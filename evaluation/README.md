@@ -18,6 +18,7 @@ limitations. Run-specific reports remain available as supporting evidence.
 | Need | Canonical artifact |
 |---|---|
 | Overall interpretation | [REPORT.md](REPORT.md) |
+| Dataset creation and provenance | [REPORT.md — Dataset creation](REPORT.md#dataset-creation) |
 | Core dataset | [datasets/core.v1.jsonl](datasets/core.v1.jsonl) |
 | Prompt regression | [datasets/prompt_regression.v1.jsonl](datasets/prompt_regression.v1.jsonl) |
 | Judge calibration | [datasets/judge_gold.v1.jsonl](datasets/judge_gold.v1.jsonl) |

@@ -187,8 +187,8 @@ def generate(results, output_dir, calibration=None):
         "", "## Reproducibility artifacts", "",
         f"- Raw results: {results}",
         f"- Run manifest: {results.with_suffix('.manifest.json')}",
-        "- Dataset: evals/datasets/core.v1.jsonl",
-        "- Judge calibration dataset: evals/datasets/judge_gold.v1.jsonl",
+        "- Dataset: evaluation/datasets/core.v1.jsonl",
+        "- Judge calibration dataset: evaluation/datasets/judge_gold.v1.jsonl",
     ])
     report = output_dir / "report.md"
     report.write_text("\n".join(lines) + "\n", encoding="utf-8")

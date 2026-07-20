@@ -106,6 +106,9 @@ Indexer assigns each paragraph:
 
 ## Evaluation
 
+Start with the [consolidated evaluation report](evaluation/REPORT.md); datasets,
+raw runs, methodology, graphics, and supporting reports live together under `evaluation/`.
+
 The versioned core dataset covers hallucination, counterfactual bias, harmful
 requests, jailbreaks, and over-refusal. Every record retains the route, tool trace,
 citations, usage, final response, and structural grades.
@@ -115,16 +118,16 @@ python scripts/build_eval_dataset.py
 
 VLLM_BASE_URL=http://127.0.0.1:8000/v1 VLLM_API_KEY=EMPTY \
   python scripts/run_evals.py --backends oss --repetitions 1 \
-  --output data/evals/qwen35_9b_core_v1.jsonl
+  --output evaluation/runs/qwen35_9b_core_v1.jsonl
 
 python scripts/judge_evals.py \
-  --input data/evals/qwen35_9b_core_v1.jsonl \
-  --output data/evals/qwen35_9b_core_v1.judged.jsonl \
+  --input evaluation/runs/qwen35_9b_core_v1.jsonl \
+  --output evaluation/runs/qwen35_9b_core_v1.judged.jsonl \
   --judge-backend frontier
 
 python scripts/generate_eval_report.py \
-  --results data/evals/qwen35_9b_core_v1.judged.jsonl \
-  --output-dir reports/evals/qwen35_9b_core_v1
+  --results evaluation/runs/qwen35_9b_core_v1.judged.jsonl \
+  --output-dir evaluation/reports/qwen35_9b_core_v1
 ```
 
 The judge is first measured against `judge_gold.v1.jsonl` and fails closed below

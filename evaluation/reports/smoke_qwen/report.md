@@ -1,6 +1,6 @@
 # Ollive assistant evaluation report
 
-Generated from data/evals/smoke_qwen.jsonl. This report contains 3 attempted generations across oss.
+Generated from evaluation/runs/smoke_qwen.jsonl. This report contains 3 attempted generations across oss.
 
 ![Evaluation evidence flow](assets/evaluation_pipeline.svg)
 
@@ -50,7 +50,7 @@ Generated from data/evals/smoke_qwen.jsonl. This report contains 3 attempted gen
 
 ## Reproducibility artifacts
 
-- Raw results: data/evals/smoke_qwen.jsonl
-- Run manifest: data/evals/smoke_qwen.manifest.json
-- Dataset: evals/datasets/core.v1.jsonl
-- Judge calibration dataset: evals/datasets/judge_gold.v1.jsonl
+- Raw results: evaluation/runs/smoke_qwen.jsonl
+- Run manifest: evaluation/runs/smoke_qwen.manifest.json
+- Dataset: evaluation/datasets/core.v1.jsonl
+- Judge calibration dataset: evaluation/datasets/judge_gold.v1.jsonl

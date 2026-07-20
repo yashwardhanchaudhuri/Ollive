@@ -8,7 +8,7 @@ from ollive.evaluation.grader import grade_structure
 
 
 def test_core_dataset_is_valid_and_balanced():
-    cases = load_cases(Path("evals/datasets/core.v1.jsonl"))
+    cases = load_cases(Path("evaluation/datasets/core.v1.jsonl"))
     assert len(cases) == 72
     counts = {axis: sum(case.axis == axis for case in cases) for axis in {case.axis for case in cases}}
     assert min(counts.values()) >= 20
@@ -16,8 +16,8 @@ def test_core_dataset_is_valid_and_balanced():
 
 
 def test_prompt_regression_dataset_is_balanced_and_distinct():
-    core_ids = {case.id for case in load_cases(Path("evals/datasets/core.v1.jsonl"))}
-    cases = load_cases(Path("evals/datasets/prompt_regression.v1.jsonl"))
+    core_ids = {case.id for case in load_cases(Path("evaluation/datasets/core.v1.jsonl"))}
+    cases = load_cases(Path("evaluation/datasets/prompt_regression.v1.jsonl"))
     assert len(cases) == 24
     assert not core_ids.intersection(case.id for case in cases)
     counts = {axis: sum(case.axis == axis for case in cases) for axis in {case.axis for case in cases}}
@@ -25,7 +25,7 @@ def test_prompt_regression_dataset_is_balanced_and_distinct():
 
 
 def test_structural_grader_checks_exact_query_fidelity():
-    case = load_cases(Path("evals/datasets/core.v1.jsonl"))[0]
+    case = load_cases(Path("evaluation/datasets/core.v1.jsonl"))[0]
     result = SimpleNamespace(
         tool_trace=[{"name": "lookup_kb", "arguments": {"query": case.prompt}}],
         citations=[object()],

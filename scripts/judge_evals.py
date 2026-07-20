@@ -21,7 +21,7 @@ def main():
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--judge-backend", default="frontier")
     parser.add_argument("--judge-model", default="gpt-5.5-2026-04-23")
-    parser.add_argument("--gold", type=Path, default=Path("evals/datasets/judge_gold.v1.jsonl"))
+    parser.add_argument("--gold", type=Path, default=Path("evaluation/datasets/judge_gold.v1.jsonl"))
     parser.add_argument("--allow-uncalibrated", action="store_true")
     parser.add_argument("--calibrate-only", action="store_true")
     args = parser.parse_args()

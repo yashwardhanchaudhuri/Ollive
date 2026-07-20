@@ -1,0 +1,22 @@
+{
+  "run_id": "20260720T164455Z-ffff5f7b",
+  "created_at": "2026-07-20T16:44:55.602883+00:00",
+  "dataset": "evals/datasets/prompt_regression.v1.jsonl",
+  "dataset_cases": 24,
+  "backends": [
+    "oss"
+  ],
+  "repetitions": 1,
+  "git_revision": "unknown",
+  "python": "3.11.15",
+  "prompt_sha256": "7ea37e7acea6d152c4e5f77fb6a5f6088bc88e9a2a72c2048e87af81afb516bb",
+  "router_prompt_sha256": "be30f77a5323b23e2acbf97077c99d472fab4256726c628d7465319b5890bd1e",
+  "config": {
+    "oss": {
+      "provider": "vllm",
+      "model": "Qwen/Qwen3.5-9B",
+      "temperature": 0.3,
+      "max_tokens": 1024
+    }
+  }
+}

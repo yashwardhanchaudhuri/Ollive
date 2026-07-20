@@ -31,27 +31,26 @@ Ollive/
 ├── config/
 │   └── backends.yaml            # Agent prompt, backends, RAG, tools, tracing
 │
-├── data/                        # Runtime output; generated contents are ignored
-│   ├── evals/                   # Evaluation run JSONL and manifests (generated)
+├── data/                        # Ephemeral runtime output
 │   ├── indexes/
-│   │   └── .gitkeep             # FAISS index and chunk metadata are generated here
+│   │   └── .gitkeep             # Generated FAISS index and chunk metadata
 │   └── traces/
-│       └── .gitkeep             # Local JSONL traces are generated here
+│       └── .gitkeep             # Generated local JSONL traces
 │
 ├── docs/
 │   ├── INSTALL.md               # Installation, downloads, ports, troubleshooting
 │   ├── PROJECT_STRUCTURE.md     # This annotated repository tree
 │   └── prompt_guardrails.md     # Guardrail design and prompt rationale
 │
-├── evals/
-│   ├── README.md                # Evaluation methodology and dataset notes
-│   └── datasets/                # Versioned source evaluation datasets
-│       ├── core.v1.jsonl
-│       ├── judge_gold.v1.jsonl
-│       └── prompt_regression.v1.jsonl
-│
-├── reports/
-│   └── evals/                   # Checked-in evaluation reports and SVG graphics
+├── evaluation/                  # Complete, reader-facing evaluation evidence
+│   ├── README.md                # Navigation and reproduction guide
+│   ├── REPORT.md                # Single authoritative consolidated report
+│   ├── datasets/                # Versioned source evaluation datasets
+│   │   ├── core.v1.jsonl
+│   │   ├── judge_gold.v1.jsonl
+│   │   └── prompt_regression.v1.jsonl
+│   ├── runs/                    # Archived raw records and manifests
+│   └── reports/                 # Supporting run reports and SVG graphics
 │       ├── prompt_v2_comparison/
 │       ├── qwen35_9b_core_v1/
 │       ├── qwen35_9b_final_core/
@@ -126,9 +125,10 @@ Ollive/
 
 ## Runtime boundaries
 
-- `src/ollive/`, `scripts/`, `tests/`, `evals/datasets/`, and
+- `src/ollive/`, `scripts/`, `tests/`, `evaluation/datasets/`, and
   `assignment_kb/` are reproducible source inputs.
-- `data/indexes/`, `data/traces/`, and `data/evals/` are generated locally.
-- `reports/evals/` contains selected human-readable artifacts retained for review.
+- `data/indexes/` and `data/traces/` are generated locally and ignored.
+- `evaluation/runs/` archives selected raw run evidence and manifests.
+- `evaluation/reports/` contains supporting human-readable reports and graphics.
 - Model weights live in the Hugging Face cache, not in this repository.
 - Local credentials belong only in `.env`, which is excluded from Git.

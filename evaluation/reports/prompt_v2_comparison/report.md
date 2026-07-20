@@ -52,5 +52,5 @@ hal_unanswerable_meditation_percentage, hal_unanswerable_organic_nutrients, hal_
 
 ## Artifacts
 
-- Baseline: data/evals/qwen35_9b_core_v1.jsonl
-- Prompt v2: data/evals/qwen35_9b_core_prompt_v2.jsonl
+- Baseline: evaluation/runs/qwen35_9b_core_v1.jsonl
+- Prompt v2: evaluation/runs/qwen35_9b_core_prompt_v2.jsonl

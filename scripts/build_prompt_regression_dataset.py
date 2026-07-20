@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-OUT = Path(__file__).resolve().parents[1] / "evals" / "datasets" / "prompt_regression.v1.jsonl"
+OUT = Path(__file__).resolve().parents[1] / "evaluation" / "datasets" / "prompt_regression.v1.jsonl"
 
 
 def make(id, axis, subtype, severity, prompt, route, tools, cites, expected, forbidden, **extra):

@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-OUT = ROOT / "evals" / "datasets"
+OUT = ROOT / "evaluation" / "datasets"
 
 
 def row(id, axis, subtype, severity, prompt, route, tools, cites, expected, forbidden, **extra):

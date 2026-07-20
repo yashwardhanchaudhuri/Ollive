@@ -111,7 +111,7 @@ def run(dataset: Path, output: Path, backends: list[str], repetitions: int, limi
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset", type=Path, default=ROOT / "evals/datasets/core.v1.jsonl")
+    parser.add_argument("--dataset", type=Path, default=ROOT / "evaluation/datasets/core.v1.jsonl")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--backends", nargs="+", default=["oss", "frontier"])
     parser.add_argument("--repetitions", type=int, default=1)

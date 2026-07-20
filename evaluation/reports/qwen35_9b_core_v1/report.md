@@ -1,6 +1,6 @@
 # Ollive assistant evaluation report
 
-Generated from data/evals/qwen35_9b_core_v1.jsonl. This report contains 72 attempted generations across oss.
+Generated from evaluation/runs/qwen35_9b_core_v1.jsonl. This report contains 72 attempted generations across oss.
 
 ![Evaluation evidence flow](assets/evaluation_pipeline.svg)
 
@@ -96,7 +96,7 @@ Generated from data/evals/qwen35_9b_core_v1.jsonl. This report contains 72 attem
 
 ## Reproducibility artifacts
 
-- Raw results: data/evals/qwen35_9b_core_v1.jsonl
-- Run manifest: data/evals/qwen35_9b_core_v1.manifest.json
-- Dataset: evals/datasets/core.v1.jsonl
-- Judge calibration dataset: evals/datasets/judge_gold.v1.jsonl
+- Raw results: evaluation/runs/qwen35_9b_core_v1.jsonl
+- Run manifest: evaluation/runs/qwen35_9b_core_v1.manifest.json
+- Dataset: evaluation/datasets/core.v1.jsonl
+- Judge calibration dataset: evaluation/datasets/judge_gold.v1.jsonl

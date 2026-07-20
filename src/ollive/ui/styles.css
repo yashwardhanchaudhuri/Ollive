@@ -1,0 +1,458 @@
+:root {
+            --canvas: #f8f7f4;
+            --canvas-soft: #fbfaf8;
+            --ink: #302c29;
+            --body: #625d58;
+            --muted: #88817a;
+            --hairline: #ebe7e1;
+            --hairline-strong: #dfdad3;
+            --surface: #fffefa;
+            --surface-strong: #f2f0ec;
+        }
+
+        html, body, [class*="css"] {
+            font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont,
+                "Segoe UI", sans-serif;
+            color: var(--body);
+        }
+
+        .stApp {
+            background:
+                radial-gradient(circle at 86% 5%, rgba(185, 224, 213, .15), transparent 19rem),
+                radial-gradient(circle at 69% 12%, rgba(238, 207, 188, .13), transparent 17rem),
+                radial-gradient(circle at 96% 24%, rgba(211, 202, 226, .13), transparent 20rem),
+                var(--canvas);
+        }
+
+        [data-testid="stHeader"] {
+            background: transparent;
+        }
+
+        [data-testid="stToolbar"],
+        #MainMenu,
+        footer {
+            visibility: hidden;
+        }
+
+        .block-container {
+            max-width: 920px;
+            padding-top: 4.5rem;
+            padding-bottom: 9rem;
+        }
+
+        .ollive-hero {
+            position: relative;
+            margin: 0 0 2.5rem;
+            padding: 0 0 2rem;
+            border-bottom: 1px solid var(--hairline-strong);
+        }
+
+        .ollive-eyebrow,
+        .sidebar-kicker {
+            color: var(--muted);
+            font-size: .72rem;
+            font-weight: 650;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+        }
+
+        .ollive-hero h1 {
+            max-width: 680px;
+            margin: .55rem 0 .85rem;
+            color: var(--ink);
+            font-family: "Iowan Old Style", "Palatino Linotype", Palatino,
+                "Times New Roman", serif;
+            font-size: clamp(3rem, 7vw, 5rem);
+            font-weight: 300;
+            line-height: .98;
+            letter-spacing: -.045em;
+        }
+
+        .ollive-hero p {
+            max-width: 590px;
+            margin: 0;
+            color: var(--muted);
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+
+        .ollive-status {
+            display: inline-flex;
+            align-items: center;
+            gap: .45rem;
+            margin-top: 1.2rem;
+            padding: .38rem .72rem;
+            color: var(--ink);
+            background: rgba(255, 254, 250, .72);
+            border: 1px solid var(--hairline);
+            border-radius: 999px;
+            font-size: .75rem;
+            font-weight: 550;
+        }
+
+        .ollive-status::before {
+            width: .42rem;
+            height: .42rem;
+            content: "";
+            background: #16a34a;
+            border-radius: 999px;
+        }
+
+        [data-testid="stSidebar"] {
+            width: 300px !important;
+            min-width: 300px !important;
+            max-width: 300px !important;
+            transform: none !important;
+            background: rgba(251, 250, 248, .97);
+            border-right: 1px solid var(--hairline);
+        }
+
+        [data-testid="stSidebar"][aria-expanded="false"] {
+            width: 300px !important;
+            min-width: 300px !important;
+            max-width: 300px !important;
+            transform: none !important;
+        }
+
+        [data-testid="stSidebarContent"] {
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+
+        [data-testid="stSidebarCollapseButton"],
+        [data-testid="stSidebarCollapsed"] {
+            display: none !important;
+        }
+
+        [data-testid="stSidebar"] > div:first-child {
+            padding: 2rem 1.25rem;
+        }
+
+        [data-testid="stSidebar"] h2,
+        [data-testid="stSidebar"] h3 {
+            color: var(--ink);
+            font-weight: 550;
+            letter-spacing: -.015em;
+        }
+
+        [data-testid="stSidebar"] hr {
+            border-color: var(--hairline);
+        }
+
+        [data-testid="stMetric"] {
+            padding: .8rem .9rem;
+            background: var(--surface);
+            border: 1px solid var(--hairline);
+            border-radius: 12px;
+        }
+
+        [data-testid="stMetricLabel"] {
+            color: var(--muted);
+            font-size: .72rem;
+            letter-spacing: .04em;
+        }
+
+        [data-testid="stMetricValue"] {
+            color: var(--ink);
+            font-size: 1.25rem;
+            font-weight: 500;
+        }
+
+        [data-testid="stChatMessage"] {
+            margin: 0 0 .85rem;
+            padding: 1.15rem 1.25rem;
+            background: rgba(255, 254, 250, .82);
+            border: 1px solid var(--hairline);
+            border-radius: 16px;
+            box-shadow: 0 1px 0 rgba(12, 10, 9, .02);
+        }
+
+        [data-testid="stChatMessage"]:has(
+            [data-testid="chatAvatarIcon-user"]
+        ) {
+            margin-left: 9%;
+            background: var(--surface-strong);
+            border-color: transparent;
+        }
+
+        [data-testid="stChatMessage"] p,
+        [data-testid="stChatMessage"] li {
+            color: var(--body);
+            font-size: .98rem;
+            line-height: 1.65;
+        }
+
+        [data-testid="stChatMessage"] code {
+            padding: .16rem .38rem;
+            color: var(--ink);
+            background: #f0efed;
+            border: 1px solid var(--hairline);
+            border-radius: 6px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            font-size: .76rem;
+        }
+
+        [data-testid="stAppViewContainer"],
+        [data-testid="stMain"] {
+            background: transparent !important;
+        }
+
+        [data-testid="stBottom"] {
+            position: fixed !important;
+            z-index: 99990 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            left: 300px !important;
+            width: calc(100vw - 300px) !important;
+            min-height: 0 !important;
+            background: linear-gradient(
+                to top,
+                rgba(248, 247, 244, 1) 68%,
+                rgba(248, 247, 244, .88) 84%,
+                rgba(248, 247, 244, 0)
+            ) !important;
+            box-shadow: none !important;
+            pointer-events: none;
+        }
+
+        [data-testid="stBottom"] > div {
+            min-height: 0 !important;
+            background: transparent !important;
+            box-shadow: none !important;
+        }
+
+        [data-testid="stBottomBlockContainer"] {
+            width: calc(100% - 2rem) !important;
+            max-width: 888px !important;
+            margin: 0 auto !important;
+            padding: 1.35rem 0 1rem !important;
+            background: transparent !important;
+            pointer-events: auto;
+        }
+
+        [data-testid="stChatInput"] {
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            background: transparent !important;
+            border: 0;
+        }
+
+        [data-testid="stChatInput"] > div {
+            min-height: 54px;
+            padding: .45rem .5rem .45rem 1rem !important;
+            gap: .35rem !important;
+            background: rgba(255, 254, 250, .98) !important;
+            border: 1px solid var(--hairline-strong) !important;
+            border-radius: 18px !important;
+            box-shadow: 0 6px 22px rgba(48, 44, 41, .055) !important;
+        }
+
+        [data-testid="stChatInputTextArea"],
+        [data-testid="stChatInput"] textarea,
+        [data-testid="stChatInput"] [data-baseweb="textarea"] {
+            min-height: 38px !important;
+            padding: .55rem .2rem !important;
+            color: var(--ink) !important;
+            background: transparent !important;
+            border: 0 !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+        }
+
+        [data-testid="stChatInputTextArea"]::placeholder,
+        [data-testid="stChatInput"] textarea::placeholder {
+            color: #aaa39c !important;
+            opacity: 1;
+        }
+
+        [data-testid="stChatInputSubmitButton"] {
+            width: 40px !important;
+            min-width: 40px !important;
+            height: 40px !important;
+            min-height: 40px !important;
+            padding: 0 !important;
+            color: #fffefa !important;
+            background: #625d58 !important;
+            border: 0 !important;
+            border-radius: 13px !important;
+        }
+
+        [data-testid="stChatInputSubmitButton"]:hover {
+            background: #4f4a46 !important;
+        }
+
+        .stButton > button {
+            min-height: 2.5rem;
+            color: var(--ink);
+            background: transparent;
+            border: 1px solid var(--hairline-strong);
+            border-radius: 999px;
+            font-weight: 550;
+        }
+
+        .stButton > button:hover {
+            color: white;
+            background: #514b46;
+            border-color: #514b46;
+        }
+
+        [data-baseweb="select"] > div {
+            background: var(--surface);
+            border-color: var(--hairline-strong);
+            border-radius: 10px;
+        }
+
+        [data-testid="stExpander"] {
+            overflow: hidden;
+            background: rgba(255, 254, 250, .68);
+            border: 1px solid var(--hairline);
+            border-radius: 12px;
+        }
+
+        [data-testid="stCaptionContainer"] {
+            color: var(--muted);
+        }
+
+        .citation-link {
+            display: inline-flex;
+            align-items: center;
+            margin: 0 .08rem;
+            padding: .13rem .38rem;
+            color: #5e625a !important;
+            background: #f1f2ed;
+            border: 1px solid #dde0d8;
+            border-radius: 6px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            font-size: .76rem;
+            line-height: 1.35;
+            text-decoration: none !important;
+        }
+
+        .citation-link:hover {
+            color: var(--ink) !important;
+            background: #e9ebe4;
+            border-color: #ccd0c5;
+        }
+
+        .source-drawer {
+            position: fixed;
+            z-index: 999999;
+            top: 0;
+            right: 0;
+            display: none;
+            width: min(430px, 92vw);
+            height: 100vh;
+            padding: 2rem 1.8rem 3rem;
+            overflow-y: auto;
+            color: var(--body);
+            background: rgba(255, 254, 250, .985);
+            border-left: 1px solid var(--hairline-strong);
+            box-shadow: -18px 0 50px rgba(48, 44, 41, .08);
+            backdrop-filter: blur(18px);
+        }
+
+        .source-drawer:target {
+            display: block;
+            animation: source-drawer-in .18s ease-out;
+        }
+
+        @keyframes source-drawer-in {
+            from { opacity: 0; transform: translateX(18px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .source-drawer__top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 2.5rem;
+        }
+
+        .source-drawer__label {
+            color: var(--muted);
+            font-size: .7rem;
+            font-weight: 650;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+        }
+
+        .source-drawer__close {
+            display: grid;
+            width: 2.2rem;
+            height: 2.2rem;
+            place-items: center;
+            color: var(--ink) !important;
+            background: var(--surface-strong);
+            border: 1px solid var(--hairline);
+            border-radius: 999px;
+            font-size: 1.25rem;
+            line-height: 1;
+            text-decoration: none !important;
+        }
+
+        .source-drawer h2 {
+            margin: 0 0 .65rem;
+            color: var(--ink);
+            font-family: "Iowan Old Style", "Palatino Linotype", Palatino,
+                "Times New Roman", serif;
+            font-size: 2rem;
+            font-weight: 300;
+            line-height: 1.12;
+            letter-spacing: -.025em;
+        }
+
+        .source-drawer__heading {
+            display: flex;
+            flex-direction: column;
+            gap: .22rem;
+        }
+
+        .source-drawer__line {
+            color: var(--muted);
+            font-size: .78rem;
+        }
+
+        .source-drawer__body {
+            color: var(--body);
+            font-size: .94rem;
+            line-height: 1.72;
+            white-space: pre-wrap;
+        }
+
+        @media (max-width: 760px) {
+            [data-testid="stSidebar"],
+            [data-testid="stSidebar"][aria-expanded="false"] {
+                width: 260px !important;
+                min-width: 260px !important;
+                max-width: 260px !important;
+            }
+
+            [data-testid="stBottom"] {
+                left: 260px !important;
+                width: calc(100vw - 260px) !important;
+            }
+
+            .block-container {
+                padding-top: 2.25rem;
+            }
+
+            .ollive-hero h1 {
+                font-size: 3.2rem;
+            }
+
+            [data-testid="stChatMessage"]:has(
+                [data-testid="chatAvatarIcon-user"]
+            ) {
+                margin-left: 0;
+            }
+
+            [data-testid="stBottomBlockContainer"] {
+                width: calc(100% - 1.5rem) !important;
+            }
+
+            .source-drawer {
+                width: 100vw;
+                padding: 1.5rem 1.25rem 2.5rem;
+            }
+        }

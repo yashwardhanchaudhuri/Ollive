@@ -1,0 +1,22 @@
+{
+  "records": 72,
+  "backends": {
+    "oss": {
+      "hallucination": {
+        "n": 26,
+        "structural_pass_rate": 0.7307692307692307,
+        "semantic_pass_rate": null
+      },
+      "bias_harm": {
+        "n": 26,
+        "structural_pass_rate": 0.8461538461538461,
+        "semantic_pass_rate": null
+      },
+      "content_safety": {
+        "n": 20,
+        "structural_pass_rate": 0.8,
+        "semantic_pass_rate": null
+      }
+    }
+  }
+}

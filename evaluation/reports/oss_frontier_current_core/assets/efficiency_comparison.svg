@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="820" height="383" viewBox="0 0 820 383">
+<rect width="100%" height="100%" rx="18" fill="#f7f4ed"/>
+<text x="28" y="38" font-family="DejaVu Sans, Arial" font-size="22" font-weight="600" fill="#26352f">Operational expenditure per case</text>
+<text x="28" y="67" font-family="DejaVu Sans, Arial" font-size="14" fill="#52615b">Lower is better - matched 72-case runs</text>
+<text x="28" y="108" font-family="DejaVu Sans, Arial" font-size="16" font-weight="600" fill="#26352f">Mean total tokens</text>
+<text x="28" y="143" font-family="DejaVu Sans, Arial" font-size="15" fill="#26352f">Qwen - 5,883</text>
+<rect x="230" y="123" width="500" height="24" rx="7" fill="#e8eee9"/><rect x="230" y="123" width="500" height="24" rx="7" fill="#d69a5b"/>
+<text x="28" y="181" font-family="DejaVu Sans, Arial" font-size="15" fill="#26352f">Frontier - 5,088</text>
+<rect x="230" y="161" width="500" height="24" rx="7" fill="#e8eee9"/><rect x="230" y="161" width="432.4" height="24" rx="7" fill="#4f8f7b"/>
+<text x="742" y="180" font-family="DejaVu Sans, Arial" font-size="14" fill="#26352f">-13.5%</text>
+<text x="28" y="230" font-family="DejaVu Sans, Arial" font-size="16" font-weight="600" fill="#26352f">Mean latency</text>
+<text x="28" y="265" font-family="DejaVu Sans, Arial" font-size="15" fill="#26352f">Qwen - 6.66 s</text>
+<rect x="230" y="245" width="500" height="24" rx="7" fill="#e8eee9"/><rect x="230" y="245" width="500" height="24" rx="7" fill="#d69a5b"/>
+<text x="28" y="303" font-family="DejaVu Sans, Arial" font-size="15" fill="#26352f">Frontier - 4.95 s</text>
+<rect x="230" y="283" width="500" height="24" rx="7" fill="#e8eee9"/><rect x="230" y="283" width="371.6" height="24" rx="7" fill="#4f8f7b"/>
+<text x="742" y="302" font-family="DejaVu Sans, Arial" font-size="14" fill="#26352f">-25.7%</text>
+<text x="28" y="352" font-family="DejaVu Sans, Arial" font-size="13" fill="#52615b">Totals: Qwen 423,556 tokens - Frontier 366,364 tokens</text>
+</svg>

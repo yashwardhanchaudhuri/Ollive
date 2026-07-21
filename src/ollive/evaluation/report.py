@@ -116,7 +116,7 @@ def generate(results, output_dir, calibration=None):
         f"| Backends | {', '.join(backends)} |",
         "| Result type | Structural regression evidence; semantic quality is separate |",
         "", "## At a glance", "",
-        "This report follows one run from archived records to component failures. "
+        "This report follows one recorded current run from component failures to supporting evidence. "
         "Read the summary first, then use variation and the failure register to "
         "understand why the aggregate moved.",
         "", "![Evaluation evidence flow](assets/evaluation_pipeline.svg)", "",

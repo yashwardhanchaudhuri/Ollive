@@ -25,9 +25,6 @@ def load_config(path: Path | None = None) -> dict[str, Any]:
     with cfg_path.open("r", encoding="utf-8") as f:
         cfg = yaml.safe_load(f)
 
-    env_active = os.getenv("OLLIVE_ACTIVE_BACKEND")
-    if env_active:
-        cfg["active"] = env_active.strip().lower()
 
     # Resolve env-backed URLs/keys into backend dicts for convenience
     for name, backend in cfg.get("backends", {}).items():

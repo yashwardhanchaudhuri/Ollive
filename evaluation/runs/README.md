@@ -1,18 +1,20 @@
-# Archived matched evaluation runs
+# Matched evaluation runs
 
 ## At a glance
 
-This folder contains only the evidence needed for the archived OSS–frontier comparison and judge-calibration disclosure. Each candidate JSONL preserves case outputs and structural grades; its manifest preserves model, dataset, prompt, and revision provenance.
+This folder contains versioned OSS-frontier evidence. The current run is the canonical comparison; the earlier matched snapshot is retained for provenance.
 
 | File | Responsibility |
 |---|---|
-| `oss_qwen35_9b_matched_core.jsonl` | Matched Qwen outputs and structural grades. |
-| `oss_qwen35_9b_matched_core.manifest.json` | Qwen model, prompt, dataset, and commit provenance. |
-| `frontier_gpt54mini_matched_core.jsonl` | Matched GPT-5.4 mini outputs and structural grades. |
-| `frontier_gpt54mini_matched_core.manifest.json` | Frontier model, prompt, dataset, and commit provenance. |
-| `oss_frontier_matched_core.jsonl` | Combined 144-record comparison input. |
-| `oss_frontier_matched_core.manifest.json` | Compatibility and source-run provenance. |
+| `oss_frontier_current_core.jsonl` | Current combined 144-record OSS-frontier comparison. |
+| `oss_frontier_current_core.manifest.json` | Current model, dataset, prompt, and revision provenance. |
+| `oss_frontier_matched_core.jsonl` | Earlier archived combined comparison. |
+| `oss_frontier_matched_core.manifest.json` | Earlier snapshot provenance. |
+| `oss_qwen35_9b_matched_core.jsonl` | Earlier Qwen-only raw records. |
+| `oss_qwen35_9b_matched_core.manifest.json` | Earlier Qwen-only model and prompt provenance. |
+| `frontier_gpt54mini_matched_core.jsonl` | Earlier frontier-only raw records. |
+| `frontier_gpt54mini_matched_core.manifest.json` | Earlier frontier-only model and prompt provenance. |
 | `qwen35_9b_judge_probe.calibration.json` | Exploratory judge agreement against authored gold labels. |
-| `README.md` | Explains retained evidence. |
+| `README.md` | Explains current versus retained evidence. |
 
-Intermediate smoke, prompt-development, and superseded single-model runs are intentionally omitted. New runs should be written with `scripts/run_evals.py` and compared as a separate, dated snapshot.
+Each JSONL record preserves case outputs and structural grades. Each manifest preserves model, dataset, prompt, and source-revision identity. New runs are written with `scripts/run_evals.py`; do not overwrite a prior snapshot.

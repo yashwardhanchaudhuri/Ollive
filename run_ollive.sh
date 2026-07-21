@@ -54,6 +54,12 @@ if [[ ! -f .env ]]; then
   cp .env.example .env
   echo "Created .env from .env.example. Add optional provider keys there when needed."
 fi
+CONFIGURED_BACKEND="$(conda run --no-capture-output --name "${ENV_NAME}" python -c 'from ollive.application.config import load_config; print(load_config()["active"])')"
+if [[ "${MODE}" != "${CONFIGURED_BACKEND}" ]]; then
+  echo "Launcher mode '${MODE}' does not match config/backends.yaml active '${CONFIGURED_BACKEND}'." >&2
+  echo "Edit the YAML active field, then rerun the launcher." >&2
+  exit 1
+fi
 
 if [[ ! -f data/indexes/faiss.index || ! -f data/indexes/chunks.pkl || ! -f data/indexes/meta.json ]]; then
   echo "Building the local knowledge-base index (first run downloads the embedding model)."
@@ -71,7 +77,6 @@ cleanup() {
 trap cleanup EXIT INT TERM
 
 if [[ "${MODE}" == "oss" ]]; then
-  export OLLIVE_ACTIVE_BACKEND=oss
   export VLLM_BASE_URL="${VLLM_URL}"
   export VLLM_API_KEY="${VLLM_API_KEY:-EMPTY}"
   export OLLIVE_VLLM_HOST="${VLLM_HOST}"
@@ -107,7 +112,6 @@ if [[ "${MODE}" == "oss" ]]; then
     done
   fi
 else
-  export OLLIVE_ACTIVE_BACKEND=frontier
   if [[ -z "${OPENAI_API_KEY:-}" ]] && ! grep -Eq '^[[:space:]]*OPENAI_API_KEY=[^[:space:]#]+' .env; then
     echo "Frontier mode requires OPENAI_API_KEY in .env or the shell environment." >&2
     exit 1

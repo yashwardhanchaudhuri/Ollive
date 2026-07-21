@@ -27,13 +27,13 @@ starts Streamlit on `127.0.0.1:8501`. It reuses already healthy local vLLM and S
 vLLM process it started. The first invocation downloads the embedding and Qwen
 models, so it can take several minutes.
 
-For the frontier backend, first put `OPENAI_API_KEY` in `.env`, then run:
+For the frontier backend, put `OPENAI_API_KEY` in `.env`, change `active: oss` to `active: frontier` in `config/backends.yaml`, then run:
 
 ```bash
 ./run_ollive.sh frontier
 ```
 
-This uses the same environment and starts only Streamlit. `TAVILY_API_KEY`
+The launcher verifies that its mode matches YAML and starts only Streamlit. Restore `active: oss` before the OSS path. `TAVILY_API_KEY`
 remains optional for authoritative web-search completion. Both paths bind their
 services to loopback by default.
 
@@ -93,7 +93,6 @@ For local Qwen:
 ```dotenv
 VLLM_BASE_URL=http://127.0.0.1:8000/v1
 VLLM_API_KEY=EMPTY
-OLLIVE_ACTIVE_BACKEND=oss
 ```
 
 For the frontier backend in the same environment:
@@ -101,7 +100,6 @@ For the frontier backend in the same environment:
 ```dotenv
 OPENAI_API_KEY=replace_me
 OPENAI_BASE_URL=https://api.openai.com/v1
-OLLIVE_ACTIVE_BACKEND=frontier
 ```
 
 `TAVILY_API_KEY` is optional and enables authoritative-domain web completion.
@@ -152,7 +150,6 @@ Verify it with:
 curl http://127.0.0.1:8000/v1/models
 ```
 
-For the frontier backend, do not start vLLM; set `OLLIVE_ACTIVE_BACKEND=frontier`
 and a valid `OPENAI_API_KEY` instead.
 
 ## 5. Start Streamlit manually (optional)

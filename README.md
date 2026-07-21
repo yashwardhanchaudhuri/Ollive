@@ -14,13 +14,13 @@ and citation validation. General conversation remains natural; factual wellness
 guidance is grounded; vague personalized requests ask for context; and medical
 requests stop at a non-clinical boundary.
 
-| Capability or archived evidence | Status |
+| Capability or current evidence | Status |
 |---|---|
 | Local Qwen workflow | Supported through vLLM |
 | Grounded local retrieval | Paragraph-level FAISS search |
 | Citation provenance checks | Application-enforced and fail-closed |
-| Archived Qwen structural evaluation | 61/72 (84.7%) on the matched run |
-| Archived frontier structural evaluation | 61/72 (84.7%); axis and efficiency results differ |
+| Current Qwen structural evaluation | 53/72 (73.6%) on the matched run |
+| Current frontier structural evaluation | 62/72 (86.1%); faster and 13.5% lower token use |
 | Human semantic review | Not completed |
 
 The [agent workflow](docs/AGENT_WORKFLOW.md) explains the design. The
@@ -97,13 +97,13 @@ waits for the local API, and serves Streamlit at `http://127.0.0.1:8501`. On
 exit it stops only the vLLM process it started. The first run downloads the
 embedding model and Qwen.
 
-For the frontier backend, set `OPENAI_API_KEY` in `.env` first, then run:
+For the frontier backend, set `OPENAI_API_KEY` in `.env`, change `active: oss` to `active: frontier` in `config/backends.yaml`, then run:
 
 ```bash
 ./run_ollive.sh frontier
 ```
 
-That path uses the same environment and starts Streamlit without vLLM. See
+The launcher verifies that its mode matches YAML and starts Streamlit without vLLM. Restore `active: oss` before the OSS path. See
 [installation details](docs/INSTALL.md) for prerequisites, ports, manual control,
 and troubleshooting. Traces land in `data/traces/*.jsonl`.
 
@@ -116,7 +116,7 @@ and troubleshooting. Traces land in `data/traces/*.jsonl`.
 - embedding model and index paths / `top_k`
 - Tavily and observability settings
 
-Override active backend with `OLLIVE_ACTIVE_BACKEND=frontier`.
+Set the active backend only in `config/backends.yaml`; it is the single source of truth. The launcher verifies its mode against this value and does not override it.
 
 ## Citation contract
 
@@ -144,12 +144,9 @@ page.
 
 ## Evaluation
 
-### What the archived results mean
+### What the current results mean
 
-The archived matched comparison is an overall structural tie at 61/72 (84.7%). Qwen is
-stronger on hallucination structure; GPT-5.4 mini is stronger on bias/harm and
-content safety, and is faster with fewer tokens. Both models pass all harmful
-and jailbreak cases structurally but over-refuse several benign controls.
+The current matched comparison favors GPT-5.4 mini: 62/72 (86.1%) versus Qwen 3.5 9B at 53/72 (73.6%). Frontier leads the three structural axes, averages 4.95 s versus 6.66 s per case, and uses 366,364 versus 423,556 total tokens. Both retain 100% KB-query fidelity; semantic human review remains pending.
 
 Start with the [one-page evaluation paper](evaluation/REPORT.pdf).
 Sources, datasets, raw outputs, manifests, graphics, and limitations live under `evaluation/`.

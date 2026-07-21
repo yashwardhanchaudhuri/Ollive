@@ -1,3 +1,4 @@
+header#title-block-header { display: none; }
 @page {
   size: A4;
   margin: 8mm 10mm 7mm;

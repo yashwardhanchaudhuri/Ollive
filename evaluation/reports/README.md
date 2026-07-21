@@ -1,14 +1,15 @@
-# Final evaluation report evidence
+# Evaluation report evidence
 
 ## At a glance
 
-This folder retains one detailed archived matched comparison behind the one-page `evaluation/REPORT.md`. The report is derived from the Qwen and GPT-5.4 mini snapshot records and does not compete with the submission narrative.
+This folder holds the detailed report behind the canonical one-page paper and preserves the earlier comparison for audit.
 
 | Path | Responsibility |
 |---|---|
-| `oss_frontier_matched_core/report.md` | Detailed structural results and failure register. |
-| `oss_frontier_matched_core/summary.json` | Machine-readable comparison summary. |
-| `oss_frontier_matched_core/assets/` | Axis, diagnostic, pipeline, and efficiency graphics. |
-| `README.md` | Explains the retained report boundary. |
+| `oss_frontier_current_core/report.md` | Current structural results, diagnostics, and failure register. |
+| `oss_frontier_current_core/summary.json` | Machine-readable current axis summary. |
+| `oss_frontier_current_core/assets/` | Current axis, guardrail, pipeline, and expenditure graphics. |
+| `oss_frontier_matched_core/` | Earlier archived comparison retained for provenance. |
+| `README.md` | Explains which report is current. |
 
-Superseded smoke, single-model, and prompt-iteration reports are intentionally removed. Their source workflows remain reproducible from the scripts and datasets.
+The current detailed report is derived from the 2026-07-21 rerun against commit `ebbcd4a`. It is the evidence source for `evaluation/REPORT.md`; the older report does not compete with that conclusion.

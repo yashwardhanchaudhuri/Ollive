@@ -1,5 +1,26 @@
 # Prompt guardrail design
 
+| Field | Value |
+|---|---|
+| Objective | Explain which failures the guardrails address and where enforcement lives |
+| Audience | Prompt authors, application developers, and evaluators |
+| Status | Current production design |
+
+## At a glance
+
+Ollive does not depend on one long safety prompt. It selects a turn boundary,
+applies route-specific instructions, forces retrieval when facts are needed, and
+validates the final structure in application code.
+
+Prompts influence behavior. Code enforces allowed shapes, queries, retries, and
+citation provenance.
+
+## Threat model
+
+The design addresses user-supplied evidence, invented document types, search
+drift, unsupported precision, fake citations, role-play and encoding attacks,
+stereotypes, unsafe medical guidance, over-refusal, and malformed tool output.
+
 ## Production invariants
 
 The production prompts are intentionally independent of evaluation case wording.
@@ -20,6 +41,17 @@ The router emits a constrained object with exactly two fields: the domain kind a
 boolean grounding decision. Unknown, missing, extra, incorrectly typed, or contradictory
 fields fail to the no-tool out-of-scope policy.
 
+## Why these choices exist
+
+| Choice | Failure reduced | Trade-off |
+|---|---|---|
+| Route before answering | Treating every turn like factual wellness advice | Extra model call and possible misrouting |
+| Force the first KB lookup | Unsupported wellness guidance | Added latency |
+| Preserve the user query | Search drift and hidden facets | No automatic query expansion |
+| Dynamic citation enum | Fabricated or stale markers | More schema pressure on small models |
+| Fail closed | Unsupported text reaching the UI | More withheld answers |
+| Clarification route | Generic personalized plans | One additional conversation turn |
+
 ## Anti-overfitting protocol
 
 - core.v1.jsonl and prompt_regression.v1.jsonl are development sets.
@@ -34,8 +66,25 @@ fields fail to the no-tool out-of-scope policy.
   holdout must not become an iterative tuning set.
 - Report repeated generations and confidence intervals. A single favorable run is
   directional evidence, not a release claim.
-- Human review remains required for critical safety behavior, counterfactual fairness,
+- Human review remains required for critical safety behavior, paired identity fairness,
   and claim-to-source entailment.
+
+## Observed results and variation
+
+The archived Qwen baseline passes all structural checks on 52.8% of the core
+cases; the latest archived run reaches 79.2%. Tool policy improves most.
+Citation integrity declines from 95.8% to 90.3%, showing that tighter constraints
+can shift failure from unsupported output toward withheld output.
+
+These measurements use Qwen, one sample per case, and development datasets.
+Frontier behavior and repeated-sampling variation are not measured.
+
+## Design insight
+
+The evidence does not show that more restriction always produces a better
+assistant. It shows that explicit application boundaries improve structural
+compliance, while usefulness still depends on conversational routing, focused
+retrieval, and concise answers.
 
 ## Known architectural boundary
 
@@ -43,3 +92,7 @@ Prompts can strongly influence routing and tool use, but cannot guarantee that g
 prose contains every required citation or that each citation entails its claim. The
 application-level citation validator must remain fail-closed, and claim entailment needs
 an independently calibrated grader plus human adjudication.
+
+Other limits include ambiguous route labels, incomplete KB coverage, development
+set contamination, and same-family judge dependence. Supporting measurements and
+failure registers are in the [evaluation report](../evaluation/REPORT.md).

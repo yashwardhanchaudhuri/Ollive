@@ -1,6 +1,6 @@
 # Nature and General Welfare
 
-*The Healing Power of the Natural World*
+*Scope: accessible ways to engage with nature; no guaranteed exposure duration or effect size.*
 
 The connection between nature and human welfare is profound and increasingly supported by scientific research. Spending time in natural environments offers wide-ranging benefits for physical health, mental well-being, and overall quality of life. As modern living grows more urban and technology-driven, the importance of reconnecting with the natural world becomes ever more apparent.
 

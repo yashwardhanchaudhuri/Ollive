@@ -4,6 +4,27 @@ This guide keeps the Streamlit application and the vLLM GPU server in separate
 Python environments. The application can also run against the OpenAI frontier
 backend without installing vLLM or downloading Qwen.
 
+## What this guide produces
+
+At the end of the local OSS path:
+
+- Qwen serves an OpenAI-compatible API on port 8000.
+- The application has a paragraph-level vector index built with FAISS.
+- Streamlit serves Ollive on port 8501.
+- Tests and dependency checks pass in the application environment.
+
+The application and model server deliberately use different environments. vLLM
+owns a CUDA-sensitive PyTorch stack; Streamlit and retrieval do not need that
+dependency surface.
+
+## Choose a path
+
+| Goal | Application environment | vLLM environment | Model download |
+|---|---:|---:|---:|
+| Local Qwen | Required | Required | Qwen and embedding model |
+| Frontier only | Required | No | Embedding model |
+| Development and tests | Required with dev packages | Optional | Embedding model for index work |
+
 ## Prerequisites
 
 - Linux or WSL2
@@ -39,6 +60,9 @@ For tests and development tools, use:
 ```bash
 python -m pip install -r requirements-dev.txt
 ```
+
+**Checkpoint:** `python -m pip check` should report no broken requirements.
+This verifies dependency consistency, not model access or GPU compatibility.
 
 ## 2. Configure environment variables
 
@@ -135,6 +159,10 @@ curl http://127.0.0.1:8000/v1/models
 
 The server must stay running while the OSS backend is selected.
 
+**Checkpoint:** `curl http://127.0.0.1:8000/v1/models` should return a JSON
+model list containing the served model. A successful connection alone does not
+prove tool calling works.
+
 ## 6. Build the knowledge index
 
 In the application environment:
@@ -148,6 +176,9 @@ This downloads `BAAI/bge-small-en-v1.5` when necessary and writes the FAISS
 index under `data/indexes/`.
 
 Rebuild the index whenever documents in `assignment_kb/` change.
+
+**Checkpoint:** `data/indexes/` should contain `faiss.index`, `chunks.pkl`,
+and `meta.json`. Indexed document types must match the configured enum.
 
 ## 7. Start Streamlit
 
@@ -178,6 +209,9 @@ For the OSS backend, also confirm that both ports are listening:
 ss -ltnp | grep -E ':8000|:8501'
 ```
 
+Passing tests establishes code-level invariants and fixture behavior. It does
+not establish model quality; use the evaluation bundle for behavioral evidence.
+
 ## Troubleshooting
 
 ### The local Qwen service is unavailable
@@ -200,3 +234,11 @@ then restart the indexer and vLLM with the same value.
 Set `OPENAI_API_KEY`, select the `frontier` backend, and confirm that
 `OPENAI_BASE_URL` is either unset or points to an OpenAI-compatible `/v1`
 endpoint.
+
+## Scope and security
+
+- The Streamlit UI has no application-level authentication.
+- `VLLM_API_KEY=EMPTY` is appropriate only for a controlled local endpoint.
+- Public deployment needs a trusted proxy, access control, TLS, and network restrictions.
+- Installation success does not validate the authority of the wellness corpus.
+- GPU compatibility varies by driver, CUDA runtime, vLLM wheel, and hardware.

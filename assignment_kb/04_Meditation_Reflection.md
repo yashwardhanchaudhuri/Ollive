@@ -1,6 +1,6 @@
 # Meditation and Reflection
 
-*Cultivating Inner Awareness and Calm*
+*Scope: general mindfulness and reflection practices; not diagnosis, treatment, or cure evidence.*
 
 Meditation and reflection are ancient practices that have gained widespread recognition for their profound benefits to mental and emotional well-being. In an age of constant stimulation and information overload, the ability to pause, turn inward, and cultivate stillness has become increasingly valuable. These practices offer a pathway to reduced stress, greater clarity, and a deeper understanding of oneself.
 

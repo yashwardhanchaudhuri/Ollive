@@ -1,6 +1,6 @@
 # Diet and Nutrition
 
-*Foundations of a Balanced Eating Approach*
+*Scope: practical balanced-eating principles; not individualized calorie targets or treatment advice.*
 
 Diet forms the cornerstone of overall wellness, influencing not only physical health but also mental clarity, energy levels, and long-term disease prevention. A thoughtful approach to eating goes beyond counting calories; it involves understanding how different foods interact with the body and supply the nutrients required for optimal function. The goal of a healthy diet is not restriction but nourishment, providing the body with a diverse range of vitamins, minerals, proteins, fats, and carbohydrates in balanced proportions.
 

@@ -88,7 +88,16 @@ def generate(results, calibration, dataset, output_dir):
     subtype_counts = Counter((case.axis, case.subtype) for case in cases)
     lines = [
         "# Ollive assistant evaluation: Qwen 3.5 9B vs GPT-5.4 mini", "",
-        "## Executive summary", "",
+        "| Field | Value |",
+        "|---|---|",
+        "| Objective | Compare two model backends while holding the surrounding Ollive workflow fixed |",
+        "| Controlled system | Agent code, prompts, retrieval index, tool schemas, dataset, and grading |",
+        "| Primary result | Structural, semantic-judge, and strict pass variation by candidate and axis |",
+        "", "## How to read this report", "",
+        "Start with the higher-level candidate picture, then inspect axis and guardrail "
+        "variation, counterfactual pairs, judge quality, and the failure register. "
+        "The limitations section defines what the comparison cannot support.",
+        "", "## Executive summary", "",
         "This report compares the local Qwen 3.5 9B assistant with the pinned GPT-5.4-mini frontier candidate using the same agent code, frozen prompts, retrieval index, tool schemas, and 72-case dataset. GPT-5.5 is used as a blinded rubric judge after calibration on a separate 28-example rubric set.",
         "", "![Evaluation pipeline](assets/evaluation_pipeline.svg)", "",
         "| Candidate | Completed | Structural pass | Judge pass | Strict pass | Mean latency | p95 latency | Mean tokens |",

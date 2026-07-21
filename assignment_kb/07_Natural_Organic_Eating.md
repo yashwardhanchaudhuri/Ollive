@@ -1,6 +1,6 @@
 # Natural and Organic Eating
 
-*The Benefits of Farm-to-Table Living*
+*Scope: local and organic eating themes and trade-offs; no universal nutrient-superiority claim.*
 
 Natural and organic eating represents a return to food in its purest form, emphasizing produce and products grown without synthetic pesticides, fertilizers, or genetic modification. This approach to nutrition prioritizes quality, sustainability, and a closer connection to the origins of our food. Among the most celebrated expressions of this philosophy is the farm-to-table movement, which champions locally sourced, freshly harvested ingredients.
 

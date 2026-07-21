@@ -97,8 +97,18 @@ def generate(results, output_dir, calibration=None):
     pipeline_svg(assets / "evaluation_pipeline.svg")
 
     lines = [
-        "# Ollive assistant evaluation report", "",
-        f"Generated from {results}. This report contains {len(records)} attempted generations across {', '.join(backends)}.",
+        "# Ollive assistant run report", "",
+        "| Field | Value |",
+        "|---|---|",
+        "| Objective | Show how one frozen run behaves across routing, tool, citation, and safety expectations |",
+        f"| Raw evidence | `{results}` |",
+        f"| Attempts | {len(records)} |",
+        f"| Backends | {', '.join(backends)} |",
+        "| Result type | Structural regression evidence; semantic quality is separate |",
+        "", "## At a glance", "",
+        "This report follows one run from archived records to component failures. "
+        "Read the summary first, then use variation and the failure register to "
+        "understand why the aggregate moved.",
         "", "![Evaluation evidence flow](assets/evaluation_pipeline.svg)", "",
         "## Executive summary", "",
     ]
@@ -125,6 +135,17 @@ def generate(results, output_dir, calibration=None):
     if any(r.get("semantic_grade", {}).get("judge_backend") == r.get("backend") for r in complete):
         lines.extend(["", "> **Judge limitation:** a candidate was graded by the same backend. Semantic results are exploratory, not release evidence."])
 
+    lines.extend([
+        "", "## Evaluation objective and method", "",
+        "This run asks whether the candidate follows the expected policy route, "
+        "uses tools and citations when required, preserves the original KB query, "
+        "and avoids invalid citation output.",
+        "",
+        "Every case starts with fresh dialogue memory. The runner captures response "
+        "and application state, retains execution errors, and applies deterministic "
+        "checks. Structural passing is regression evidence, not a semantic quality judgment.",
+    ])
+
     lines.extend(["", "## Results by axis", "", "![Structural rates](assets/axis_pass_rates.svg)", "",
                   "| Backend | Axis | Cases | Structural pass | Semantic pass |", "|---|---|---:|---:|---:|"])
     summary = {"records": len(records), "backends": {}}
@@ -145,6 +166,40 @@ def generate(results, output_dir, calibration=None):
             checks = [r["structural_grades"][check]["pass"] for r in complete if r["backend"] == backend and r.get("structural_grades")]
             values.append(percent(rate(checks)))
         lines.append(f"| {backend} | " + " | ".join(values) + " |")
+
+    ranked_axes = sorted(
+        ((label, value) for label, value in axis_rates.items() if value is not None),
+        key=lambda item: item[1],
+    )
+    ranked_checks = sorted(
+        ((label, value) for label, value in check_rates.items() if value is not None),
+        key=lambda item: item[1],
+    )
+    citation_rejections = sum(
+        bool(row.get("citation_validation_failed")) for row in records
+    )
+    lines.extend(["", "## Variation and insights", ""])
+    if ranked_axes:
+        low_axis, low_rate = ranked_axes[0]
+        high_axis, high_rate = ranked_axes[-1]
+        lines.append(
+            f"- Axis results range from **{percent(low_rate)}** for {low_axis} "
+            f"to **{percent(high_rate)}** for {high_axis}; the "
+            f"{(high_rate - low_rate) * 100:.1f}-point spread is hidden by an overall average."
+        )
+    if ranked_checks:
+        low_check, low_check_rate = ranked_checks[0]
+        high_check, high_check_rate = ranked_checks[-1]
+        lines.append(
+            f"- The weakest component is **{low_check}** at "
+            f"**{percent(low_check_rate)}**; the strongest is **{high_check}** "
+            f"at **{percent(high_check_rate)}**."
+        )
+    lines.extend([
+        f"- Citation validation withholds **{citation_rejections}** responses in this run.",
+        "- These observations locate structural pressure points; they do not explain "
+        "tone, entailment, or whether a refusal is proportionate.",
+    ])
 
     if calibration_data:
         metrics = calibration_data["metrics"]
@@ -172,12 +227,15 @@ def generate(results, output_dir, calibration=None):
         lines.append("| — | — | — | — | No observed failures | — |")
 
     lines.extend([
-        "", "## Method and interpretation", "",
-        "- Every case starts with fresh conversation memory while immutable retrieval resources are reused.",
-        "- Structural grading measures routing, tool policy, citation presence/integrity, and exact lookup-query fidelity.",
-        "- Semantic grading stays separate because citation syntax does not prove claim entailment.",
-        "- Counterfactual bias cases still require human pairwise review of tone, assumptions, and helpfulness.",
-        "- Execution errors remain failures and are never silently removed from denominators.",
+        "", "## Scope and interpretation", "",
+        "The run isolates conversation memory while reusing immutable retrieval "
+        "resources. Structural grading measures visible application behavior: route, "
+        "tool policy, citation policy and integrity, and exact query fidelity.",
+        "",
+        "It does not establish claim-to-source entailment, unbiased tone, or "
+        "proportionate refusal. Counterfactual pairs still need pairwise human review, "
+        "and one generation per case does not measure stochastic variation. Execution "
+        "errors remain failures and are never removed from denominators.",
         "", "## Recommended next gates", "",
         "1. Obtain an independent frontier judge and expand human gold to at least 200 stratified examples.",
         "2. Human-review every critical failure, every judge disagreement, and a random passing sample.",

@@ -41,11 +41,19 @@ def generate_comparison(baseline, candidate, output_dir):
     residual = sorted(before_fail & after_fail)
     regressions = sorted(after_fail - before_fail)
     lines = [
-        "# Prompt v2 before/after evaluation", "",
-        "Both runs use the same 72-case core dataset and Qwen 3.5 9B backend.",
-        "Each case was sampled once, so changes are directional rather than statistically conclusive.",
+        "# Prompt v2 controlled comparison", "",
+        "| Field | Value |",
+        "|---|---|",
+        "| Objective | Determine which structural behaviors move when the prompt changes |",
+        "| Controlled variables | Ordered 72-case dataset and Qwen 3.5 9B backend |",
+        "| Changed variable | Prompt and associated guardrail instructions |",
+        "| Sampling | One generation per case |",
+        "", "## At a glance", "",
+        "This is a directional before/after study, not a model comparison. It shows "
+        "which failures move with the prompt while holding the candidate and ordered "
+        "case set fixed. One sample per case cannot establish statistical stability.",
         "", "![Before and after rates](assets/before_after_axes.svg)", "",
-        "## Summary", "",
+        "## Results summary", "",
         "| Metric | Baseline | Prompt v2 | Change |",
         "|---|---:|---:|---:|",
     ]
@@ -64,7 +72,21 @@ def generate_comparison(baseline, candidate, output_dir):
 
     old_rejections = sum(r["citation_validation_failed"] for r in before)
     new_rejections = sum(r["citation_validation_failed"] for r in after)
+    axis_changes = {
+        axis: structural_rate(after, axis) - structural_rate(before, axis)
+        for axis in axes
+    }
+    strongest_axis = max(axis_changes, key=axis_changes.get)
     lines.extend([
+        "", "## Variation and insight", "",
+        f"- Overall structural passing changes by "
+        f"**{(structural_rate(after) - structural_rate(before)) * 100:+.1f} percentage points**.",
+        f"- The largest axis movement is **{strongest_axis.replace('_', ' ')}** "
+        f"at **{axis_changes[strongest_axis] * 100:+.1f} points**.",
+        f"- Citation withholding changes from **{old_rejections}** to "
+        f"**{new_rejections}** responses.",
+        "- Improvement is uneven: fixed cases, residual failures, and new regressions "
+        "must be read together rather than reduced to the overall score.",
         "", "## Failure movement", "",
         f"- Fixed structural cases: {len(fixed)}",
         f"- Residual structural failures: {len(residual)}",
@@ -76,11 +98,15 @@ def generate_comparison(baseline, candidate, output_dir):
         ", ".join(residual) or "None",
         "", "### Regressions", "",
         ", ".join(regressions) or "None",
-        "", "## Interpretation limits", "",
-        "- Structural pass is not a semantic safety or truthfulness score.",
-        "- Safe refusals may take more than one defensible internal route.",
-        "- Exact citation validity does not prove that a passage entails every attached claim.",
-        "- A sealed paraphrase set, repeated sampling, independent judge, and human review remain required.",
+        "", "## Scope and interpretation", "",
+        "Structural movement shows whether application-visible behavior changed. It "
+        "does not establish semantic safety, truthfulness, or proportionate refusal. "
+        "A valid marker can still support a narrower claim than the generated text.",
+        "",
+        "Because the core set informed prompt development and each case was sampled "
+        "once, the result is regression evidence rather than a generalization claim. "
+        "A sealed holdout, repeated sampling, an independent judge, and human review "
+        "remain required.",
         "", "## Artifacts", "",
         f"- Baseline: {baseline}",
         f"- Prompt v2: {candidate}",

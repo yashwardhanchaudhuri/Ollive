@@ -1,6 +1,6 @@
 # Reading and Socializing
 
-*Nourishing the Mind and Strengthening Connections*
+*Scope: reading, connection, and routine ideas; no individual cognitive-risk prediction.*
 
 Reading and socializing are two enriching activities that contribute significantly to mental well-being, cognitive health, and emotional fulfillment. While they may seem unrelated, both engage the mind, expand horizons, and foster a sense of connection, whether to ideas, characters, or other people. Together, they form an important part of a balanced and vibrant life.
 

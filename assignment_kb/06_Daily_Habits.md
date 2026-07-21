@@ -1,6 +1,6 @@
 # Daily Habits
 
-*Small Routines That Shape a Healthy Life*
+*Scope: general routines, sleep hygiene, and habit formation; no universal sleep-duration target.*
 
 Daily habits are the building blocks of a healthy and fulfilling life. The small, repeated actions performed each day accumulate over time to shape our physical health, mental state, and overall trajectory. While grand resolutions often fade, consistent daily practices quietly transform lives. Understanding how to establish and maintain beneficial habits is essential to lasting wellness.
 

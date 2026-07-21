@@ -1,6 +1,6 @@
 # Natural Supplements
 
-*Supporting Health Through Thoughtful Supplementation*
+*Scope: high-level supplement cautions; dosing, interactions, and individual use require professional guidance.*
 
 Natural supplements have become an increasingly popular means of supporting health and filling nutritional gaps. Derived from plants, minerals, and other natural sources, these products aim to complement a balanced diet and address specific wellness needs. While supplements can offer meaningful benefits, using them wisely and with appropriate knowledge is essential to achieving positive results safely.
 

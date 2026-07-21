@@ -1,0 +1,167 @@
+# Agent workflow
+
+| Field | Value |
+|---|---|
+| Objective | Explain how one user message becomes a bounded, grounded Ollive response |
+| Audience | Developers, reviewers, and evaluators |
+| Status | Describes the current production workflow |
+| Supporting code | application/agent.py, application/guardrails.py, application/tools.py |
+
+## At a glance
+
+Ollive uses one orchestrating agent. It makes several constrained model calls,
+but those calls are stages of one workflow rather than independent agents.
+
+The central design choice is to select a safety and evidence boundary before
+answering. A greeting should remain conversational, a vague personalized request
+should ask for context, a factual wellness answer should retrieve evidence, and
+a medical request should stop at the medical boundary.
+
+```text
+User message
+    │
+    ▼
+Semantic policy route
+    ├── conversation ───────────────► natural answer
+    ├── wellness clarification ─────► ask for missing context
+    ├── medical boundary ───────────► safe boundary response
+    ├── out of scope ───────────────► brief redirection
+    └── grounded wellness
+            │
+            ▼
+       forced KB lookup
+            │
+            ▼
+     structured answer submission
+            │
+            ▼
+      shape + citation validation
+            ├── valid ──────────────► render and remember
+            └── invalid ────────────► bounded correction or withholding
+```
+
+## Why routing happens first
+
+A single universal prompt tended to produce two opposite failures: it could cite
+ordinary conversation unnecessarily, or answer medical and safety-sensitive
+requests too freely. Ollive therefore asks the selected model to return a small,
+strict routing object before it produces the response.
+
+The router receives recent dialogue only to resolve follow-ups. It cannot choose
+arbitrary policy names, and malformed output falls back to a no-tool,
+out-of-scope policy.
+
+## Route behavior
+
+| Route | Why it exists | Tools | Expected response |
+|---|---|---:|---|
+| Conversation | Preserve natural greetings and assistant questions | No | Brief, uncited conversation |
+| Wellness clarification | Avoid generic plans when personal constraints are missing | No | Two to four useful questions |
+| Wellness | Ground factual lifestyle guidance | Required | Retrieved, structured, cited answer |
+| Medical | Prevent diagnosis, prescribing, dosing, and dangerous clinical guidance | No | Boundary or urgent-help response |
+| Out of scope | Keep the assistant within its supported purpose | No | Brief refusal or redirection |
+
+A wellness route can also disable tools for a purely non-factual boundary
+response. This keeps refusal text from acquiring irrelevant citations.
+
+## Grounded wellness execution
+
+### 1. The application forces retrieval
+
+On the first grounded round, the model can call only `lookup_kb`. The model may
+select a document type from the live enum and a result count, but the application
+controls the query.
+
+The query is always the user's current message. This prevents the model from
+silently broadening a question or searching for a claim the user did not make.
+
+### 2. Retrieval returns evidence objects
+
+The local retriever embeds the query, searches paragraph vectors in FAISS, and
+returns the most similar chunks. Each chunk includes its document type, title,
+line positions, descriptor, text, and stable citation marker.
+
+### 3. Free-text finalization is disabled
+
+Once citations exist, the agent exposes only `submit_grounded_answer`. The
+schema contains the exact markers returned during that turn.
+
+The model submits at most three items. An item is either a supported claim tied
+to one returned marker or an evidence limitation with no citation.
+
+### 4. The application validates before display
+
+Validation checks shape, field bounds, marker provenance, limitation count, and
+citation syntax. The application adds citation markers itself, so the model
+cannot type a plausible-looking replacement into the prose.
+
+This proves that a marker came from the current retrieval. It does not
+independently prove that the source passage entails every word of the claim.
+
+## Correction and fail-closed behavior
+
+When structured output is malformed, the application returns the validation
+error to the model and requests a corrected submission using the same evidence.
+The entire loop is bounded by the configured maximum number of rounds.
+
+If correction still fails, Ollive withholds the answer. This design prefers an
+explicit quality failure over displaying unsupported wellness guidance.
+
+## Conversation memory
+
+Only final user and assistant messages persist. Tool payloads and model tool-call
+envelopes remain in traces but are removed from conversational memory.
+
+This avoids two common problems:
+
+- stale passages appearing as evidence for a later question;
+- token growth caused by carrying full retrieval payloads across turns.
+
+If an exception interrupts a turn, memory rolls back to its previous state.
+
+## Backend variation
+
+The workflow is backend-independent.
+
+| Backend | Model access | Important variation |
+|---|---|---|
+| OSS | Qwen 3.5 9B through local vLLM | Local service availability and tool-schema adherence |
+| Frontier | OpenAI-compatible GPT endpoint | Remote latency, provider behavior, and no temperature field when unsupported |
+
+Both backends receive the same route schemas, tool schemas, policies, memory, and
+retrieval evidence. A fair comparison therefore changes the model backend while
+freezing the surrounding workflow.
+
+## What current evidence suggests
+
+Observed evaluation results show that explicit routing and forced tool policies
+substantially improve structural compliance. They also show that stricter
+citation handling can increase withheld answers. The useful design lesson is not
+that more restriction is always better: grounding must remain direct and
+conversational, or safety improves while usefulness declines.
+
+See the [consolidated evaluation report](../evaluation/REPORT.md) for the
+measurements and limitations.
+
+## Scope and limitations
+
+- This is one agent with staged model calls, not a multi-agent deliberation system.
+- Routing is model-based and can select a defensible route different from a test label.
+- Marker validation proves provenance, not semantic entailment.
+- The local KB limits what grounded answers can establish.
+- Web search is configured but is not the normal evidence path after a successful
+  local retrieval.
+- Archived evaluations contain only completed Qwen candidate evidence.
+
+## Code map
+
+| Responsibility | Source |
+|---|---|
+| Main loop and memory cleanup | `src/ollive/application/agent.py` |
+| Semantic routes and policies | `src/ollive/application/guardrails.py` |
+| Tool schemas and execution | `src/ollive/application/tools.py` |
+| Grounded answer contract | `src/ollive/application/grounded_answer.py` |
+| Retrieval and indexing | `src/ollive/adapters/rag/` |
+| Backend adaptation | `src/ollive/adapters/llm/` |
+| Citation parsing | `src/ollive/domain/citations.py` |
+| Streamlit rendering | `src/ollive/ui/streamlit_app.py` |

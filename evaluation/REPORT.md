@@ -15,6 +15,13 @@ support a valid Qwen-versus-frontier winner claim.
 grades but no independent semantic grades. A 28-example same-family judge probe
 exists, but it is not release evidence.
 
+## How to read this report
+
+The executive summary gives the higher-level picture. Dataset creation explains
+where the cases and labels come from. Methodology explains what is measured.
+Results then separate aggregate movement, component variation, and remaining
+failure classes. Limitations define what the numbers cannot support.
+
 ## Executive summary
 
 The latest Qwen run passed all structural checks on **57 of 72 cases (79.2%)**,
@@ -33,6 +40,17 @@ performance remained flat at 80.0%.
 
 These are structural regression results, not proof that every response was
 factually correct, unbiased, or safe.
+
+### Key insights
+
+1. **The main gain is structural discipline.** Routing and tool use improve much
+   more than content-safety outcomes.
+2. **Variation matters more than the average.** Hallucination and bias/harm move
+   sharply; content safety remains flat.
+3. **Tighter citation handling exposes a usability cost.** More unsupported
+   answers are withheld, which is safer but still a failed user experience.
+4. **The comparison remains incomplete.** No archived frontier candidate or
+   independent human semantic review exists.
 
 ## Dataset creation
 

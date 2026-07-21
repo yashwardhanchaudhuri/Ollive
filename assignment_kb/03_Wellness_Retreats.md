@@ -1,6 +1,6 @@
 # Wellness Retreats and Exposure
 
-*Immersive Experiences for Renewal and Growth*
+*Scope: retreat formats and selection trade-offs; no measured success rates or clinical outcomes.*
 
 Wellness retreats offer dedicated time and space away from the demands of daily life, allowing individuals to reset, reflect, and rejuvenate. These immersive experiences combine various elements of health, including nutrition, movement, mindfulness, and connection with nature, into a concentrated period of focused self-care. For many, a retreat provides the pause necessary to reassess priorities and adopt healthier habits.
 

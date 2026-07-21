@@ -2,9 +2,19 @@
 
 This directory is the single entry point for Ollive's evaluation work.
 
-Start with the [consolidated evaluation report](REPORT.md). It connects dataset
-design, methodology, available results, failure analysis, judge evidence, and
-limitations. Run-specific reports remain available as supporting evidence.
+## At a glance
+
+| Evidence question | Current answer |
+|---|---|
+| What candidate has a complete archived run? | Qwen/Qwen3.5-9B |
+| Is there a valid frontier comparison? | No |
+| Are latest results semantically human-graded? | No |
+| What is measured? | Routing, tool, citation, query, latency, and token behavior |
+| What should be read first? | [Consolidated report](REPORT.md) |
+
+The consolidated report connects dataset design, execution, results, variation,
+insights, and limitations. Run-specific reports provide supporting detail rather
+than competing narratives.
 
 ## Layout
 

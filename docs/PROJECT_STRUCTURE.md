@@ -1,7 +1,20 @@
 # Project structure
 
+| Field | Value |
+|---|---|
+| Objective | Show where responsibilities live and what changes together |
+| Audience | Contributors and reviewers |
+| Scope | Source-controlled layout plus runtime artifact boundaries |
+
+## How to read the repository
+
+Dependencies point inward. Domain models contain no infrastructure; ports define
+capabilities; adapters connect vendors and storage; application code coordinates
+the agent; and the UI only presents results.
+
+This arrangement keeps model choice separate from safety and grounding behavior.
 The tree below describes the complete source-controlled layout. Generated files
-are shown where they are created at runtime, but are excluded from Git.
+appear only as runtime placeholders.
 
 ```text
 Ollive/
@@ -17,7 +30,7 @@ Ollive/
 ├── requirements-vllm.txt        # Separate GPU model-server dependencies
 ├── requirements.md              # Dependency rationale
 │
-├── assignment_kb/               # Curated source documents used by local RAG
+├── assignment_kb/               # Curated source documents used by local evidence retrieval
 │   ├── 01_Diet.md
 │   ├── 02_Exercise.md
 │   ├── 03_Wellness_Retreats.md
@@ -29,7 +42,7 @@ Ollive/
 │   └── 09_Nature_General_Welfare.md
 │
 ├── config/
-│   └── backends.yaml            # Agent prompt, backends, RAG, tools, tracing
+│   └── backends.yaml            # Agent prompt, backends, retrieval, tools, tracing
 │
 ├── data/                        # Ephemeral runtime output
 │   ├── indexes/
@@ -38,9 +51,12 @@ Ollive/
 │       └── .gitkeep             # Generated local JSONL traces
 │
 ├── docs/
+│   ├── AGENT_WORKFLOW.md        # End-to-end agent execution and design choices
 │   ├── INSTALL.md               # Installation, downloads, ports, troubleshooting
+│   ├── KNOWLEDGE_BASE.md        # Corpus scope, retrieval, citations, and limits
 │   ├── PROJECT_STRUCTURE.md     # This annotated repository tree
-│   └── prompt_guardrails.md     # Guardrail design and prompt rationale
+│   ├── WRITING_STANDARD.md      # Narrative and evidence rules for Markdown
+│   └── prompt_guardrails.md     # Guardrail threats, choices, results, and limits
 │
 ├── evaluation/                  # Complete, reader-facing evaluation evidence
 │   ├── README.md                # Navigation and reproduction guide
@@ -116,12 +132,36 @@ Ollive/
 └── tests/
     ├── test_agent_grounding.py
     ├── test_citations.py
+    ├── test_documentation.py
     ├── test_evaluation.py
     ├── test_grounded_answer.py
     ├── test_guardrails.py
     ├── test_indexer.py
     └── test_memory.py
 ```
+
+## Design boundaries
+
+| Boundary | Why it exists |
+|---|---|
+| Application versus vLLM environments | Isolate CUDA-sensitive dependencies |
+| Ports versus adapters | Keep orchestration independent of vendors |
+| Dialogue memory versus traces | Prevent stale tool evidence entering later turns |
+| Evaluation source versus generated reports | Preserve reproducible inputs and derived evidence |
+| Knowledge corpus versus project docs | Avoid indexing operational text as wellness evidence |
+
+## Change-impact guide
+
+| Change | Review together |
+|---|---|
+| Add a backend | Configuration, adapter, factory, installation docs, evaluation manifest |
+| Add a route | Guardrails, agent behavior, datasets, tests, workflow document |
+| Change citation shape | Parser, grounding contract, UI, tests, archived evidence |
+| Change a KB file | Corpus version, index, citation lines, retrieval tests, evaluation |
+| Change report structure | Generator, generated reports, links, artifact validation |
+
+The important insight is ownership: behavioral changes rarely belong to one file.
+This map keeps prompts, code, tests, and reports from drifting apart.
 
 ## Runtime boundaries
 

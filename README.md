@@ -1,19 +1,47 @@
 # Ollive — Wellness Assistant
 
-Wellness assistant with one fixed agent architecture, two backends, local RAG with strict citations, Streamlit UI, and observability.
+Wellness assistant with one fixed agent architecture, two backends, retrieval over a local knowledge base with strict citations, Streamlit UI, and observability.
 
-## Features
+## At a glance
+
+Ollive asks one design question: how can a small wellness assistant stay
+conversational without presenting unsupported guidance as fact?
+
+It separates intent routing, evidence retrieval, structured response generation,
+and citation validation. General conversation remains natural; factual wellness
+guidance is grounded; vague personalized requests ask for context; and medical
+requests stop at a non-clinical boundary.
+
+| Current capability | Evidence status |
+|---|---|
+| Local Qwen workflow | Running through vLLM |
+| Grounded local retrieval | Paragraph-level FAISS search |
+| Citation provenance checks | Application-enforced and fail-closed |
+| Qwen structural evaluation | 79.2% on the latest archived 72-case run |
+| Frontier comparison | Not completed; no winner claim is supported |
+| Human semantic review | Not completed |
+
+The [agent workflow](docs/AGENT_WORKFLOW.md) explains the design. The
+[consolidated report](evaluation/REPORT.md) explains the evidence and its limits.
+
+## Design choices
 
 - **Shared agent spec**: system prompt, last-N memory, tools (`lookup_kb`, `search_web`)
 - **Swappable backends** via `config/backends.yaml`
   - OSS: **`Qwen/Qwen3.5-9B` on local vLLM** (OpenAI-compatible; `VLLM_API_KEY=EMPTY`)
   - Frontier: `gpt-5.4-mini` (needs `OPENAI_API_KEY`)
-- **Local RAG**: paragraph chunks from `assignment_kb/`, indexed by `doc_type`, FAISS + `BAAI/bge-small-en-v1.5`
+- **Local grounding**: paragraph chunks from `assignment_kb/`, indexed by `doc_type`, FAISS + `BAAI/bge-small-en-v1.5`
 - **Citations**: every KB-grounded claim uses `[doc_type:L{line}:descriptor]`
 - **Streamlit UI**: chat, backend switcher, token/latency sidebar, expandable sources
 - **Observability**: local JSONL traces in `data/traces/` (no Langfuse keys)
 
 ## Architecture
+
+The system uses ports and adapters so the model backend can change without
+changing routing, retrieval, validation, or memory. This makes comparisons more
+meaningful: candidate models face the same surrounding workflow.
+
+The diagram is a responsibility map, not a multi-agent hierarchy.
 
 ```
       Streamlit
@@ -33,18 +61,21 @@ Wellness assistant with one fixed agent architecture, two backends, local RAG wi
    └── OpenAI → gpt-5.4-mini (frontier)
 ```
 
-SOLID layout under `src/ollive/`:
+Code layers under `src/ollive/`:
 
 | Layer | Responsibility |
 |-------|----------------|
 | `domain/` | Messages, citations, usage — no I/O |
 | `ports/` | LLM / Retriever / WebSearch / Tracer interfaces |
-| `adapters/` | vLLM/OpenAI, FAISS RAG, Tavily, Langfuse |
+| `adapters/` | vLLM/OpenAI, FAISS vector retrieval, Tavily, Langfuse |
 | `application/` | Agent, tools, memory, config, factory |
 | `ui/` | Streamlit |
 
 See [docs/PROJECT_STRUCTURE.md](docs/PROJECT_STRUCTURE.md) for the complete,
 annotated repository tree and generated-file boundaries.
+
+The key design insight is that prompts guide behavior, while application code
+enforces shapes, query fidelity, retries, and allowed citations.
 
 ## Setup
 
@@ -80,7 +111,7 @@ land in `data/traces/*.jsonl`.
 
 - `active` backend
 - model ids, temperature, memory turns
-- RAG embedder / paths / `top_k`
+- embedding model and index paths / `top_k`
 - Tavily + Langfuse toggles
 
 Override active backend with `OLLIVE_ACTIVE_BACKEND=frontier`.
@@ -106,10 +137,18 @@ Indexer assigns each paragraph:
 
 ## Evaluation
 
+### What the current results mean
+
+Observed Qwen structural compliance improves substantially from the archived
+baseline, especially for routing and tool policy. Citation integrity moves in
+the opposite direction in some cases because stricter checks withhold more
+answers. This is a safety trade-off, not a complete quality result: semantic
+correctness and human usefulness remain unmeasured.
+
 Start with the [consolidated evaluation report](evaluation/REPORT.md); datasets,
 raw runs, methodology, graphics, and supporting reports live together under `evaluation/`.
 
-The versioned core dataset covers hallucination, counterfactual bias, harmful
+The versioned core dataset covers hallucination, paired identity swaps (counterfactual bias), harmful
 requests, jailbreaks, and over-refusal. Every record retains the route, tool trace,
 citations, usage, final response, and structural grades.
 
@@ -136,6 +175,18 @@ the macro-F1 threshold. Same-family judging is exploratory, never release eviden
 Structural grading is intentionally narrower than semantic grading: exact citation
 syntax, route choice, and tool policy are deterministic, while claim support, bias,
 and refusal quality require a calibrated judge and human review.
+
+## Documentation map
+
+| Question | Start here |
+|---|---|
+| How does one request flow through the system? | [Agent workflow](docs/AGENT_WORKFLOW.md) |
+| How is the local evidence corpus constructed? | [Knowledge-base design](docs/KNOWLEDGE_BASE.md) |
+| How do I install and run it? | [Installation guide](docs/INSTALL.md) |
+| Why do the guardrails work this way? | [Prompt guardrails](docs/prompt_guardrails.md) |
+| What was evaluated and what changed? | [Evaluation report](evaluation/REPORT.md) |
+| Where does each file belong? | [Project structure](docs/PROJECT_STRUCTURE.md) |
+| How should documentation be written? | [Writing standard](docs/WRITING_STANDARD.md) |
 
 ## Tests
 

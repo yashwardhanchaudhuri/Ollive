@@ -1,6 +1,6 @@
 # Exercise and Physical Activity
 
-*Building Strength, Endurance, and Vitality*
+*Scope: movement types, consistency, and recovery; not a personalized prescription or timing comparison.*
 
 Regular physical activity is one of the most powerful tools available for enhancing health and extending lifespan. Exercise strengthens the heart, builds muscle, improves flexibility, and supports mental well-being. Beyond its physical benefits, movement releases endorphins that elevate mood and reduce stress, making it a foundational element of any comprehensive wellness program.
 

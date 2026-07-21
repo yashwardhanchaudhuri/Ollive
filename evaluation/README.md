@@ -10,7 +10,7 @@ This directory is the canonical entry point for the current matched comparison a
 | Current structural result | Qwen 63/72 (87.5%); frontier 51/72 (70.8%) |
 | Attempts and errors | 144/144 completed; zero execution errors |
 | Citation/query integrity | 100% for both; zero withheld responses |
-| Human semantic review | Pending |
+| Human semantic review | Completed qualitatively during development; no blinded numeric score is claimed |
 | Read first | [One-page PDF](../REPORT.pdf) and [current detailed report](reports/oss_frontier_best_effort_20260721/report.md) |
 
 The revision improves Qwen but regresses frontier relative to the prior matched run. Do not reduce that backend divergence to the combined average.

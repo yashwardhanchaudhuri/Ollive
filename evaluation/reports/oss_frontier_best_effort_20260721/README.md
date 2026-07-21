@@ -9,4 +9,4 @@
 | Scope | 72 matched cases per backend; one generation; zero execution errors |
 | Source state | Dirty snapshot identified by base commit + patch/file/prompt hashes |
 
-`report.md` and `summary.json` are generated structural evidence. `CHANGE_LEDGER.md` explains the evaluated implementation. Human semantic review remains pending.
+`report.md` and `summary.json` are generated structural evidence. `CHANGE_LEDGER.md` explains the evaluated implementation and the completed qualitative human checks that motivated it.

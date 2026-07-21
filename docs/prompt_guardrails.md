@@ -82,7 +82,7 @@ contradictory fields fail to a safe bounded state.
 In the latest matched run, Qwen passes 63 of 72 cases structurally and GPT-5.4 mini passes 51 of 72. Both complete every attempt with 100% citation integrity and query fidelity and no withheld responses. Qwen improves while frontier regresses against the prior matched baseline, showing that shared guardrails remain backend-sensitive.
 
 These measurements use one sample per case and development-informed datasets.
-Semantic human review and repeated-sampling variation remain unmeasured.
+Qualitative human checks informed the current fixes; blinded case-level agreement and repeated-sampling variation remain unmeasured.
 
 ## Design insight
 

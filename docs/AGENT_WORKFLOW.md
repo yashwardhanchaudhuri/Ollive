@@ -193,8 +193,7 @@ measurements and limitations.
   every returned excerpt is correct, current, or sufficient for the generated claim.
 - Web fallback requires `TAVILY_API_KEY`; without it, the agent can only return a
   structured evidence limitation when the KB is insufficient.
-- Matched Qwen and frontier structural runs are complete; human semantic review and
-  repeated sampling remain pending.
+- Matched structural runs and qualitative human checks are complete; blinded case-level adjudication and repeated sampling are not reported.
 
 ## Code map
 

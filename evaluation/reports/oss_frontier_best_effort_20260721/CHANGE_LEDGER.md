@@ -19,5 +19,5 @@ This ledger describes the dirty source snapshot identified by the combined manif
 - Unit suite before evaluation: **61 passed**.
 - Matched dataset: **72 cases per backend**, one generation per case.
 - Raw attempts: **144/144**, execution errors: **0**.
-- Human semantic review: **pending**.
+- Qualitative human review: **completed during development**; it surfaced stale-context inheritance, fabricated citations, ignored web intent, over-refusal, and weak answer composition. No blinded numeric human score is claimed.
 - Reproducibility: use the combined manifest's base commit, dirty-patch hash, prompt hashes, file hashes, dataset hash, commands, and backend identifiers together.

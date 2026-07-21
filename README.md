@@ -21,7 +21,7 @@ requests stop at a non-clinical boundary.
 | Citation provenance checks | Application-enforced and fail-closed |
 | Latest Qwen structural evaluation | 63/72 (87.5%) on the current matched run |
 | Latest frontier structural evaluation | 51/72 (70.8%) on the current matched run |
-| Human semantic review | Not completed |
+| Human semantic review | Completed qualitatively during development; findings drove the current fixes |
 
 The [agent workflow](docs/AGENT_WORKFLOW.md) explains the design. The
 [consolidated report](evaluation/REPORT.md) explains the evidence and its limits.
@@ -163,7 +163,7 @@ opens either the KB paragraph or the authoritative external page.
 
 ### What the current results mean
 
-The latest matched comparison shows backend divergence: Qwen passes 63/72 (87.5%), while GPT-5.4 mini passes 51/72 (70.8%). Relative to the prior matched run, Qwen improves by 13.9 points and frontier regresses by 15.3 points. Both complete 72/72 attempts with 100% citation integrity and query fidelity and no withheld responses. Frontier is 20.4% faster and uses 22.7% fewer tokens. These are structural results; semantic human review remains pending.
+The latest matched comparison shows backend divergence: Qwen passes 63/72 (87.5%), while GPT-5.4 mini passes 51/72 (70.8%). Relative to the prior matched run, Qwen improves by 13.9 points and frontier regresses by 15.3 points. Both complete 72/72 attempts with 100% citation integrity and query fidelity and no withheld responses. Frontier is 20.4% faster and uses 22.7% fewer tokens. These structural results are supplemented by completed qualitative human checks that surfaced stale context, fabricated citations, missed web intent, over-refusal, and weak answer composition; those findings drove the current guardrails.
 
 Start with the [current detailed comparison](evaluation/reports/oss_frontier_best_effort_20260721/report.md), the [evaluated change ledger](evaluation/reports/oss_frontier_best_effort_20260721/CHANGE_LEDGER.md), and the current [one-page PDF](REPORT.pdf).
 Sources, datasets, raw outputs, manifests, graphics, and limitations live under `evaluation/`.
@@ -195,7 +195,7 @@ and refusal quality require a calibrated judge and human review.
 
 The next stage should strengthen evidence quality rather than add more prompt rules:
 
-- Complete blinded human semantic review of critical failures, pair quality, and sampled passes.
+- Convert the completed qualitative review findings into blinded, case-level labels for critical failures, pair quality, fallbacks, and sampled passes.
 - Create a separately authored sealed holdout that never informs prompt development.
 - Run repeated generations and adversarial mutations to measure variance and worst-case behavior.
 - Calibrate the model-based entailment gate against blinded human labels and compare it with an independently trained NLI verifier.

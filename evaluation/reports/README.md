@@ -1,17 +1,14 @@
-# Supporting evaluation reports
+# Final evaluation report evidence
 
 ## At a glance
 
-Each child folder turns one archived run or comparison into readable findings.
-The consolidated interpretation remains `evaluation/REPORT.md`.
+This folder retains one detailed matched comparison behind the one-page `evaluation/REPORT.md`. The report is derived from the final Qwen and GPT-5.4 mini run records and does not compete with the submission narrative.
 
-| Folder | Responsibility |
+| Path | Responsibility |
 |---|---|
-| `qwen35_9b_core_v1/` | Initial full Qwen core evaluation. |
-| `qwen35_9b_final_core/` | Later Qwen core evaluation after prompt changes. |
-| `prompt_v2_comparison/` | Before/after structural comparison of prompt iterations. |
-| `smoke_qwen/` | Small pipeline-verification run. |
-| `README.md` | Explains how supporting reports relate to the consolidated result. |
+| `oss_frontier_matched_core/report.md` | Detailed structural results and failure register. |
+| `oss_frontier_matched_core/summary.json` | Machine-readable comparison summary. |
+| `oss_frontier_matched_core/assets/` | Axis, diagnostic, pipeline, and efficiency graphics. |
+| `README.md` | Explains the retained report boundary. |
 
-Reports and SVGs are derived views. Their `summary.json` and corresponding raw
-records under `evaluation/runs/` preserve machine-readable evidence.
+Superseded smoke, single-model, and prompt-iteration reports are intentionally removed. Their source workflows remain reproducible from the scripts and datasets.

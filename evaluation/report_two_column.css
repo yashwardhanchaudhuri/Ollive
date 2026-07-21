@@ -1,0 +1,154 @@
+@page {
+  size: A4;
+  margin: 8mm 10mm 7mm;
+}
+
+body {
+  color: #25322d;
+  font-family: "DejaVu Sans", Arial, sans-serif;
+  font-size: 10pt;
+  line-height: 1.18;
+  margin: 0;
+}
+
+h1 {
+  color: #245243;
+  font-size: 20pt;
+  letter-spacing: -0.35pt;
+  line-height: 1.05;
+  margin: 0 0 0.8mm;
+}
+
+body > p:nth-of-type(1) {
+  color: #29483e;
+  font-size: 10.2pt;
+  margin: 0 0 0.5mm;
+}
+
+body > p:nth-of-type(2) {
+  color: #66736e;
+  font-family: "DejaVu Serif", Georgia, serif;
+  font-size: 10pt;
+  font-style: italic;
+  margin: 0 0 1.6mm;
+}
+
+h2 {
+  border-bottom: 0.55pt solid #a8bdb4;
+  color: #2d6855;
+  font-size: 11pt;
+  line-height: 1.08;
+  margin: 1.8mm 0 0.7mm;
+  padding-bottom: 0.45mm;
+  break-after: avoid;
+}
+
+p {
+  margin: 0 0 1.25mm;
+  orphans: 3;
+  widows: 3;
+}
+
+.decision-band {
+  background: #e8f0ec;
+  border-left: 2.2mm solid #4f8f7b;
+  border-radius: 1.5mm;
+  color: #263c34;
+  font-size: 10pt;
+  line-height: 1.22;
+  margin: 0 0 1.8mm;
+  padding: 1.7mm 2.4mm 1.5mm;
+}
+
+.decision-band p {
+  margin: 0;
+}
+
+.metric-grid {
+  display: flex;
+  gap: 1.7mm;
+  margin: 0 0 1.8mm;
+}
+
+.metric-card {
+  background: #f7f4ed;
+  border: 0.45pt solid #d9d8d1;
+  border-radius: 1.5mm;
+  box-sizing: border-box;
+  flex: 1;
+  min-height: 14mm;
+  padding: 1.6mm 1.8mm 1.2mm;
+}
+
+.metric-card p {
+  color: #52615b;
+  font-size: 10pt;
+  line-height: 1.12;
+  margin: 0.7mm 0 0;
+}
+
+.metric-card strong {
+  color: #2d594a;
+}
+
+.metric-value {
+  color: #244f41;
+  display: block;
+  font-size: 11.2pt;
+  font-weight: 800;
+  line-height: 1.05;
+  white-space: nowrap;
+}
+
+.plot-grid {
+  display: flex;
+  gap: 2.2mm;
+  margin: 0 0 1.8mm;
+}
+
+.plot-card {
+  flex: 1;
+}
+
+.plot-card p,
+.plot-card figure {
+  margin: 0;
+}
+
+.plot-card img {
+  display: block;
+  height: 48mm;
+  object-fit: contain;
+  width: 100%;
+}
+
+.paper-columns {
+  column-count: 2;
+  column-gap: 7mm;
+  column-rule: 0.4pt solid #d5ded9;
+}
+
+.paper-columns > h2:first-child {
+  margin-top: 0;
+}
+
+.paper-columns p,
+.paper-columns table,
+.paper-columns figure {
+  break-inside: avoid;
+}
+
+code {
+  font-family: "DejaVu Sans Mono", monospace;
+  font-size: 0.88em;
+}
+
+a {
+  color: #2f6654;
+  text-decoration: none;
+}
+
+strong {
+  color: #203f35;
+  font-weight: 700;
+}

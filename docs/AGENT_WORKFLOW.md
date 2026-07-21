@@ -52,9 +52,10 @@ ordinary conversation unnecessarily, or answer medical and safety-sensitive
 requests too freely. Ollive therefore asks the selected model to return a small,
 strict routing object before it produces the response.
 
-The router receives recent dialogue only to resolve follow-ups. It cannot choose
-arbitrary policy names, and malformed output falls back to a no-tool,
-out-of-scope policy.
+The router receives recent dialogue only to resolve follow-ups. Alongside the route and
+grounding decision, it selects whether retrieval needs recent user context and whether
+the user explicitly requested a detailed answer. It cannot choose arbitrary values, and
+malformed output falls back to a no-tool, out-of-scope policy.
 
 ## Route behavior
 
@@ -77,8 +78,10 @@ On the first grounded round, the model can call only `lookup_kb`. The model may
 select a document type from the live enum and a result count, but the application
 controls the query.
 
-The query is always the user's current message. This prevents the model from
-silently broadening a question or searching for a claim the user did not make.
+For an independent request, the query is the current user message. For a dependent
+follow-up such as “elaborate,” the application concatenates recent user-authored
+messages with the current message. It performs no model-written query expansion, so the
+original topic survives without introducing hidden facets.
 
 ### 2. Retrieval returns evidence objects
 
@@ -111,7 +114,8 @@ offered; structured finalization is required.
 ### 4. Free-text finalization is disabled
 
 `submit_grounded_answer` contains the exact KB and web markers returned during
-the current turn. The model submits at most three items. An item is either a
+the current turn. Standard turns permit at most three items; an explicit request for detail permits up to
+five. An item is either a
 supported claim tied to one returned marker or an evidence limitation with no
 citation. If both evidence sources are empty, only a structured limitation can
 pass validation.
@@ -137,7 +141,10 @@ explicit quality failure over displaying unsupported wellness guidance.
 ## Conversation memory
 
 Only final user and assistant messages persist. Tool payloads and model tool-call
-envelopes remain in traces but are removed from conversational memory.
+envelopes remain in traces but are removed from conversational memory. The router sees
+that bounded dialogue to resolve intent; grounded answer generation receives user turns
+and current retrieval, but excludes prior assistant prose so stale claims cannot be
+reused as evidence.
 
 This avoids two common problems:
 
@@ -180,7 +187,8 @@ measurements and limitations.
   every returned excerpt is correct, current, or sufficient for the generated claim.
 - Web fallback requires `TAVILY_API_KEY`; without it, the agent can only return a
   structured evidence limitation when the KB is insufficient.
-- Archived evaluations contain only completed Qwen candidate evidence.
+- Matched Qwen and frontier structural runs are complete; human semantic review and
+  repeated sampling remain pending.
 
 ## Code map
 

@@ -2,6 +2,8 @@
 
 Wellness assistant with one fixed agent architecture, two backends, retrieval over a local knowledge base with strict citations, Streamlit UI, and observability.
 
+![Ollive wellness assistant interface](main_page.png)
+
 ## At a glance
 
 Ollive asks one design question: how can a small wellness assistant stay
@@ -17,8 +19,8 @@ requests stop at a non-clinical boundary.
 | Local Qwen workflow | Running through vLLM |
 | Grounded local retrieval | Paragraph-level FAISS search |
 | Citation provenance checks | Application-enforced and fail-closed |
-| Qwen structural evaluation | 79.2% on the latest archived 72-case run |
-| Frontier comparison | Not completed; no winner claim is supported |
+| Qwen structural evaluation | 61/72 (84.7%) on the matched run |
+| Frontier structural evaluation | 61/72 (84.7%); axis and efficiency results differ |
 | Human semantic review | Not completed |
 
 The [agent workflow](docs/AGENT_WORKFLOW.md) explains the design. The
@@ -144,14 +146,13 @@ page.
 
 ### What the current results mean
 
-Observed Qwen structural compliance improves substantially from the archived
-baseline, especially for routing and tool policy. Citation integrity moves in
-the opposite direction in some cases because stricter checks withhold more
-answers. This is a safety trade-off, not a complete quality result: semantic
-correctness and human usefulness remain unmeasured.
+The matched comparison is an overall structural tie at 61/72 (84.7%). Qwen is
+stronger on hallucination structure; GPT-5.4 mini is stronger on bias/harm and
+content safety, and is faster with fewer tokens. Both models pass all harmful
+and jailbreak cases structurally but over-refuse several benign controls.
 
-Start with the [consolidated evaluation report](evaluation/REPORT.md); datasets,
-raw runs, methodology, graphics, and supporting reports live together under `evaluation/`.
+Start with the [one-page evaluation paper](evaluation/REPORT.pdf).
+Sources, datasets, raw outputs, manifests, graphics, and limitations live under `evaluation/`.
 
 The versioned core dataset covers hallucination, paired identity swaps (counterfactual bias), harmful
 requests, jailbreaks, and over-refusal. Every record retains the route, tool trace,
@@ -161,17 +162,12 @@ citations, usage, final response, and structural grades.
 python scripts/build_eval_dataset.py
 
 VLLM_BASE_URL=http://127.0.0.1:8000/v1 VLLM_API_KEY=EMPTY \
-  python scripts/run_evals.py --backends oss --repetitions 1 \
-  --output evaluation/runs/qwen35_9b_core_v1.jsonl
-
-python scripts/judge_evals.py \
-  --input evaluation/runs/qwen35_9b_core_v1.jsonl \
-  --output evaluation/runs/qwen35_9b_core_v1.judged.jsonl \
-  --judge-backend frontier
+  python scripts/run_evals.py --backends oss frontier --repetitions 1 \
+  --output evaluation/runs/oss_frontier_reproduction.jsonl
 
 python scripts/generate_eval_report.py \
-  --results evaluation/runs/qwen35_9b_core_v1.judged.jsonl \
-  --output-dir evaluation/reports/qwen35_9b_core_v1
+  --results evaluation/runs/oss_frontier_reproduction.jsonl \
+  --output-dir evaluation/reports/oss_frontier_reproduction
 ```
 
 The judge is first measured against `judge_gold.v1.jsonl` and fails closed below
@@ -180,6 +176,17 @@ the macro-F1 threshold. Same-family judging is exploratory, never release eviden
 Structural grading is intentionally narrower than semantic grading: exact citation
 syntax, route choice, and tool policy are deterministic, while claim support, bias,
 and refusal quality require a calibrated judge and human review.
+
+## What we would improve with more time
+
+The next stage should strengthen evidence quality rather than add more prompt rules:
+
+- Complete blinded human semantic review of critical failures, pair quality, and sampled passes.
+- Create a separately authored sealed holdout that never informs prompt development.
+- Run repeated generations and adversarial mutations to measure variance and worst-case behavior.
+- Add claim-to-passage entailment review so valid citation syntax cannot mask overbroad claims.
+- Measure hosted Qwen hardware/electricity cost and frontier API spend on the same workload.
+- Expand multilingual, cultural, disability, and medical-boundary coverage with independent reviewers.
 
 ## Documentation map
 

@@ -24,7 +24,9 @@ class GroundedItem(BaseModel):
 class GroundedAnswer(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
-    items: list[GroundedItem] = Field(min_length=1, max_length=3)
+    # The per-turn limit is applied after validation. Five is the absolute ceiling;
+    # standard turns retain the stricter three-item budget.
+    items: list[GroundedItem] = Field(min_length=1, max_length=5)
 
 
 class GroundedAnswerError(ValueError):
@@ -36,7 +38,9 @@ def _unique_markers(citations: list[Citation]) -> list[str]:
     return list(dict.fromkeys(citation.marker for citation in citations))
 
 
-def build_grounded_answer_schema(citations: list[Citation]) -> dict[str, Any]:
+def build_grounded_answer_schema(
+    citations: list[Citation], max_items: int = 3
+) -> dict[str, Any]:
     """Build the constrained final-answer tool from retrieved citations."""
     markers = _unique_markers(citations)
     # Build the enum per turn so supplied, remembered, or stale markers cannot be
@@ -46,10 +50,10 @@ def build_grounded_answer_schema(citations: list[Citation]) -> dict[str, Any]:
         "function": {
             "name": SUBMIT_GROUNDED_ANSWER,
             "description": (
-                "Submit a concise, direct answer with at most three atomic items. The "
+                f"Submit a direct answer with at most {max_items} atomic items. The "
                 "first item must answer the user's main question or state the precise "
                 "evidence gap. Use the fewest items necessary. An evidence_limitation may "
-                "occupy one of the three items; every remaining item must be a directly "
+                "occupy one item; every remaining item must be a directly "
                 "useful supported claim. After an evidence gap, include only "
                 "an item that supplies a cited decision criterion or action for the "
                 "question; accurate background information is not relevant. Do not inventory the retrieved passages. A "
@@ -63,7 +67,7 @@ def build_grounded_answer_schema(citations: list[Citation]) -> dict[str, Any]:
                     "items": {
                         "type": "array",
                         "minItems": 1,
-                        "maxItems": 3,
+                        "maxItems": max_items,
                         "items": {
                             "type": "object",
                             "properties": {
@@ -104,12 +108,18 @@ def forced_grounded_answer_choice() -> dict[str, Any]:
 def parse_and_render_grounded_answer(
     arguments: dict[str, Any],
     allowed: list[Citation],
+    max_items: int = 3,
 ) -> tuple[str, list[Citation]]:
     """Validate structured claims and render only retrieved citation markers."""
     try:
         answer = GroundedAnswer.model_validate(arguments)
     except ValidationError as exc:
         raise GroundedAnswerError(str(exc)) from exc
+
+    if len(answer.items) > max_items:
+        raise GroundedAnswerError(
+            f"Grounded answer exceeds the {max_items}-item turn limit"
+        )
 
     allowed_by_marker = {citation.marker: citation for citation in allowed}
     used: list[Citation] = []

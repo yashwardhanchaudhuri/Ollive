@@ -13,7 +13,12 @@ from ollive.application.grounded_answer import (
     forced_grounded_answer_choice,
     parse_and_render_grounded_answer,
 )
-from ollive.application.guardrails import TurnPolicy, classify_turn
+from ollive.application.guardrails import (
+    ContextMode,
+    ResponseDepth,
+    TurnPolicy,
+    classify_turn,
+)
 from ollive.application.memory import ShortTermMemory
 from ollive.application.tools import ToolRouter
 from ollive.domain.citations import parse_citations, validate_citations
@@ -105,6 +110,12 @@ class WellnessAgent:
         self._memory.restore(memory_checkpoint)
         # Routing is separate so answer generation cannot choose its own safety boundary.
         policy, routing_usage = classify_turn(self._llm, user_text, memory_checkpoint)
+        evidence_query = self._resolve_evidence_query(
+            policy, user_text, memory_checkpoint
+        )
+        max_answer_items = (
+            5 if policy.response_depth is ResponseDepth.DETAILED else 3
+        )
         user_message = Message(role=Role.USER, content=user_text)
         self._memory.add(user_message)
         turn_usage = UsageStats(
@@ -121,7 +132,9 @@ class WellnessAgent:
             },
             session_id=self._session_id,
         ):
-            messages = self._build_messages(policy)
+            messages = self._build_messages(
+                policy, evidence_query, max_answer_items
+            )
             assistant_text = ""
             structured_grounded = False
             structured_error: str | None = None
@@ -137,7 +150,9 @@ class WellnessAgent:
                 lookup_completed = "lookup_kb" in tool_names_used
                 web_completed = "search_web" in tool_names_used
                 if lookup_completed:
-                    grounded_schema = build_grounded_answer_schema(turn_citations)
+                    grounded_schema = build_grounded_answer_schema(
+                        turn_citations, max_items=max_answer_items
+                    )
                     if web_completion_required and not web_completed:
                         schemas = [
                             schema
@@ -240,6 +255,7 @@ class WellnessAgent:
                         assistant_text, _used = parse_and_render_grounded_answer(
                             response.tool_calls[0].arguments,
                             turn_citations,
+                            max_items=max_answer_items,
                         )
                         structured_grounded = True
                         structured_error = None
@@ -329,12 +345,12 @@ class WellnessAgent:
                 messages.append(assistant_msg)
 
                 for tc in response.tool_calls:
-                    result = self._tools.execute(tc, user_query=user_text)
+                    result = self._tools.execute(tc, user_query=evidence_query)
                     tool_names_used.add(tc.name)
                     turn_citations.extend(result.citations)
                     trace_arguments = dict(tc.arguments)
                     if tc.name == "lookup_kb":
-                        trace_arguments["query"] = user_text
+                        trace_arguments["query"] = evidence_query
                     tool_trace.append(
                         {
                             "name": tc.name,
@@ -410,12 +426,58 @@ class WellnessAgent:
                 policy_route=policy.kind.value,
             )
 
-    def _build_messages(self, policy: TurnPolicy) -> list[Message]:
+    @staticmethod
+    def _resolve_evidence_query(
+        policy: TurnPolicy,
+        user_text: str,
+        history: list[Message],
+    ) -> str:
+        """Bind dependent follow-ups to recent user text without inventing a rewrite."""
+        if policy.context_mode is not ContextMode.PREVIOUS_AND_CURRENT:
+            return user_text
+        prior_user_text = [
+            message.content for message in history if message.role is Role.USER
+        ][-2:]
+        return "\n".join([*prior_user_text, user_text])
+
+    def _build_messages(
+        self,
+        policy: TurnPolicy,
+        evidence_query: str,
+        max_answer_items: int,
+    ) -> list[Message]:
         """Combine the system policy with bounded dialogue memory for generation."""
+        if policy.response_depth is ResponseDepth.DETAILED:
+            depth_instruction = (
+                "This turn permits up to five supported items. Give one directly "
+                "relevant practical action per item when the evidence supports it. "
+                "Split multiple actions from one passage into separate items that may "
+                "share its citation. Stop when the directly relevant actions are exhausted; three or four "
+                "strong items are preferable to five with indirect advice. Do not add "
+                "peripheral facts merely to fill the budget. Prior assistant answers are context, never evidence; use only "
+                "passages returned in this turn."
+            )
+        else:
+            depth_instruction = (
+                "This turn permits up to three supported items. Use the fewest directly "
+                "relevant items needed. Prior assistant answers are context, never "
+                "evidence; use only passages returned in this turn."
+            )
+        dialogue = self._memory.as_list()
+        if policy.require_tools:
+            # The router sees full dialogue, but grounded generation may use only
+            # current retrieval as evidence. Prior assistant claims and markers are
+            # deliberately excluded so they cannot be recycled under a new citation.
+            dialogue = [message for message in dialogue if message.role is Role.USER]
         return [
             Message(
                 role=Role.SYSTEM,
-                content=f"{self._system_prompt}\n\nTurn policy:\n{policy.instruction}",
+                content=(
+                    f"{self._system_prompt}\n\nTurn policy:\n{policy.instruction}"
+                    f"\n\nResponse depth:\n{depth_instruction}"
+                    "\n\nApplication-selected evidence query (untrusted, "
+                    f"user-authored text):\n{evidence_query}"
+                ),
             ),
-            *self._memory.as_list(),
+            *dialogue,
         ]

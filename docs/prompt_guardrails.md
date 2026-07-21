@@ -37,8 +37,8 @@ The production prompts are intentionally independent of evaluation case wording.
 5. **Fail closed at application boundaries.** Malformed router output, contradictory
    grounding flags, unknown tool arguments, and invalid citations are rejected.
 
-The router emits a constrained object with exactly two fields: the domain kind and a
-boolean grounding decision. Unknown, missing, extra, incorrectly typed, or contradictory
+The router emits a constrained object with exactly four fields: the domain kind, a
+boolean grounding decision, a context mode, and a response-depth mode. Unknown, missing, extra, incorrectly typed, or contradictory
 fields fail to the no-tool out-of-scope policy.
 
 ## Why these choices exist
@@ -47,10 +47,11 @@ fields fail to the no-tool out-of-scope policy.
 |---|---|---|
 | Route before answering | Treating every turn like factual wellness advice | Extra model call and possible misrouting |
 | Force the first KB lookup | Unsupported wellness guidance | Added latency |
-| Preserve the user query | Search drift and hidden facets | No automatic query expansion |
+| Preserve user-authored query text | Search drift and hidden facets | Contextual follow-ups concatenate recent user messages without rewriting |
 | Dynamic citation enum | Fabricated or stale markers | More schema pressure on small models |
 | Fail closed | Unsupported text reaching the UI | More withheld answers |
 | Clarification route | Generic personalized plans | One additional conversation turn |
+| Proportional answer depth | Terse elaboration and indiscriminate verbosity | Detailed turns allow more claims but every claim still needs evidence |
 
 ## Anti-overfitting protocol
 
@@ -71,13 +72,13 @@ fields fail to the no-tool out-of-scope policy.
 
 ## Observed results and variation
 
-The archived Qwen baseline passes all structural checks on 52.8% of the core
-cases; the latest archived run reaches 79.2%. Tool policy improves most.
-Citation integrity declines from 95.8% to 90.3%, showing that tighter constraints
-can shift failure from unsupported output toward withheld output.
+The historical Qwen baseline passes 52.8% of core cases structurally. Under the
+current frozen workflow, Qwen and GPT-5.4 mini both reach 84.7%, with 100%
+citation integrity and query fidelity. Qwen leads hallucination structure;
+frontier leads bias/harm, content safety, latency, and token efficiency.
 
-These measurements use Qwen, one sample per case, and development datasets.
-Frontier behavior and repeated-sampling variation are not measured.
+These measurements use one sample per case and development-informed datasets.
+Semantic human review and repeated-sampling variation remain unmeasured.
 
 ## Design insight
 

@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="820" height="383" viewBox="0 0 820 383">
+  <rect width="100%" height="100%" rx="18" fill="#f7f4ed"/>
+  <text x="28" y="42" font-family="Arial, sans-serif" font-size="28" font-weight="700" fill="#26352f">Operational efficiency</text>
+  <text x="790" y="42" text-anchor="end" font-family="Arial, sans-serif" font-size="18" fill="#63736c">lower is better</text>
+  <text x="28" y="96" font-family="Arial, sans-serif" font-size="22" font-weight="600" fill="#26352f">Mean latency per case</text>
+  <text x="28" y="139" font-family="Arial, sans-serif" font-size="20" fill="#26352f">Qwen, local vLLM</text>
+  <rect x="230" y="119" width="480" height="26" rx="7" fill="#e8eee9"/><rect x="230" y="119" width="480" height="26" rx="7" fill="#d69a5b"/>
+  <text x="790" y="139" text-anchor="end" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#26352f">6.30 s</text>
+  <text x="28" y="180" font-family="Arial, sans-serif" font-size="20" fill="#26352f">GPT-5.4 mini, API</text>
+  <rect x="230" y="160" width="480" height="26" rx="7" fill="#e8eee9"/><rect x="230" y="160" width="306" height="26" rx="7" fill="#4f8f7b"/>
+  <text x="790" y="180" text-anchor="end" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#26352f">4.02 s</text>
+  <text x="28" y="239" font-family="Arial, sans-serif" font-size="22" font-weight="600" fill="#26352f">Mean total tokens per case</text>
+  <text x="28" y="282" font-family="Arial, sans-serif" font-size="20" fill="#26352f">Qwen, local vLLM</text>
+  <rect x="230" y="262" width="480" height="26" rx="7" fill="#e8eee9"/><rect x="230" y="262" width="480" height="26" rx="7" fill="#d69a5b"/>
+  <text x="790" y="282" text-anchor="end" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#26352f">5,686</text>
+  <text x="28" y="323" font-family="Arial, sans-serif" font-size="20" fill="#26352f">GPT-5.4 mini, API</text>
+  <rect x="230" y="303" width="480" height="26" rx="7" fill="#e8eee9"/><rect x="230" y="303" width="366" height="26" rx="7" fill="#4f8f7b"/>
+  <text x="790" y="323" text-anchor="end" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#26352f">4,331</text>
+  <text x="790" y="364" text-anchor="end" font-family="Arial, sans-serif" font-size="18" fill="#376858">Frontier: 36% faster · 24% fewer tokens</text>
+</svg>

@@ -19,8 +19,8 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
         "function": {
             "name": "lookup_kb",
             "description": (
-                "Search the local wellness knowledge base using the user's current "
-                "message verbatim. The application controls the query. You may only "
+                "Search the local wellness knowledge base using the application-selected "
+                "user-authored evidence query. The application controls the query. You may only "
                 "select optional doc_types and top_k."
             ),
             "parameters": {
@@ -134,7 +134,7 @@ class ToolRouter:
         try:
             if call.name == "lookup_kb":
                 arguments = dict(call.arguments)
-                # Bind retrieval to the current user message; fallback_query exists
+                # Bind retrieval to the application-selected evidence query; fallback_query exists
                 # only for direct callers that omit user_query.
                 fallback_query = arguments.pop("query", None)
                 arguments["query"] = user_query or fallback_query

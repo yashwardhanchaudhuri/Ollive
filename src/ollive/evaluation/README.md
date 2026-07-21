@@ -14,7 +14,6 @@ archived outputs live in the repository-level `evaluation/` folder.
 | `judge.py` | Applies semantic judging and calculates calibration metrics. |
 | `compare.py` | Measures movement between baseline and candidate runs. |
 | `report.py` | Generates one-run summaries and SVG charts. |
-| `comprehensive_report.py` | Builds cross-artifact analysis for the consolidated report. |
 | `__init__.py` | Marks the evaluation namespace. |
 | `README.md` | Distinguishes reusable code from evaluation evidence. |
 

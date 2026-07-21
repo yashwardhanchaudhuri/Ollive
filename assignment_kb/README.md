@@ -17,7 +17,6 @@ each filename.
 | `07_Natural_Organic_Eating.md` | Organic and minimally processed food choices. |
 | `08_Natural_Supplements.md` | General supplement context and cautions. |
 | `09_Nature_General_Welfare.md` | Nature exposure and broad wellbeing. |
-| `wellness_docs_md.zip` | Original local archive of the supplied corpus; ignored by Git and never indexed. |
 | `README.md` | Explains the corpus and is excluded from retrieval. |
 
 Corpus edits require an index rebuild and grounding regression tests because

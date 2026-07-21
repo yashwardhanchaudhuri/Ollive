@@ -1,7 +1,18 @@
 import pytest
 
-from ollive.application.guardrails import TurnKind, classify_turn
-from ollive.domain.models import LLMResponse, ToolCallRequest, UsageStats
+from ollive.application.guardrails import (
+    ContextMode,
+    ResponseDepth,
+    TurnKind,
+    classify_turn,
+)
+from ollive.domain.models import (
+    LLMResponse,
+    Message,
+    Role,
+    ToolCallRequest,
+    UsageStats,
+)
 
 
 class RoutingLLM:
@@ -15,12 +26,20 @@ class RoutingLLM:
         grounding: object | None = None,
         omit_grounding: bool = False,
         wrong_tool: bool = False,
+        context_mode: object = "current",
+        response_depth: object = "standard",
+        omit_context_mode: bool = False,
+        omit_response_depth: bool = False,
     ):
         """Store the router payload returned by the deterministic LLM stub."""
         self.kind = kind
         self.grounding = kind == "wellness" if grounding is None else grounding
         self.omit_grounding = omit_grounding
         self.wrong_tool = wrong_tool
+        self.context_mode = context_mode
+        self.response_depth = response_depth
+        self.omit_context_mode = omit_context_mode
+        self.omit_response_depth = omit_response_depth
 
     def chat(self, messages, tools=None, tool_choice=None):
         """Return the configured semantic-routing response without network I/O."""
@@ -29,6 +48,10 @@ class RoutingLLM:
             arguments = {"kind": self.kind}
             if not self.omit_grounding:
                 arguments["needs_grounding"] = self.grounding
+            if not self.omit_context_mode:
+                arguments["context_mode"] = self.context_mode
+            if not self.omit_response_depth:
+                arguments["response_depth"] = self.response_depth
             calls.append(
                 ToolCallRequest(
                     id="route-1",
@@ -71,6 +94,35 @@ def test_wellness_boundary_disables_tools_without_changing_domain():
     assert not policy.require_tools
 
 
+def test_router_marks_dependent_elaboration_as_contextual_and_detailed():
+    """Preserve the prior topic and allow more supported detail on follow-ups."""
+    policy, _usage = classify_turn(
+        RoutingLLM(
+            "wellness",
+            context_mode="previous_and_current",
+            response_depth="detailed",
+        ),
+        "Elaborate on it?",
+        history=[
+            Message(role=Role.USER, content="How can I sleep on time?"),
+            Message(role=Role.ASSISTANT, content="Keep a regular schedule."),
+        ],
+    )
+
+    assert policy.context_mode is ContextMode.PREVIOUS_AND_CURRENT
+    assert policy.response_depth is ResponseDepth.DETAILED
+
+
+def test_contextual_mode_without_prior_user_turn_normalizes_to_current():
+    """Avoid manufacturing context when no earlier user request exists."""
+    policy, _usage = classify_turn(
+        RoutingLLM("wellness", context_mode="previous_and_current"),
+        "Elaborate on it?",
+    )
+
+    assert policy.context_mode is ContextMode.CURRENT
+
+
 @pytest.mark.parametrize(
     "router",
     [
@@ -78,6 +130,10 @@ def test_wellness_boundary_disables_tools_without_changing_domain():
         RoutingLLM("invented_route"),
         RoutingLLM("wellness", wrong_tool=True),
         RoutingLLM("wellness", omit_grounding=True),
+        RoutingLLM("wellness", omit_context_mode=True),
+        RoutingLLM("wellness", omit_response_depth=True),
+        RoutingLLM("wellness", context_mode="invented"),
+        RoutingLLM("wellness", response_depth="invented"),
         RoutingLLM("wellness", grounding="true"),
         RoutingLLM("conversation", grounding=True),
     ],

@@ -4,6 +4,7 @@ from ollive.application.grounded_answer import SUBMIT_GROUNDED_ANSWER
 from ollive.domain.models import (
     Citation,
     LLMResponse,
+    Message,
     Role,
     ToolCallRequest,
     ToolResult,
@@ -30,7 +31,12 @@ class StructuredSleepLLM:
                     ToolCallRequest(
                         id="route",
                         name="route_turn",
-                        arguments={"kind": "wellness", "needs_grounding": True},
+                        arguments={
+                            "kind": "wellness",
+                            "needs_grounding": True,
+                            "context_mode": "current",
+                            "response_depth": "standard",
+                        },
                     )
                 ],
                 usage=UsageStats(total_tokens=1),
@@ -184,6 +190,113 @@ def test_malformed_structured_answer_fails_closed_and_memory_stays_clean():
     assert all(message.role != Role.TOOL for message in agent.memory.as_list())
 
 
+class DetailedFollowupLLM:
+    model_name = "detailed-followup-test"
+    backend_name = "test"
+
+    def __init__(self):
+        """Count answer-stage calls for the contextual follow-up scenario."""
+        self.answer_calls = 0
+
+    def chat(self, messages, tools=None, tool_choice=None):
+        """Simulate contextual routing, KB retrieval, and a four-item answer."""
+        tool_names = [tool["function"]["name"] for tool in tools or []]
+        if tool_names == ["route_turn"]:
+            return LLMResponse(
+                tool_calls=[
+                    ToolCallRequest(
+                        id="route",
+                        name="route_turn",
+                        arguments={
+                            "kind": "wellness",
+                            "needs_grounding": True,
+                            "context_mode": "previous_and_current",
+                            "response_depth": "detailed",
+                        },
+                    )
+                ]
+            )
+
+        self.answer_calls += 1
+        if self.answer_calls == 1:
+            assert tool_names == ["lookup_kb"]
+            assert all(message.role is not Role.ASSISTANT for message in messages)
+            return LLMResponse(
+                tool_calls=[
+                    ToolCallRequest(
+                        id="lookup",
+                        name="lookup_kb",
+                        arguments={"doc_types": ["daily_habits"]},
+                    )
+                ]
+            )
+
+        assert tool_names == [SUBMIT_GROUNDED_ANSWER, "search_web"]
+        item_schema = tools[0]["function"]["parameters"]["properties"]["items"]
+        assert item_schema["maxItems"] == 5
+        marker = item_schema["items"]["properties"]["citation"]["enum"][1]
+        actions = [
+            "Keep a regular sleep schedule.",
+            "Make the sleeping environment dark.",
+            "Keep the sleeping environment quiet.",
+            "Limit caffeine and screen time before bed.",
+        ]
+        return LLMResponse(
+            tool_calls=[
+                ToolCallRequest(
+                    id="submit",
+                    name=SUBMIT_GROUNDED_ANSWER,
+                    arguments={
+                        "items": [
+                            {
+                                "kind": "supported_claim",
+                                "text": action,
+                                "citation": marker,
+                            }
+                            for action in actions
+                        ]
+                    },
+                )
+            ]
+        )
+
+
+class DetailedFollowupTools(SleepTools):
+    def execute(self, call, *, user_query=None):
+        """Require the original sleep request to remain attached to elaboration."""
+        assert call.name == "lookup_kb"
+        assert user_query == "How can I sleep on time?\nElaborate on it?"
+        return ToolResult(
+            tool_call_id=call.id,
+            name=call.name,
+            content="{\"results\": [{\"text\": \"sleep actions\"}]}",
+            citations=[self.citation],
+        )
+
+
+def test_elaboration_keeps_prior_topic_and_allows_more_supported_actions():
+    """Answer an elliptical follow-up from KB evidence without unnecessary web search."""
+    agent = WellnessAgent(
+        llm=DetailedFollowupLLM(),
+        tools=DetailedFollowupTools(),
+        tracer=NoOpTracer(),
+        system_prompt="Use grounded wellness evidence.",
+    )
+    agent.memory.add(Message(role=Role.USER, content="How can I sleep on time?"))
+    agent.memory.add(
+        Message(role=Role.ASSISTANT, content="Keep a regular sleep schedule.")
+    )
+
+    result = agent.chat("Elaborate on it?")
+
+    assert [step["name"] for step in result.tool_trace] == ["lookup_kb"]
+    assert result.tool_trace[0]["arguments"]["query"] == (
+        "How can I sleep on time?\nElaborate on it?"
+    )
+    assert result.assistant_message.count(DetailedFollowupTools.citation.marker) == 4
+    assert not result.citation_validation_failed
+
+
 class PartialEvidenceLLM:
     model_name = "partial-evidence-test"
     backend_name = "test"
@@ -201,7 +314,12 @@ class PartialEvidenceLLM:
                     ToolCallRequest(
                         id="route",
                         name="route_turn",
-                        arguments={"kind": "wellness", "needs_grounding": True},
+                        arguments={
+                            "kind": "wellness",
+                            "needs_grounding": True,
+                            "context_mode": "current",
+                            "response_depth": "standard",
+                        },
                     )
                 ]
             )
@@ -348,7 +466,12 @@ class NoEvidenceLLM:
                     ToolCallRequest(
                         id="route",
                         name="route_turn",
-                        arguments={"kind": "wellness", "needs_grounding": True},
+                        arguments={
+                            "kind": "wellness",
+                            "needs_grounding": True,
+                            "context_mode": "current",
+                            "response_depth": "standard",
+                        },
                     )
                 ]
             )

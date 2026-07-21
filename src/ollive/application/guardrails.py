@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from enum import Enum
 from typing import Any
 
@@ -18,12 +18,28 @@ class TurnKind(str, Enum):
     OUT_OF_SCOPE = "out_of_scope"
 
 
+class ContextMode(str, Enum):
+    """Choose whether retrieval needs prior user-authored context."""
+
+    CURRENT = "current"
+    PREVIOUS_AND_CURRENT = "previous_and_current"
+
+
+class ResponseDepth(str, Enum):
+    """Represent the amount of supported detail requested for this turn."""
+
+    STANDARD = "standard"
+    DETAILED = "detailed"
+
+
 @dataclass(frozen=True)
 class TurnPolicy:
     kind: TurnKind
     allow_tools: bool
     instruction: str
     require_tools: bool = False
+    context_mode: ContextMode = ContextMode.CURRENT
+    response_depth: ResponseDepth = ResponseDepth.STANDARD
 
 
 # Policies are immutable capabilities: routing may select one, but it cannot
@@ -74,14 +90,17 @@ WELLNESS_POLICY = TurnPolicy(
     require_tools=True,
     instruction=(
         "This wellness turn requires grounding. Your first action is lookup_kb. After "
-        "retrieval, check whether the passages directly support every material part of "
-        "the request. If a material part is missing, call search_web once to complete "
+        "retrieval, check whether the passages directly support every distinct factual "
+        "part of the request. If such a part is missing, call search_web once to complete "
         "the evidence from configured authoritative domains; otherwise use "
         "submit_grounded_answer. After search_web, use submit_grounded_answer. Answer "
-        "the user's main question first, "
-        "using the fewest items necessary and no more than three total. If the results do not directly "
+        "the user's main question first. The per-turn response-depth instruction sets "
+        "the item budget. A request to elaborate is a presentation preference, not a "
+        "new factual gap. When KB passages state several practical actions for the "
+        "user's broad goal, use those actions directly without unnecessary web search. "
+        "If the results do not directly "
         "establish a requested comparison, choice, or detail, make the first item one "
-        "precise evidence_limitation and return no more than three items total. Then include only cited guidance that directly answers another requested part or supplies a decision criterion or action "
+        "precise evidence_limitation. Then include only cited guidance that directly answers another requested part or supplies a decision criterion or action "
         "for the user's question; accurate background facts are not relevant. Never "
         "inventory everything retrieved. Put "
         "each atomic fact in an item with "
@@ -170,7 +189,16 @@ verifiable proposition, evaluation, correction, comparison, or recommendation.
 Set it false only when the entire safe response can be a non-factual boundary statement
 with no explanatory or advisory content. If uncertain, set it true.
 
-Return exactly one route_turn tool call with both required fields."""
+Also set context_mode. Use previous_and_current only when the current message
+depends on earlier user wording to identify or modify the request, such as asking
+to elaborate, continue, shorten, reformat, or change a prior answer. Otherwise use
+current. The application combines user-authored text without inventing a rewrite.
+
+Set response_depth to detailed when the user explicitly requests elaboration, a
+fuller explanation, or step-by-step treatment. Otherwise use standard. Depth never
+relaxes evidence or safety requirements.
+
+Return one route_turn call with all four required fields."""
 
 ROUTER_TOOL: dict[str, Any] = {
     "type": "function",
@@ -192,8 +220,29 @@ ROUTER_TOOL: dict[str, Any] = {
                         "boundary statement. Always false for other routes."
                     ),
                 },
+                "context_mode": {
+                    "type": "string",
+                    "enum": [mode.value for mode in ContextMode],
+                    "description": (
+                        "Whether evidence retrieval uses only the current message or "
+                        "also recent user-authored context."
+                    ),
+                },
+                "response_depth": {
+                    "type": "string",
+                    "enum": [depth.value for depth in ResponseDepth],
+                    "description": (
+                        "Use detailed only when the user explicitly requests a fuller "
+                        "or step-by-step response."
+                    ),
+                },
             },
-            "required": ["kind", "needs_grounding"],
+            "required": [
+                "kind",
+                "needs_grounding",
+                "context_mode",
+                "response_depth",
+            ],
             "additionalProperties": False,
         },
     },
@@ -233,20 +282,36 @@ def classify_turn(
     # Validate exact shape and primitive types before conversion. Ambiguity chooses
     # the no-tool fallback rather than guessing what the model meant.
     arguments = call.arguments
-    if set(arguments) != {"kind", "needs_grounding"}:
+    if set(arguments) != {
+        "kind",
+        "needs_grounding",
+        "context_mode",
+        "response_depth",
+    }:
         return OUT_OF_SCOPE_POLICY, response.usage
     if type(arguments["needs_grounding"]) is not bool:
         return OUT_OF_SCOPE_POLICY, response.usage
 
     try:
         kind = TurnKind(arguments["kind"])
+        context_mode = ContextMode(arguments["context_mode"])
+        response_depth = ResponseDepth(arguments["response_depth"])
     except (TypeError, ValueError):
         return OUT_OF_SCOPE_POLICY, response.usage
 
     needs_grounding = arguments["needs_grounding"]
     if kind is not TurnKind.WELLNESS and needs_grounding:
         return OUT_OF_SCOPE_POLICY, response.usage
+    if context_mode is ContextMode.PREVIOUS_AND_CURRENT and not any(
+        message.role is Role.USER for message in history or []
+    ):
+        context_mode = ContextMode.CURRENT
     if kind is TurnKind.WELLNESS:
-        policy = WELLNESS_POLICY if needs_grounding else WELLNESS_BOUNDARY_POLICY
-        return policy, response.usage
-    return POLICIES[kind], response.usage
+        base_policy = WELLNESS_POLICY if needs_grounding else WELLNESS_BOUNDARY_POLICY
+    else:
+        base_policy = POLICIES[kind]
+    return replace(
+        base_policy,
+        context_mode=context_mode,
+        response_depth=response_depth,
+    ), response.usage

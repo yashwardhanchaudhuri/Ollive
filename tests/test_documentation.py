@@ -15,7 +15,7 @@ FOUNDATIONAL_DOCS = {
     "docs/prompt_guardrails.md": ("Objective", "Threat model", "Design insight"),
     "requirements.md": ("Objective", "At a glance", "Resolution and known versions"),
     "evaluation/README.md": ("At a glance", "Evidence map", "Governance"),
-    "evaluation/REPORT.md": ("How to read this report", "Key insights", "Limitations"),
+    "evaluation/REPORT.md": ("30-second conclusion", "Findings", "Decision and release boundary"),
 }
 
 LOCAL_LINK_RE = re.compile(r"!?\[[^\]]*\]\(([^)#]+)(?:#[^)]+)?\)")

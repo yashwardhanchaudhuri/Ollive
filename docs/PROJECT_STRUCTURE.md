@@ -61,16 +61,19 @@ Ollive/
 ├── evaluation/                  # Complete, reader-facing evaluation evidence
 │   ├── README.md                # Navigation and reproduction guide
 │   ├── REPORT.md                # Single authoritative consolidated report
+│   ├── REPORT.pdf               # One-page two-column evaluation paper
+│   ├── report_two_column.css    # Reproducible one-page PDF style
 │   ├── datasets/                # Versioned source evaluation datasets
 │   │   ├── core.v1.jsonl
 │   │   ├── judge_gold.v1.jsonl
 │   │   └── prompt_regression.v1.jsonl
-│   ├── runs/                    # Archived raw records and manifests
-│   └── reports/                 # Supporting run reports and SVG graphics
-│       ├── prompt_v2_comparison/
-│       ├── qwen35_9b_core_v1/
-│       ├── qwen35_9b_final_core/
-│       └── smoke_qwen/
+│   ├── runs/                    # Final matched records and manifests
+│   │   ├── oss_qwen35_9b_matched_core.jsonl
+│   │   ├── frontier_gpt54mini_matched_core.jsonl
+│   │   ├── oss_frontier_matched_core.jsonl
+│   │   └── qwen35_9b_judge_probe.calibration.json
+│   └── reports/                 # Supporting detailed comparison and graphics
+│       └── oss_frontier_matched_core/
 │
 ├── scripts/
 │   ├── build_eval_dataset.py    # Build the core evaluation dataset
@@ -78,7 +81,6 @@ Ollive/
 │   ├── build_prompt_regression_dataset.py
 │   ├── combine_eval_runs.py
 │   ├── compare_eval_runs.py
-│   ├── generate_comprehensive_eval_report.py
 │   ├── generate_eval_report.py
 │   ├── judge_evals.py           # Run calibrated model judging
 │   ├── run_evals.py             # Execute evaluation cases
@@ -118,7 +120,6 @@ Ollive/
 │       │       └── tavily_search.py
 │       ├── evaluation/          # Dataset, grading, judging, comparison, reports
 │       │   ├── compare.py
-│       │   ├── comprehensive_report.py
 │       │   ├── dataset.py
 │       │   ├── grader.py
 │       │   ├── judge.py

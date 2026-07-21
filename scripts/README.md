@@ -16,7 +16,6 @@ logic stays under `src/ollive/`.
 | `combine_eval_runs.py` | Merges compatible raw runs. |
 | `compare_eval_runs.py` | Creates a before/after comparison. |
 | `generate_eval_report.py` | Generates a report for one run. |
-| `generate_comprehensive_eval_report.py` | Generates the consolidated report. |
 | `README.md` | Explains script ownership and entry points. |
 
 Run scripts from the repository root so relative paths resolve consistently.

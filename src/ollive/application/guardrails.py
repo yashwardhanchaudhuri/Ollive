@@ -72,7 +72,11 @@ WELLNESS_POLICY = TurnPolicy(
     require_tools=True,
     instruction=(
         "This wellness turn requires grounding. Your first action is lookup_kb. After "
-        "retrieval, use submit_grounded_answer. Answer the user's main question first, "
+        "retrieval, check whether the passages directly support every material part of "
+        "the request. If a material part is missing, call search_web once to complete "
+        "the evidence from configured authoritative domains; otherwise use "
+        "submit_grounded_answer. After search_web, use submit_grounded_answer. Answer "
+        "the user's main question first, "
         "using the fewest items necessary and no more than three total. If the results do not directly "
         "establish a requested comparison, choice, or detail, make the first item one "
         "precise evidence_limitation and return no more than two items total. Then include only cited guidance that supplies a decision criterion or action "

@@ -37,8 +37,6 @@ def _unique_markers(citations: list[Citation]) -> list[str]:
 
 def build_grounded_answer_schema(citations: list[Citation]) -> dict[str, Any]:
     markers = _unique_markers(citations)
-    if not markers:
-        raise ValueError("Cannot build grounded-answer schema without citations")
     return {
         "type": "function",
         "function": {
@@ -48,7 +46,7 @@ def build_grounded_answer_schema(citations: list[Citation]) -> dict[str, Any]:
                 "first item must answer the user's main question or state the precise "
                 "evidence gap. Use the fewest items necessary. If you use evidence_limitation, return no more "
                 "than two items total: the limitation and at most one directly useful "
-                "supported item. After an evidence gap, include only "
+                "supported item when a retrieved citation is available. After an evidence gap, include only "
                 "an item that supplies a cited decision criterion or action for the "
                 "question; accurate background information is not relevant. Do not inventory the retrieved passages. A "
                 "supported_claim must select one exact retrieved marker. An "

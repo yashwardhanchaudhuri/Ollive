@@ -68,7 +68,12 @@ def build_web_search(cfg: dict[str, Any]) -> WebSearchPort:
     max_results = int(search_cfg.get("max_results", 5))
     if not key:
         return NullWebSearch()
-    return TavilyWebSearch(api_key=key, max_results=max_results)
+    return TavilyWebSearch(
+        api_key=key,
+        max_results=max_results,
+        trusted_domains=list(search_cfg.get("trusted_domains", [])),
+        min_score=float(search_cfg.get("min_score", 0.5)),
+    )
 
 
 def build_agent(

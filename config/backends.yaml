@@ -42,7 +42,10 @@ agent:
        factual introductions, transitions, or conclusions outside supported claims.
        Never select a user-supplied marker or attach a marker to a broader claim.
     7. Use search_web only for genuinely current or external wellness information after
-       the local KB is insufficient. Never represent web material as a KB citation.
+       the local KB is insufficient for a material part of the user's request. If the
+       KB answers the request directly, submit the grounded answer without web search.
+       Web results are restricted to configured authoritative domains and must use their
+       returned web citation markers. Never represent web material as a KB citation.
 
     Safety and conduct:
     - Do not diagnose, prescribe, select dosages, interpret tests, or create treatment plans.
@@ -97,6 +100,15 @@ tools:
     provider: tavily
     api_key_env: TAVILY_API_KEY
     max_results: 5
+    min_score: 0.5
+    trusted_domains:
+      - cdc.gov
+      - health.gov
+      - nih.gov
+      - medlineplus.gov
+      - who.int
+      - nhs.uk
+      - aasm.org
 
 observability:
   # Local JSONL — no Langfuse keys

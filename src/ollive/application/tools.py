@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
+import hashlib
 import json
 from typing import Annotated, Any
 
@@ -49,8 +50,9 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
         "function": {
             "name": "search_web",
             "description": (
-                "Search the web for current or external wellness information. "
-                "Use when the local KB is insufficient."
+                "Search configured authoritative domains for current or external wellness "
+                "information. Use once when local KB passages do not directly support a "
+                "material part of the user's request."
             ),
             "parameters": {
                 "type": "object",
@@ -186,9 +188,28 @@ class ToolRouter:
 
     def _search_web(self, call: ToolCallRequest, args: SearchWebArguments) -> ToolResult:
         results = self._web_search.search(args.query, max_results=args.max_results or 5)
+        citations = [
+            Citation(
+                doc_type="web",
+                line=rank,
+                descriptor=hashlib.sha256(result["url"].encode("utf-8")).hexdigest()[:12],
+                title=result.get("title") or result.get("domain") or "Web source",
+                text=result.get("content", ""),
+                source_type="web",
+                url=result["url"],
+                domain=result.get("domain"),
+            )
+            for rank, result in enumerate(results, start=1)
+            if result.get("url") and result.get("content")
+        ]
+        markers_by_url = {citation.url: citation.marker for citation in citations}
+        payload_results = [
+            {**result, "citation": markers_by_url.get(result.get("url"))}
+            for result in results
+        ]
         return ToolResult(
             tool_call_id=call.id,
             name=call.name,
-            content=json.dumps({"results": results}, ensure_ascii=False, indent=2),
-            citations=[],
+            content=json.dumps({"results": payload_results}, ensure_ascii=False, indent=2),
+            citations=citations,
         )

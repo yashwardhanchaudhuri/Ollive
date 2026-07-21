@@ -88,16 +88,35 @@ def _render_answer(text: str) -> None:
 def _render_source_drawers() -> None:
     drawers = []
     for marker, citation in st.session_state.citation_map.items():
-        end_line = citation.end_line or citation.line
-        line_label = f"Line {citation.line}" if end_line == citation.line else f"Lines {citation.line}–{end_line}"
+        is_web = citation.source_type == "web"
+        if is_web:
+            source_label = "Authoritative web source"
+            source_meta = citation.domain or "External source"
+            external_link = (
+                '<a class="source-drawer__external" href="'
+                + html.escape(citation.url or "", quote=True)
+                + '" target="_blank" rel="noopener noreferrer">Open original source ↗</a>'
+            )
+        else:
+            end_line = citation.end_line or citation.line
+            source_label = "Knowledge source"
+            source_meta = (
+                f"Line {citation.line}"
+                if end_line == citation.line
+                else f"Lines {citation.line}–{end_line}"
+            )
+            external_link = ""
+
         drawers.append(
             '<aside class="source-drawer" id="' + _source_id(marker) + '">'
             '<div class="source-drawer__top"><div class="source-drawer__heading">'
-            '<span class="source-drawer__label">Knowledge source</span>'
-            '<span class="source-drawer__line">' + html.escape(line_label) + '</span></div>'
+            '<span class="source-drawer__label">' + html.escape(source_label) + '</span>'
+            '<span class="source-drawer__line">' + html.escape(source_meta) + '</span></div>'
             '<a class="source-drawer__close" href="#" aria-label="Close source">×</a></div>'
             '<h2>' + html.escape(citation.title or citation.doc_type.replace("_", " ").title()) + '</h2>'
-            '<div class="source-drawer__body">' + html.escape(citation.text) + '</div></aside>'
+            '<div class="source-drawer__body">' + html.escape(citation.text) + '</div>'
+            + external_link
+            + '</aside>'
         )
     if drawers:
         st.markdown("".join(drawers), unsafe_allow_html=True)

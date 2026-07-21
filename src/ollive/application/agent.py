@@ -117,13 +117,37 @@ class WellnessAgent:
             assistant_text = ""
             structured_grounded = False
             structured_error: str | None = None
+            tool_names_used: set[str] = set()
+            finalization_attempted = False
 
             for _round in range(self._max_tool_rounds):
                 schemas = None
                 tool_choice = None
-                if turn_citations:
-                    schemas = [build_grounded_answer_schema(turn_citations)]
-                    tool_choice = forced_grounded_answer_choice()
+                lookup_completed = "lookup_kb" in tool_names_used
+                web_completed = "search_web" in tool_names_used
+                if lookup_completed:
+                    grounded_schema = build_grounded_answer_schema(turn_citations)
+                    if finalization_attempted or web_completed:
+                        schemas = [grounded_schema]
+                        tool_choice = forced_grounded_answer_choice()
+                    elif turn_citations:
+                        search_schema = next(
+                            schema
+                            for schema in self._tools.schemas
+                            if schema["function"]["name"] == "search_web"
+                        )
+                        schemas = [grounded_schema, search_schema]
+                        tool_choice = "required"
+                    else:
+                        schemas = [
+                            schema
+                            for schema in self._tools.schemas
+                            if schema["function"]["name"] == "search_web"
+                        ]
+                        tool_choice = {
+                            "type": "function",
+                            "function": {"name": "search_web"},
+                        }
                 elif policy.allow_tools:
                     schemas = self._tools.schemas
                     tool_choice = "auto"
@@ -141,6 +165,18 @@ class WellnessAgent:
                     messages, tools=schemas, tool_choice=tool_choice
                 )
                 turn_usage = turn_usage.add(response.usage)
+                offered_tool_names = {
+                    schema["function"]["name"] for schema in schemas or []
+                }
+                unexpected_tool_names = {
+                    call.name for call in response.tool_calls
+                } - offered_tool_names
+                if unexpected_tool_names:
+                    structured_error = (
+                        "Model called tools that were not offered in this round: "
+                        + ", ".join(sorted(unexpected_tool_names))
+                    )
+                    break
                 self._tracer.log_generation(
                     name="llm_chat",
                     model=self._llm.model_name,
@@ -155,7 +191,8 @@ class WellnessAgent:
                     metadata={"latency_ms": response.usage.latency_ms},
                 )
 
-                if turn_citations:
+                if any(call.name == SUBMIT_GROUNDED_ANSWER for call in response.tool_calls):
+                    finalization_attempted = True
                     if (
                         len(response.tool_calls) != 1
                         or response.tool_calls[0].name != SUBMIT_GROUNDED_ANSWER
@@ -228,6 +265,12 @@ class WellnessAgent:
                         )
                         continue
 
+                if lookup_completed and not response.tool_calls:
+                    structured_error = (
+                        "Evidence completion did not return a required tool call"
+                    )
+                    break
+
                 if not response.tool_calls:
                     assistant_text = response.content
                     break
@@ -253,6 +296,7 @@ class WellnessAgent:
 
                 for tc in response.tool_calls:
                     result = self._tools.execute(tc, user_query=user_text)
+                    tool_names_used.add(tc.name)
                     turn_citations.extend(result.citations)
                     trace_arguments = dict(tc.arguments)
                     if tc.name == "lookup_kb":
@@ -278,7 +322,7 @@ class WellnessAgent:
                     messages.append(tool_msg)
             else:
                 # Never downgrade a malformed grounded answer to uncited free text.
-                if not (turn_citations and structured_error):
+                if not structured_error:
                     response = self._llm.chat(
                         messages, tools=None, tool_choice=None
                     )

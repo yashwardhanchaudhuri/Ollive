@@ -174,3 +174,211 @@ def test_malformed_structured_answer_fails_closed_and_memory_stays_clean():
         Role.ASSISTANT,
     ]
     assert all(message.role != Role.TOOL for message in agent.memory.as_list())
+
+
+class PartialEvidenceLLM:
+    model_name = "partial-evidence-test"
+    backend_name = "test"
+
+    def __init__(self):
+        self.answer_calls = 0
+
+    def chat(self, messages, tools=None, tool_choice=None):
+        tool_names = [tool["function"]["name"] for tool in tools or []]
+        if tool_names == ["route_turn"]:
+            return LLMResponse(
+                tool_calls=[
+                    ToolCallRequest(
+                        id="route",
+                        name="route_turn",
+                        arguments={"kind": "wellness", "needs_grounding": True},
+                    )
+                ]
+            )
+
+        self.answer_calls += 1
+        if self.answer_calls == 1:
+            assert tool_names == ["lookup_kb"]
+            return LLMResponse(
+                tool_calls=[
+                    ToolCallRequest(
+                        id="lookup",
+                        name="lookup_kb",
+                        arguments={"doc_types": ["daily_habits"]},
+                    )
+                ]
+            )
+        if self.answer_calls == 2:
+            assert tool_names == [SUBMIT_GROUNDED_ANSWER, "search_web"]
+            assert tool_choice == "required"
+            return LLMResponse(
+                tool_calls=[
+                    ToolCallRequest(
+                        id="web",
+                        name="search_web",
+                        arguments={"query": "recommended sleep duration for adults"},
+                    )
+                ]
+            )
+
+        assert tool_names == [SUBMIT_GROUNDED_ANSWER]
+        markers = tools[0]["function"]["parameters"]["properties"]["items"][
+            "items"
+        ]["properties"]["citation"]["enum"]
+        return LLMResponse(
+            tool_calls=[
+                ToolCallRequest(
+                    id="submit",
+                    name=SUBMIT_GROUNDED_ANSWER,
+                    arguments={
+                        "items": [
+                            {
+                                "kind": "supported_claim",
+                                "text": "Keep a regular sleep schedule.",
+                                "citation": markers[1],
+                            },
+                            {
+                                "kind": "supported_claim",
+                                "text": "Most adults need at least seven hours of sleep.",
+                                "citation": markers[2],
+                            },
+                        ]
+                    },
+                )
+            ]
+        )
+
+
+class PartialEvidenceTools(SleepTools):
+    web_citation = Citation(
+        doc_type="web",
+        line=1,
+        descriptor="abc123",
+        title="CDC sleep guidance",
+        text="Most adults need at least seven hours of sleep.",
+        source_type="web",
+        url="https://www.cdc.gov/sleep/about/index.html",
+        domain="www.cdc.gov",
+    )
+
+    def execute(self, call, *, user_query=None):
+        if call.name == "search_web":
+            return ToolResult(
+                tool_call_id=call.id,
+                name=call.name,
+                content="{\"results\": []}",
+                citations=[self.web_citation],
+            )
+        assert call.name == "lookup_kb"
+        return ToolResult(
+            tool_call_id=call.id,
+            name=call.name,
+            content="{\"results\": []}",
+            citations=[self.citation],
+        )
+
+
+def test_agent_completes_partial_kb_evidence_with_cited_web_source():
+    agent = WellnessAgent(
+        llm=PartialEvidenceLLM(),
+        tools=PartialEvidenceTools(),
+        tracer=NoOpTracer(),
+        system_prompt="Use grounded wellness evidence.",
+    )
+    result = agent.chat("What time should I sleep and how many hours do I need?")
+
+    assert [step["name"] for step in result.tool_trace] == ["lookup_kb", "search_web"]
+    assert {citation.source_type for citation in result.citations} == {
+        "knowledge_base",
+        "web",
+    }
+    assert PartialEvidenceTools.web_citation.marker in result.assistant_message
+    assert not result.citation_validation_failed
+
+
+class NoEvidenceLLM:
+    model_name = "no-evidence-test"
+    backend_name = "test"
+
+    def __init__(self):
+        self.answer_calls = 0
+
+    def chat(self, messages, tools=None, tool_choice=None):
+        tool_names = [tool["function"]["name"] for tool in tools or []]
+        if tool_names == ["route_turn"]:
+            return LLMResponse(
+                tool_calls=[
+                    ToolCallRequest(
+                        id="route",
+                        name="route_turn",
+                        arguments={"kind": "wellness", "needs_grounding": True},
+                    )
+                ]
+            )
+
+        self.answer_calls += 1
+        if self.answer_calls == 1:
+            assert tool_names == ["lookup_kb"]
+            selected = "lookup_kb"
+        elif self.answer_calls == 2:
+            assert tool_names == ["search_web"]
+            selected = "search_web"
+        else:
+            assert tool_names == [SUBMIT_GROUNDED_ANSWER]
+            markers = tools[0]["function"]["parameters"]["properties"]["items"][
+                "items"
+            ]["properties"]["citation"]["enum"]
+            assert markers == ["__NO_CITATION__"]
+            return LLMResponse(
+                tool_calls=[
+                    ToolCallRequest(
+                        id="submit",
+                        name=SUBMIT_GROUNDED_ANSWER,
+                        arguments={
+                            "items": [
+                                {
+                                    "kind": "evidence_limitation",
+                                    "text": "The available sources do not establish this detail.",
+                                    "citation": "__NO_CITATION__",
+                                }
+                            ]
+                        },
+                    )
+                ]
+            )
+
+        return LLMResponse(
+            tool_calls=[
+                ToolCallRequest(
+                    id=selected,
+                    name=selected,
+                    arguments={} if selected == "lookup_kb" else {"query": "missing detail"},
+                )
+            ]
+        )
+
+
+class NoEvidenceTools(SleepTools):
+    def execute(self, call, *, user_query=None):
+        return ToolResult(
+            tool_call_id=call.id,
+            name=call.name,
+            content="{\"results\": []}",
+            citations=[],
+        )
+
+
+def test_agent_returns_a_structured_limitation_when_all_sources_are_empty():
+    agent = WellnessAgent(
+        llm=NoEvidenceLLM(),
+        tools=NoEvidenceTools(),
+        tracer=NoOpTracer(),
+        system_prompt="Use grounded wellness evidence.",
+    )
+
+    result = agent.chat("Give me an unsupported wellness detail")
+
+    assert result.assistant_message == "The available sources do not establish this detail."
+    assert [step["name"] for step in result.tool_trace] == ["lookup_kb", "search_web"]
+    assert result.citations == []
+    assert not result.citation_validation_failed

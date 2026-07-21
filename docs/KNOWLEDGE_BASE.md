@@ -78,6 +78,22 @@ The internal marker is stable enough to validate within a corpus version. The UI
 shows the document title rather than the raw marker and opens the supporting
 paragraph in a source drawer.
 
+## Authoritative web completion
+
+When a local passage is relevant but does not directly answer a material part of
+the request, the agent may search the configured authoritative-domain allowlist
+once. The allowlist is applied by Tavily and verified again against each returned
+URL. Results below the configured relevance score are discarded.
+
+Accepted web results receive distinct `web` citation markers, retain their
+original URLs, and open as external sources in the UI drawer. They never masquerade
+as local KB line citations. If neither source supplies evidence, the structured
+answer contract permits only an evidence limitation.
+
+This is evidence completion, not unrestricted browsing. Organization-level trust
+does not prove that a particular excerpt entails a generated claim, and search
+snippets can omit important context. The same semantic-review limitation remains.
+
 ## Evidence quality boundary
 
 The current corpus was supplied as project material. The repository does not

@@ -32,7 +32,12 @@ Semantic policy route
        forced KB lookup
             │
             ▼
-     structured answer submission
+      evidence completeness
+        ├── sufficient ─────────────► structured answer submission
+        └── material gap ───────────► one authoritative web search
+                                           │
+                                           ▼
+                                  structured answer submission
             │
             ▼
       shape + citation validation
@@ -81,15 +86,33 @@ The local retriever embeds the query, searches paragraph vectors in FAISS, and
 returns the most similar chunks. Each chunk includes its document type, title,
 line positions, descriptor, text, and stable citation marker.
 
-### 3. Free-text finalization is disabled
+### 3. The agent checks evidence completeness
 
-Once citations exist, the agent exposes only `submit_grounded_answer`. The
-schema contains the exact markers returned during that turn.
+After local retrieval, the model must choose one of two constrained actions. It
+submits an answer when the passages directly support the material parts of the
+request, or calls `search_web` once when a material detail is missing. An empty
+KB result forces the web path. This is a semantic decision rather than a keyword
+or regular-expression rule.
 
-The model submits at most three items. An item is either a supported claim tied
-to one returned marker or an evidence limitation with no citation.
+Web search is restricted twice: Tavily receives `include_domains` from the
+configured allowlist, and the adapter independently rejects off-domain URLs and
+results below the configured relevance score. Tavily documents `include_domains`
+in its [Search API reference](https://docs.tavily.com/documentation/api-reference/endpoint/search).
+The model cannot add domains through tool arguments.
 
-### 4. The application validates before display
+Each accepted result becomes evidence with a title, excerpt, original URL, and
+application-generated citation marker. After web search, another search is not
+offered; structured finalization is required.
+
+### 4. Free-text finalization is disabled
+
+`submit_grounded_answer` contains the exact KB and web markers returned during
+the current turn. The model submits at most three items. An item is either a
+supported claim tied to one returned marker or an evidence limitation with no
+citation. If both evidence sources are empty, only a structured limitation can
+pass validation.
+
+### 5. The application validates before display
 
 Validation checks shape, field bounds, marker provenance, limitation count, and
 citation syntax. The application adds citation markers itself, so the model
@@ -149,8 +172,10 @@ measurements and limitations.
 - Routing is model-based and can select a defensible route different from a test label.
 - Marker validation proves provenance, not semantic entailment.
 - The local KB limits what grounded answers can establish.
-- Web search is configured but is not the normal evidence path after a successful
-  local retrieval.
+- The authoritative-domain allowlist reduces source risk but does not guarantee that
+  every returned excerpt is correct, current, or sufficient for the generated claim.
+- Web fallback requires `TAVILY_API_KEY`; without it, the agent can only return a
+  structured evidence limitation when the KB is insufficient.
 - Archived evaluations contain only completed Qwen candidate evidence.
 
 ## Code map

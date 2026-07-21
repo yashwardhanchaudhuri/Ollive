@@ -31,7 +31,7 @@ The [agent workflow](docs/AGENT_WORKFLOW.md) explains the design. The
   - OSS: **`Qwen/Qwen3.5-9B` on local vLLM** (OpenAI-compatible; `VLLM_API_KEY=EMPTY`)
   - Frontier: `gpt-5.4-mini` (needs `OPENAI_API_KEY`)
 - **Local grounding**: paragraph chunks from `assignment_kb/`, indexed by `doc_type`, FAISS + `BAAI/bge-small-en-v1.5`
-- **Citations**: every KB-grounded claim uses `[doc_type:L{line}:descriptor]`
+- **Citations**: every grounded claim selects an application-returned KB or web marker
 - **Streamlit UI**: chat, backend switcher, token/latency sidebar, expandable sources
 - **Observability**: local JSONL traces in `data/traces/` (no Langfuse keys)
 
@@ -124,7 +124,12 @@ Indexer assigns each paragraph:
 - `start_line` / `end_line` (1-indexed)
 - `descriptor` slug from the paragraph text
 
-`lookup_kb` returns markers like `[diet:L9:portion-control-plays-a-critical]`. The model selects from those exact values through `submit_grounded_answer`; the application renders the markers, and the UI Sources panel resolves them to full paragraphs.
+`lookup_kb` returns markers like `[diet:L9:portion-control-plays-a-critical]`.
+Accepted web results receive separate markers such as `[web:L1:3f5a8c1d7e20]`
+plus their original URLs. The model selects only from markers returned during the
+current turn through `submit_grounded_answer`; the application renders them, and
+the UI source drawer opens either the KB paragraph or the authoritative external
+page.
 
 ## Architecture decisions & tradeoffs
 

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -16,7 +16,7 @@ class Role(str, Enum):
 
 
 class Citation(BaseModel):
-    """Stable KB citation: doc_type + line + descriptor."""
+    """Validated evidence reference from the local KB or an allowed web source."""
 
     doc_type: str
     line: int
@@ -24,6 +24,9 @@ class Citation(BaseModel):
     end_line: int | None = None
     title: str | None = None
     text: str = ""
+    source_type: Literal["knowledge_base", "web"] = "knowledge_base"
+    url: str | None = None
+    domain: str | None = None
 
     @property
     def marker(self) -> str:

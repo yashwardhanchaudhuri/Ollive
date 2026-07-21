@@ -420,6 +420,19 @@
             white-space: pre-wrap;
         }
 
+        .source-drawer__external {
+            display: inline-flex;
+            margin-top: 1.35rem;
+            color: var(--olive-deep) !important;
+            font-size: .86rem;
+            font-weight: 650;
+            text-decoration: none !important;
+        }
+
+        .source-drawer__external:hover {
+            text-decoration: underline !important;
+        }
+
         @media (max-width: 760px) {
             [data-testid="stSidebar"],
             [data-testid="stSidebar"][aria-expanded="false"] {

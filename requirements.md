@@ -81,7 +81,7 @@ environment has completed an end-to-end GPU run.
 | Sentence Transformers | 5.6.0 |
 | FAISS CPU | 1.14.3 |
 | vLLM | 0.25.0 |
-| Application tests | 40 passing |
+| Application tests | 45 passing |
 
 The application regression suite remains the behavioral checkpoint after
 installation. GPU startup and a request through vLLM remain machine-specific

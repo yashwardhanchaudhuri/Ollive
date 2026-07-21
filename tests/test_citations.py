@@ -1,5 +1,9 @@
+import json
+
+from ollive.adapters.search.tavily_search import TavilyWebSearch
+from ollive.application.tools import ToolRouter
 from ollive.domain.citations import parse_citations, slugify_descriptor, validate_citations
-from ollive.domain.models import Citation
+from ollive.domain.models import Citation, ToolCallRequest
 
 
 def test_slugify_descriptor():
@@ -25,3 +29,88 @@ def test_validate_citations():
     valid, invalid = validate_citations(claimed, allowed)
     assert len(valid) == 1
     assert len(invalid) == 1
+
+
+class FakeTavilyClient:
+    def __init__(self):
+        self.call = None
+
+    def search(self, **kwargs):
+        self.call = kwargs
+        return {
+            "results": [
+                {
+                    "title": "Trusted",
+                    "url": "https://www.cdc.gov/sleep/about/index.html",
+                    "content": "Adults need regular, sufficient sleep.",
+                    "score": 0.9,
+                },
+                {
+                    "title": "Deceptive domain",
+                    "url": "https://cdc.gov.example.com/sleep",
+                    "content": "Untrusted content",
+                    "score": 0.99,
+                },
+                {
+                    "title": "Low relevance",
+                    "url": "https://www.cdc.gov/other",
+                    "content": "Unrelated content",
+                    "score": 0.2,
+                },
+            ]
+        }
+
+
+class RetrieverStub:
+    def list_doc_types(self):
+        return ["daily_habits"]
+
+
+class WebStub:
+    def search(self, query, max_results=5):
+        return [
+            {
+                "title": "CDC sleep guidance",
+                "url": "https://www.cdc.gov/sleep/about/index.html",
+                "content": "Adults need regular, sufficient sleep.",
+                "score": 0.9,
+                "domain": "www.cdc.gov",
+            }
+        ]
+
+
+def test_tavily_search_enforces_domains_and_relevance_locally():
+    client = FakeTavilyClient()
+    search = TavilyWebSearch(
+        api_key="test",
+        trusted_domains=["cdc.gov"],
+        min_score=0.5,
+        client=client,
+    )
+
+    results = search.search("adult sleep duration", max_results=3)
+
+    assert [result["title"] for result in results] == ["Trusted"]
+    assert client.call["include_domains"] == ["cdc.gov"]
+    assert client.call["search_depth"] == "basic"
+
+
+def test_web_tool_returns_url_backed_citations():
+    router = ToolRouter(
+        RetrieverStub(),
+        WebStub(),
+        allowed_doc_types=["daily_habits"],
+    )
+    result = router.execute(
+        ToolCallRequest(
+            id="web",
+            name="search_web",
+            arguments={"query": "adult sleep duration"},
+        )
+    )
+
+    assert len(result.citations) == 1
+    citation = result.citations[0]
+    assert citation.source_type == "web"
+    assert citation.url == "https://www.cdc.gov/sleep/about/index.html"
+    assert json.loads(result.content)["results"][0]["citation"] == citation.marker

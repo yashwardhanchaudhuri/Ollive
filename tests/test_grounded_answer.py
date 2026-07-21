@@ -131,3 +131,26 @@ def test_limitations_only_are_allowed_without_fabricated_citations(citations):
 def test_renderer_rejects_invalid_shapes_and_markers(citations, arguments):
     with pytest.raises(GroundedAnswerError):
         parse_and_render_grounded_answer(arguments, citations)
+
+
+def test_schema_allows_limitation_when_no_source_is_found():
+    schema = build_grounded_answer_schema([])
+    marker_enum = schema["function"]["parameters"]["properties"]["items"][
+        "items"
+    ]["properties"]["citation"]["enum"]
+    assert marker_enum == [NO_CITATION]
+
+    text, used = parse_and_render_grounded_answer(
+        {
+            "items": [
+                {
+                    "kind": "evidence_limitation",
+                    "text": "The available sources do not establish this detail.",
+                    "citation": NO_CITATION,
+                }
+            ]
+        },
+        [],
+    )
+    assert text == "The available sources do not establish this detail."
+    assert used == []

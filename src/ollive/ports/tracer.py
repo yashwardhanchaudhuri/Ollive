@@ -14,7 +14,9 @@ class TracerPort(ABC):
         name: str,
         metadata: dict[str, Any] | None = None,
         session_id: str | None = None,
-    ) -> AbstractContextManager[Any]: ...
+    ) -> AbstractContextManager[Any]:
+        """Open a trace scope for one agent turn."""
+        ...
 
     @abstractmethod
     def log_generation(
@@ -26,7 +28,9 @@ class TracerPort(ABC):
         output: str,
         usage: dict[str, Any],
         metadata: dict[str, Any] | None = None,
-    ) -> None: ...
+    ) -> None:
+        """Record one model generation and its usage metadata."""
+        ...
 
     @abstractmethod
     def log_span(
@@ -36,7 +40,11 @@ class TracerPort(ABC):
         input: Any = None,
         output: Any = None,
         metadata: dict[str, Any] | None = None,
-    ) -> None: ...
+    ) -> None:
+        """Record one non-generation operation in the active trace."""
+        ...
 
     @abstractmethod
-    def flush(self) -> None: ...
+    def flush(self) -> None:
+        """Persist buffered trace events before returning the turn."""
+        ...

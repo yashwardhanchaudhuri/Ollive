@@ -32,10 +32,12 @@ class GroundedAnswerError(ValueError):
 
 
 def _unique_markers(citations: list[Citation]) -> list[str]:
+    """Return citation markers once each while preserving retrieval order."""
     return list(dict.fromkeys(citation.marker for citation in citations))
 
 
 def build_grounded_answer_schema(citations: list[Citation]) -> dict[str, Any]:
+    """Build the constrained final-answer tool from retrieved citations."""
     markers = _unique_markers(citations)
     return {
         "type": "function",
@@ -93,6 +95,7 @@ def build_grounded_answer_schema(citations: list[Citation]) -> dict[str, Any]:
 
 
 def forced_grounded_answer_choice() -> dict[str, Any]:
+    """Return the tool-choice object that forces grounded finalization."""
     return {"type": "function", "function": {"name": SUBMIT_GROUNDED_ANSWER}}
 
 
@@ -100,6 +103,7 @@ def parse_and_render_grounded_answer(
     arguments: dict[str, Any],
     allowed: list[Citation],
 ) -> tuple[str, list[Citation]]:
+    """Validate structured claims and render only retrieved citation markers."""
     try:
         answer = GroundedAnswer.model_validate(arguments)
     except ValidationError as exc:

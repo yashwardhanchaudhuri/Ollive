@@ -105,6 +105,7 @@ class ToolRouter:
         default_top_k: int = 4,
         allowed_doc_types: list[str] | None = None,
     ) -> None:
+        """Initialize ToolRouter with its runtime collaborators."""
         self._retriever = retriever
         self._web_search = web_search
         self._default_top_k = default_top_k
@@ -112,6 +113,7 @@ class ToolRouter:
 
     @property
     def schemas(self) -> list[dict[str, Any]]:
+        """Return tool schemas constrained by the live document-type enum."""
         schemas = deepcopy(TOOL_SCHEMAS)
         doc_types = schemas[0]["function"]["parameters"]["properties"]["doc_types"]
         doc_types["items"]["enum"] = self._allowed_doc_types
@@ -126,6 +128,7 @@ class ToolRouter:
     def execute(
         self, call: ToolCallRequest, *, user_query: str | None = None
     ) -> ToolResult:
+        """Validate and dispatch one model-requested tool call."""
         try:
             if call.name == "lookup_kb":
                 arguments = dict(call.arguments)
@@ -145,6 +148,7 @@ class ToolRouter:
         )
 
     def _error(self, call: ToolCallRequest, code: str, details: Any) -> ToolResult:
+        """Return a stable JSON tool error without raising into the agent loop."""
         return ToolResult(
             tool_call_id=call.id,
             name=call.name,
@@ -152,6 +156,7 @@ class ToolRouter:
         )
 
     def _lookup_kb(self, call: ToolCallRequest, args: LookupKBArguments) -> ToolResult:
+        """Search allowed knowledge documents and return citation-bearing passages."""
         available = set(self._retriever.list_doc_types())
         unknown = sorted(set(args.doc_types or []) - available)
         if unknown:
@@ -187,6 +192,7 @@ class ToolRouter:
         )
 
     def _search_web(self, call: ToolCallRequest, args: SearchWebArguments) -> ToolResult:
+        """Convert accepted authoritative web results into URL-backed citations."""
         results = self._web_search.search(args.query, max_results=args.max_results or 5)
         citations = [
             Citation(

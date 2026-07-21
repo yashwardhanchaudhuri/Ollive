@@ -23,6 +23,7 @@ class EvalCase:
 
     @classmethod
     def from_dict(cls, value: dict[str, Any]) -> "EvalCase":
+        """Construct EvalCase from dict."""
         return cls(**value)
 
 
@@ -44,4 +45,5 @@ class EvalRecord:
     error: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
+        """Convert this value to dict."""
         return asdict(self)

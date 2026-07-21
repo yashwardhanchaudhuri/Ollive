@@ -24,6 +24,7 @@ ROOT = Path(__file__).resolve().parents[3]
 
 
 def revision() -> str:
+    """Return the source revision recorded in run manifests."""
     try:
         return subprocess.check_output(
             ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True, stderr=subprocess.DEVNULL
@@ -33,6 +34,7 @@ def revision() -> str:
 
 
 def run(dataset: Path, output: Path, backends: list[str], repetitions: int, limit: int | None) -> None:
+    """Execute the configured workflow and return collected records."""
     cases = load_cases(dataset)
     if limit is not None:
         cases = cases[:limit]
@@ -110,6 +112,7 @@ def run(dataset: Path, output: Path, backends: list[str], repetitions: int, limi
 
 
 def parse_args() -> argparse.Namespace:
+    """Parse command-line options for the evaluation runner."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset", type=Path, default=ROOT / "evaluation/datasets/core.v1.jsonl")
     parser.add_argument("--output", type=Path, required=True)

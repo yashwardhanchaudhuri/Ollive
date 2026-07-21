@@ -14,10 +14,12 @@ DEFAULT_CONFIG = ROOT / "config" / "backends.yaml"
 
 
 def project_root() -> Path:
+    """Return the repository root used to resolve configuration and data."""
     return ROOT
 
 
 def load_config(path: Path | None = None) -> dict[str, Any]:
+    """Load YAML configuration and resolve its environment-backed secrets."""
     load_dotenv(ROOT / ".env", override=False)
     cfg_path = path or DEFAULT_CONFIG
     with cfg_path.open("r", encoding="utf-8") as f:
@@ -43,6 +45,7 @@ def load_config(path: Path | None = None) -> dict[str, Any]:
 
 
 def resolve_path(relative: str) -> Path:
+    """Resolve a configured repository-relative path to an absolute path."""
     path = Path(relative)
     if path.is_absolute():
         return path

@@ -8,4 +8,6 @@ from typing import Any
 
 class WebSearchPort(ABC):
     @abstractmethod
-    def search(self, query: str, max_results: int = 5) -> list[dict[str, Any]]: ...
+    def search(self, query: str, max_results: int = 5) -> list[dict[str, Any]]:
+        """Return external results for a bounded web query."""
+        ...

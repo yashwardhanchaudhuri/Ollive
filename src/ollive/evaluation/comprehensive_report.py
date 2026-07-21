@@ -11,10 +11,12 @@ from ollive.evaluation.report import bar_chart, percent, pipeline_svg, rate
 
 
 def read_jsonl(path):
+    """Load non-empty JSONL records used by the consolidated report."""
     return [json.loads(line) for line in path.open(encoding="utf-8") if line.strip()]
 
 
 def percentile(values, fraction):
+    """Return the requested percentile from a numeric sample."""
     if not values:
         return 0.0
     ordered = sorted(values)
@@ -22,6 +24,7 @@ def percentile(values, fraction):
 
 
 def display_backend(value):
+    """Return the report label for a configured backend identifier."""
     return {
         "oss": "Qwen 3.5 9B",
         "frontier": "GPT-5.4 mini",
@@ -29,6 +32,7 @@ def display_backend(value):
 
 
 def generate(results, calibration, dataset, output_dir):
+    """Generate a reader-facing evaluation report from validated run artifacts."""
     rows = read_jsonl(results)
     cases = load_cases(dataset)
     calibration_data = json.loads(calibration.read_text(encoding="utf-8"))

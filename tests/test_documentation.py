@@ -1,3 +1,4 @@
+import ast
 from pathlib import Path
 import re
 
@@ -64,3 +65,23 @@ def test_local_setup_uses_one_requirements_path():
     for relative in ("README.md", "docs/INSTALL.md", "requirements.md"):
         text = (ROOT / relative).read_text(encoding="utf-8")
         assert "requirements-vllm" not in text
+
+
+def test_source_functions_explain_their_contract():
+    missing = []
+    for path in (ROOT / "src" / "ollive").rglob("*.py"):
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        for node in ast.walk(tree):
+            if (
+                isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+                and not ast.get_docstring(node)
+            ):
+                missing.append((str(path.relative_to(ROOT)), node.name, node.lineno))
+    assert not missing
+
+
+def test_streamlit_state_contains_only_consumed_objects():
+    text = (ROOT / "src/ollive/ui/streamlit_app.py").read_text(encoding="utf-8")
+    assert "session_state.citations" not in text
+    for key in ("messages", "citation_map", "agent_key", "agent"):
+        assert f'session_state.setdefault("{key}"' in text

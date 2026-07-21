@@ -16,6 +16,7 @@ class NoOpTracer(TracerPort):
         metadata: dict[str, Any] | None = None,
         session_id: str | None = None,
     ) -> AbstractContextManager[Any]:
+        """Provide a trace context that deliberately records nothing."""
         return nullcontext()
 
     def log_generation(
@@ -28,6 +29,7 @@ class NoOpTracer(TracerPort):
         usage: dict[str, Any],
         metadata: dict[str, Any] | None = None,
     ) -> None:
+        """Ignore generation events when observability is disabled."""
         return None
 
     def log_span(
@@ -38,9 +40,11 @@ class NoOpTracer(TracerPort):
         output: Any = None,
         metadata: dict[str, Any] | None = None,
     ) -> None:
+        """Ignore span events when observability is disabled."""
         return None
 
     def flush(self) -> None:
+        """Complete the tracer contract without performing I/O."""
         return None
 
 
@@ -48,6 +52,7 @@ class LangfuseTracer(TracerPort):
     """Langfuse SDK v4 (observation-based) adapter."""
 
     def __init__(self) -> None:
+        """Initialize LangfuseTracer with its runtime collaborators."""
         from langfuse import Langfuse
 
         self._client = Langfuse(
@@ -64,6 +69,7 @@ class LangfuseTracer(TracerPort):
         metadata: dict[str, Any] | None = None,
         session_id: str | None = None,
     ) -> Iterator[Any]:
+        """Open a trace scope for one agent turn."""
         meta = dict(metadata or {})
         if session_id:
             meta["session_id"] = session_id
@@ -89,6 +95,7 @@ class LangfuseTracer(TracerPort):
         usage: dict[str, Any],
         metadata: dict[str, Any] | None = None,
     ) -> None:
+        """Record generation in the active trace."""
         usage_details = {
             k: int(v)
             for k, v in {
@@ -118,6 +125,7 @@ class LangfuseTracer(TracerPort):
         output: Any = None,
         metadata: dict[str, Any] | None = None,
     ) -> None:
+        """Record span in the active trace."""
         parent = self._current or self._client
         as_type = "tool" if name.startswith("tool:") else "span"
         span = parent.start_observation(
@@ -130,10 +138,12 @@ class LangfuseTracer(TracerPort):
         span.end()
 
     def flush(self) -> None:
+        """Persist any buffered observability events."""
         self._client.flush()
 
 
 def build_tracer(enabled: bool = True) -> TracerPort:
+    """Construct Langfuse tracing or a no-op fallback from credentials."""
     if not enabled:
         return NoOpTracer()
     flag = os.getenv("LANGFUSE_ENABLED", "true").lower()

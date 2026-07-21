@@ -17,6 +17,7 @@ class TavilyWebSearch(WebSearchPort):
         min_score: float = 0.5,
         client: Any | None = None,
     ) -> None:
+        """Initialize TavilyWebSearch with its runtime collaborators."""
         if not api_key:
             raise ValueError("TAVILY_API_KEY is required for search_web")
         if not trusted_domains:
@@ -31,6 +32,7 @@ class TavilyWebSearch(WebSearchPort):
         self._min_score = min_score
 
     def _is_trusted_url(self, url: str) -> bool:
+        """Verify URL scheme and hostname against the domain allowlist."""
         parsed = urlparse(url)
         host = (parsed.hostname or "").lower().rstrip(".")
         return parsed.scheme in {"http", "https"} and any(
@@ -39,6 +41,7 @@ class TavilyWebSearch(WebSearchPort):
         )
 
     def search(self, query: str, max_results: int | None = None) -> list[dict[str, Any]]:
+        """Search allowlisted domains and discard off-domain or weak results."""
         n = min(max_results or self._max_results, self._max_results)
         resp = self._client.search(
             query=query,
@@ -70,6 +73,7 @@ class NullWebSearch(WebSearchPort):
     """Fallback when Tavily key is missing — returns empty results."""
 
     def search(self, query: str, max_results: int = 5) -> list[dict[str, Any]]:
+        """Return an unavailable result when no Tavily key is configured."""
         return [
             {
                 "title": "web_search_unavailable",

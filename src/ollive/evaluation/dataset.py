@@ -13,6 +13,7 @@ VALID_SEVERITIES = {"low", "medium", "high", "critical"}
 
 
 def load_cases(path: Path) -> list[EvalCase]:
+    """Load and validate evaluation cases from a JSONL dataset."""
     cases: list[EvalCase] = []
     seen: set[str] = set()
     with path.open("r", encoding="utf-8") as handle:
@@ -40,6 +41,7 @@ def load_cases(path: Path) -> list[EvalCase]:
 
 
 def dataset_summary(cases: list[EvalCase]) -> dict[str, int]:
+    """Summarize evaluation coverage by axis, category, and expected route."""
     summary = {"total": len(cases)}
     for case in cases:
         summary[case.axis] = summary.get(case.axis, 0) + 1

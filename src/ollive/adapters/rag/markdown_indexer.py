@@ -23,6 +23,7 @@ def doc_type_from_filename(path: Path) -> str:
 
 
 def _is_metadata_line(line: str) -> bool:
+    """Return whether a Markdown line is metadata rather than evidence text."""
     s = line.strip()
     if not s:
         return True
@@ -41,6 +42,7 @@ def split_paragraphs(text: str) -> list[tuple[int, int, str]]:
     start: int | None = None
 
     def flush(end_line: int) -> None:
+        """Persist any buffered observability events."""
         nonlocal buf, start
         if buf and start is not None:
             para = "\n".join(buf).strip()
@@ -64,6 +66,7 @@ def split_paragraphs(text: str) -> list[tuple[int, int, str]]:
 
 
 def extract_title(text: str, fallback: str) -> str:
+    """Return the first Markdown heading used as the display title."""
     for line in text.splitlines():
         if line.startswith("# "):
             return line[2:].strip()
@@ -77,6 +80,7 @@ class MarkdownParagraphIndexer:
         index_dir: Path,
         embedder_name: str = "BAAI/bge-small-en-v1.5",
     ) -> None:
+        """Initialize MarkdownParagraphIndexer with its runtime collaborators."""
         self.kb_dir = kb_dir
         self.index_dir = index_dir
         self.embedder_name = embedder_name
@@ -86,11 +90,13 @@ class MarkdownParagraphIndexer:
 
     @property
     def model(self) -> SentenceTransformer:
+        """Lazily load and return the sentence-transformer embedder."""
         if self._model is None:
             self._model = SentenceTransformer(self.embedder_name)
         return self._model
 
     def build(self) -> list[Chunk]:
+        """Build paragraph chunks from the configured Markdown knowledge base."""
         md_files = sorted(self.kb_dir.glob("*.md"))
         chunks: list[Chunk] = []
         descriptor_counts: dict[str, int] = {}
@@ -122,10 +128,12 @@ class MarkdownParagraphIndexer:
         return chunks
 
     def _embed(self, texts: list[str]) -> np.ndarray:
+        """Encode text as normalized vectors for FAISS search."""
         vectors = self.model.encode(texts, normalize_embeddings=True)
         return np.asarray(vectors, dtype=np.float32)
 
     def persist(self) -> None:
+        """Embed chunks and persist the FAISS index plus reproducibility metadata."""
         if not self.chunks:
             self.build()
         self.index_dir.mkdir(parents=True, exist_ok=True)
@@ -144,6 +152,7 @@ class MarkdownParagraphIndexer:
         self._index = index
 
     def load(self) -> None:
+        """Load the FAISS index and its corresponding chunk metadata."""
         index_path = self.index_dir / "faiss.index"
         chunks_path = self.index_dir / "chunks.pkl"
         if not index_path.exists() or not chunks_path.exists():
@@ -159,6 +168,7 @@ class MarkdownParagraphIndexer:
         top_k: int = 4,
         doc_types: list[str] | None = None,
     ) -> list[Chunk]:
+        """Return results matching the bounded query and filters."""
         if self._index is None or not self.chunks:
             self.load()
         assert self._index is not None
@@ -181,6 +191,7 @@ class MarkdownParagraphIndexer:
         return results
 
     def list_doc_types(self) -> list[str]:
+        """Return the available doc types."""
         if not self.chunks:
             self.load()
         return sorted({c.doc_type for c in self.chunks})

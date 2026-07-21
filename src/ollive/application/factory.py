@@ -18,6 +18,7 @@ from ollive.ports.web_search import WebSearchPort
 
 
 def build_llm(cfg: dict[str, Any], backend_name: str | None = None) -> LLMPort:
+    """Construct the configured local or frontier language-model adapter."""
     name = backend_name or cfg["active"]
     backend = cfg["backends"][name]
     provider = backend["provider"]
@@ -53,6 +54,7 @@ def build_llm(cfg: dict[str, Any], backend_name: str | None = None) -> LLMPort:
 
 
 def build_retriever(cfg: dict[str, Any], rebuild: bool = False) -> LocalRetriever:
+    """Load or rebuild the local retriever used by knowledge-base tools."""
     rag = cfg["rag"]
     return LocalRetriever.from_paths(
         kb_dir=resolve_path(rag["kb_dir"]),
@@ -63,6 +65,7 @@ def build_retriever(cfg: dict[str, Any], rebuild: bool = False) -> LocalRetrieve
 
 
 def build_web_search(cfg: dict[str, Any]) -> WebSearchPort:
+    """Construct Tavily search or its no-key fallback from configuration."""
     search_cfg = cfg.get("tools", {}).get("search_web", {})
     key = search_cfg.get("api_key") or ""
     max_results = int(search_cfg.get("max_results", 5))
@@ -83,6 +86,7 @@ def build_agent(
     session_id: str | None = None,
     cfg: dict[str, Any] | None = None,
 ) -> WellnessAgent:
+    """Compose the agent used by Streamlit and evaluation runners."""
     cfg = cfg or load_config()
     llm = build_llm(cfg, backend_name)
     retriever = build_retriever(cfg, rebuild=rebuild_index)

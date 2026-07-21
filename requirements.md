@@ -83,7 +83,7 @@ for every NVIDIA driver and GPU combination.
 | vLLM | 0.25.0 |
 | PyTorch | 2.11.0+cu130 |
 | FFmpeg | 8.0.1 |
-| Application tests | 45 passing |
+| Application tests | 47 passing |
 
 The application regression suite remains the behavioral checkpoint after
 installation. GPU startup and a request through vLLM remain machine-specific

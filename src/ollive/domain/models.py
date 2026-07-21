@@ -30,6 +30,7 @@ class Citation(BaseModel):
 
     @property
     def marker(self) -> str:
+        """Return the stable marker rendered after claim validation."""
         line_part = f"L{self.line}"
         if self.end_line and self.end_line != self.line:
             line_part = f"L{self.line}-{self.end_line}"
@@ -47,6 +48,7 @@ class Chunk(BaseModel):
     text: str
 
     def to_citation(self) -> Citation:
+        """Convert this retrieved paragraph into citation evidence."""
         return Citation(
             doc_type=self.doc_type,
             line=self.start_line,
@@ -87,6 +89,7 @@ class UsageStats(BaseModel):
     backend: str = ""
 
     def add(self, other: "UsageStats") -> "UsageStats":
+        """Return cumulative usage carrying identity from the newest call."""
         return UsageStats(
             prompt_tokens=self.prompt_tokens + other.prompt_tokens,
             completion_tokens=self.completion_tokens + other.completion_tokens,

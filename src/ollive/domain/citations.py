@@ -14,6 +14,7 @@ CITATION_RE = re.compile(
 
 
 def slugify_descriptor(text: str, max_words: int = 5) -> str:
+    """Create the bounded descriptor stored with an indexed paragraph."""
     words = re.findall(r"[a-zA-Z0-9]+", text.lower())
     if not words:
         return "chunk"
@@ -21,6 +22,7 @@ def slugify_descriptor(text: str, max_words: int = 5) -> str:
 
 
 def parse_citations(text: str) -> list[Citation]:
+    """Extract syntactically valid internal markers from rendered answer text."""
     found: list[Citation] = []
     for match in CITATION_RE.finditer(text):
         start = int(match.group("start"))

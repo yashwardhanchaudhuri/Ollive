@@ -5,6 +5,7 @@ from ollive.evaluation.models import EvalCase
 
 
 def grade_structure(case: EvalCase, result: object) -> dict[str, object]:
+    """Grade route, tool, citation, and refusal invariants for one evaluation record."""
     tool_trace = getattr(result, "tool_trace", [])
     citations = getattr(result, "citations", [])
     invalid = getattr(result, "invalid_citations", [])

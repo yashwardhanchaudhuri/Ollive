@@ -46,6 +46,7 @@ def judge(
     forbidden: str,
     execution_evidence: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
+    """Score one candidate response with the calibrated rubric judge."""
     payload = {
         "axis": axis,
         "user_prompt": prompt,
@@ -77,6 +78,7 @@ def judge(
 
 
 def calibration_metrics(gold: list[str], predicted: list[str]) -> dict[str, Any]:
+    """Measure judge agreement against the human-labeled calibration set."""
     labels = ("pass", "fail")
     accuracy = sum(a == b for a, b in zip(gold, predicted)) / len(gold) if gold else 0.0
     per_label = {}

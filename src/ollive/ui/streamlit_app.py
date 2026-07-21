@@ -33,25 +33,26 @@ STYLESHEET = Path(__file__).with_name("styles.css")
 
 
 def _inject_styles() -> None:
+    """Load the adjacent stylesheet into the current Streamlit page."""
     css = STYLESHEET.read_text(encoding="utf-8")
     st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
 
 
 def _init_state() -> None:
-    if "messages" not in st.session_state:
-        st.session_state.messages = []
-    if "citations" not in st.session_state:
-        st.session_state.citations = []
-    if "citation_map" not in st.session_state:
-        st.session_state.citation_map = {}
-    if "agent_key" not in st.session_state:
-        st.session_state.agent_key = None
-    if "agent" not in st.session_state:
-        st.session_state.agent = None
+    """Create per-browser-session objects that survive Streamlit reruns."""
+    # Streamlit reruns this module after every interaction. The transcript is the
+    # display history; citation_map resolves its markers to source drawers.
+    st.session_state.setdefault("messages", [])
+    st.session_state.setdefault("citation_map", {})
+
+    # Agent construction loads the retriever and model adapter, so cache it until
+    # the backend changes or the user explicitly rebuilds the index.
+    st.session_state.setdefault("agent_key", None)
+    st.session_state.setdefault("agent", None)
 
 
 def _ensure_agent(backend: str, rebuild: bool = False) -> None:
-    key = f"{backend}:{rebuild}"
+    """Reuse the session agent or rebuild it after a backend or index change."""
     if st.session_state.agent is None or st.session_state.agent_key != backend or rebuild:
         with st.spinner("Loading agent / index..."):
             st.session_state.agent = build_agent(
@@ -60,16 +61,20 @@ def _ensure_agent(backend: str, rebuild: bool = False) -> None:
         st.session_state.agent_key = backend
         if rebuild:
             st.session_state.messages = []
-            st.session_state.citations = []
+            st.session_state.citation_map = {}
 
 
 def _source_id(marker: str) -> str:
+    """Derive a stable HTML drawer target from an internal citation marker."""
     digest = hashlib.sha1(marker.encode("utf-8")).hexdigest()[:12]
     return f"source-{digest}"
 
 
 def _render_answer(text: str) -> None:
+    """Replace validated markers with source links and render the answer."""
+
     def citation_link(match: object) -> str:
+        """Convert one citation match into its human-readable drawer link."""
         marker = match.group(0)
         citation = st.session_state.citation_map.get(marker)
         label = (
@@ -86,6 +91,7 @@ def _render_answer(text: str) -> None:
 
 
 def _render_source_drawers() -> None:
+    """Render one hidden, anchor-addressable drawer per known citation."""
     drawers = []
     for marker, citation in st.session_state.citation_map.items():
         is_web = citation.source_type == "web"
@@ -123,6 +129,7 @@ def _render_source_drawers() -> None:
 
 
 def main() -> None:
+    """Render the Ollive page and process at most one submitted chat turn."""
     _init_state()
     cfg = load_config()
     backends = list(cfg.get("backends", {}).keys())
@@ -157,7 +164,6 @@ def main() -> None:
             if st.session_state.agent:
                 st.session_state.agent.reset()
             st.session_state.messages = []
-            st.session_state.citations = []
             st.session_state.citation_map = {}
             st.rerun()
 
@@ -227,7 +233,6 @@ def main() -> None:
                 f"{result.usage.total_tokens} tokens · {result.usage.latency_ms:.0f} ms · {result.model}"
             )
 
-        st.session_state.citations = result.citations
         st.session_state.messages.append(
             {
                 "role": "assistant",

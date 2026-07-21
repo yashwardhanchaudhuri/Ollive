@@ -13,6 +13,7 @@ from ollive.ports.llm import LLMPort
 
 
 def messages_to_openai(messages: list[Message]) -> list[dict[str, Any]]:
+    """Translate domain messages into OpenAI-compatible request dictionaries."""
     out: list[dict[str, Any]] = []
     for m in messages:
         item: dict[str, Any] = {"role": m.role.value, "content": m.content}
@@ -41,6 +42,7 @@ class OpenAICompatibleLLM(LLMPort):
         instruct_mode: bool = False,
         provider: str = "openai",
     ) -> None:
+        """Initialize OpenAICompatibleLLM with its runtime collaborators."""
         self._backend_name = backend_name
         self._model = model
         self._temperature = temperature
@@ -54,10 +56,12 @@ class OpenAICompatibleLLM(LLMPort):
 
     @property
     def model_name(self) -> str:
+        """Return the adapter model identifier."""
         return self._model
 
     @property
     def backend_name(self) -> str:
+        """Return the adapter backend identifier."""
         return self._backend_name
 
     def chat(
@@ -66,6 +70,7 @@ class OpenAICompatibleLLM(LLMPort):
         tools: list[dict[str, Any]] | None = None,
         tool_choice: str | dict[str, Any] | None = "auto",
     ) -> LLMResponse:
+        """Send one completion to OpenAI or the local vLLM endpoint."""
         payload: dict[str, Any] = {
             "model": self._model,
             "messages": messages_to_openai(messages),

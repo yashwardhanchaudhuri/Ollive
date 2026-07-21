@@ -33,8 +33,10 @@ CITATION_REJECTION_MESSAGE = (
     "Please try again."
 )
 def rollback_memory_on_error(method: Any) -> Any:
+    """Decorate a chat method so failed turns cannot pollute memory."""
     @wraps(method)
     def wrapped(self: "WellnessAgent", *args: Any, **kwargs: Any) -> AgentTurnResult:
+        """Run one chat turn and restore its memory checkpoint on failure."""
         checkpoint = self._memory.as_list()
         try:
             return method(self, *args, **kwargs)
@@ -59,6 +61,7 @@ class WellnessAgent:
         max_tool_rounds: int = 4,
         session_id: str | None = None,
     ) -> None:
+        """Initialize WellnessAgent with its runtime collaborators."""
         self._llm = llm
         self._tools = tools
         self._tracer = tracer
@@ -73,13 +76,16 @@ class WellnessAgent:
 
     @property
     def session_usage(self) -> UsageStats:
+        """Return cumulative token and latency usage for this session."""
         return self._session_usage
 
     @property
     def memory(self) -> ShortTermMemory:
+        """Expose bounded dialogue memory for UI and evaluation inspection."""
         return self._memory
 
     def reset(self) -> None:
+        """Clear conversation memory, citations, and accumulated session usage."""
         self._memory.clear()
         self._session_usage = UsageStats(
             model=self._llm.model_name, backend=self._llm.backend_name
@@ -88,6 +94,7 @@ class WellnessAgent:
 
     @rollback_memory_on_error
     def chat(self, user_text: str) -> AgentTurnResult:
+        """Process one turn through routing, tools, grounding, and validation."""
         # Persist dialogue only. Historical tool payloads make later turns larger and
         # can cause the model to reuse stale citations.
         memory_checkpoint = [
@@ -397,6 +404,7 @@ class WellnessAgent:
             )
 
     def _build_messages(self, policy: TurnPolicy) -> list[Message]:
+        """Combine the system policy with bounded dialogue memory for generation."""
         return [
             Message(
                 role=Role.SYSTEM,

@@ -8,18 +8,22 @@ from pathlib import Path
 
 
 def load_records(path):
+    """Load non-empty JSONL evaluation records from disk."""
     return [json.loads(line) for line in path.open(encoding="utf-8") if line.strip()]
 
 
 def rate(values):
+    """Return the fraction of records satisfying the predicate."""
     return sum(values) / len(values) if values else None
 
 
 def percent(value):
+    """Format a ratio as a human-readable percentage."""
     return "N/A" if value is None else f"{100 * value:.1f}%"
 
 
 def bar_chart(path, title, groups):
+    """Write an SVG bar chart for grouped evaluation rates."""
     height = 95 + 48 * len(groups)
     rows = []
     for index, (label, value) in enumerate(groups.items()):
@@ -42,6 +46,7 @@ def bar_chart(path, title, groups):
 
 
 def pipeline_svg(path):
+    """Write the evaluation evidence-flow diagram as SVG."""
     labels = ["Versioned dataset", "Isolated run", "Structural grade", "Calibrated judge", "Human review", "Release gates"]
     blocks = []
     for index, label in enumerate(labels):
@@ -60,6 +65,7 @@ def pipeline_svg(path):
 
 
 def generate(results, output_dir, calibration=None):
+    """Generate a reader-facing evaluation report from validated run artifacts."""
     records = load_records(results)
     output_dir.mkdir(parents=True, exist_ok=True)
     assets = output_dir / "assets"

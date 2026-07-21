@@ -8,11 +8,13 @@ from ollive.evaluation.report import bar_chart, load_records, percent, rate
 
 
 def structural_rate(rows, axis=None):
+    """Return the structural pass rate for one backend run."""
     subset = [r for r in rows if not r.get("error") and (axis is None or r["case"]["axis"] == axis)]
     return rate([r["structural_grades"]["overall"]["pass"] for r in subset])
 
 
 def generate_comparison(baseline, candidate, output_dir):
+    """Compare archived backend runs and write their reader-facing report."""
     before = load_records(baseline)
     after = load_records(candidate)
     before_ids = [r["case"]["id"] for r in before]

@@ -25,6 +25,7 @@ _LLAMA_TOOL_RE = re.compile(
 
 
 def _openai_tools_to_hf(tools: list[dict[str, Any]] | None) -> list[dict[str, Any]] | None:
+    """Translate OpenAI tool schemas into Transformers chat-template format."""
     if not tools:
         return None
     converted = []
@@ -47,6 +48,7 @@ def _openai_tools_to_hf(tools: list[dict[str, Any]] | None) -> list[dict[str, An
 
 
 def _messages_to_hf(messages: list[Message]) -> list[dict[str, Any]]:
+    """Translate domain messages into Transformers chat-template dictionaries."""
     out: list[dict[str, Any]] = []
     for m in messages:
         role = m.role.value
@@ -127,6 +129,7 @@ class LocalTransformersLLM(LLMPort):
         device: str | None = None,
         load_in_4bit: bool = False,
     ) -> None:
+        """Initialize LocalTransformersLLM with its runtime collaborators."""
         self._backend_name = backend_name
         self._model_name = model
         self._temperature = temperature
@@ -144,10 +147,12 @@ class LocalTransformersLLM(LLMPort):
 
     @property
     def model_name(self) -> str:
+        """Return the adapter model identifier."""
         return self._model_name
 
     @property
     def backend_name(self) -> str:
+        """Return the adapter backend identifier."""
         return self._backend_name
 
     def chat(
@@ -156,6 +161,7 @@ class LocalTransformersLLM(LLMPort):
         tools: list[dict[str, Any]] | None = None,
         tool_choice: str | dict[str, Any] | None = "auto",
     ) -> LLMResponse:
+        """Generate one response through the in-process model backend."""
         hf_messages = _messages_to_hf(messages)
         hf_tools = _openai_tools_to_hf(tools)
 

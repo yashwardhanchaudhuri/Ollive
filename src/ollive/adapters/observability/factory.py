@@ -15,6 +15,7 @@ def build_tracer_from_config(
     *,
     project_root: Path | None = None,
 ) -> TracerPort:
+    """Construct the configured local, Langfuse, or no-op tracer."""
     obs = obs_cfg or {}
     if not obs.get("enabled", True):
         from ollive.adapters.observability.langfuse_tracer import NoOpTracer

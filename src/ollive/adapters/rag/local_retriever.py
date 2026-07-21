@@ -11,6 +11,7 @@ from ollive.ports.retriever import RetrieverPort
 
 class LocalRetriever(RetrieverPort):
     def __init__(self, indexer: MarkdownParagraphIndexer) -> None:
+        """Initialize LocalRetriever with its runtime collaborators."""
         self._indexer = indexer
         self._indexer.load()
 
@@ -22,6 +23,7 @@ class LocalRetriever(RetrieverPort):
         embedder: str,
         rebuild: bool = False,
     ) -> "LocalRetriever":
+        """Load the index, rebuilding it only when explicitly requested."""
         indexer = MarkdownParagraphIndexer(kb_dir, index_dir, embedder)
         if rebuild or not (index_dir / "faiss.index").exists():
             indexer.persist()
@@ -35,7 +37,9 @@ class LocalRetriever(RetrieverPort):
         top_k: int = 4,
         doc_types: list[str] | None = None,
     ) -> list[Chunk]:
+        """Delegate a bounded semantic search to the Markdown index."""
         return self._indexer.search(query, top_k=top_k, doc_types=doc_types)
 
     def list_doc_types(self) -> list[str]:
+        """Return the exact document-type enum present in the index."""
         return self._indexer.list_doc_types()

@@ -25,6 +25,7 @@ Ollive/
 ├── .streamlit/
 │   └── config.toml              # Streamlit theme configuration
 ├── README.md                    # Project overview and quick start
+├── REPORT.pdf                   # One-page two-column evaluation paper
 ├── run_ollive.sh                # One-command local environment and service launcher
 ├── environment.yml              # Conda application/development environment
 ├── pyproject.toml               # Python package metadata

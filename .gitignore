@@ -15,6 +15,7 @@ data/indexes/*
 data/eval_results/
 data/traces/*
 !data/traces/.gitkeep
+data/vllm.log
 !data/traces/README.md
 *.faiss
 *.orig

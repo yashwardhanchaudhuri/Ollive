@@ -85,28 +85,27 @@ enforces shapes, query fidelity, retries, and allowed citations.
 Complete installation, GPU/vLLM setup, model downloads, port configuration, and
 troubleshooting are in [docs/INSTALL.md](docs/INSTALL.md).
 
-Application quick start:
+The recommended local path is one command:
 
 ```bash
-conda env create -f environment.yml
-conda activate ollive
-python -m pip install -e . --no-deps
-cp .env.example .env
-python scripts/build_index.py
-streamlit run src/ollive/ui/streamlit_app.py --server.port 8501
+./run_ollive.sh oss
 ```
 
-The Conda environment includes both the application and vLLM. Start Qwen in
-another terminal using the same environment:
+It creates or updates the single `ollive` Conda environment, installs the package,
+creates `.env` if needed, builds a missing KB index, starts Qwen through vLLM,
+waits for the local API, and serves Streamlit at `http://127.0.0.1:8501`. On
+exit it stops only the vLLM process it started. The first run downloads the
+embedding model and Qwen.
+
+For the frontier backend, set `OPENAI_API_KEY` in `.env` first, then run:
 
 ```bash
-conda activate ollive
-./scripts/serve_qwen_vllm.sh
+./run_ollive.sh frontier
 ```
 
-The two services remain separate processes, but they share one dependency
-environment. `requirements.txt` includes runtime and test dependencies together.
-Traces land in `data/traces/*.jsonl`.
+That path uses the same environment and starts Streamlit without vLLM. See
+[installation details](docs/INSTALL.md) for prerequisites, ports, manual control,
+and troubleshooting. Traces land in `data/traces/*.jsonl`.
 
 ## Configuration
 

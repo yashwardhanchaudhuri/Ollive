@@ -25,6 +25,7 @@ Ollive/
 ├── .streamlit/
 │   └── config.toml              # Streamlit theme configuration
 ├── README.md                    # Project overview and quick start
+├── run_ollive.sh                # One-command local environment and service launcher
 ├── environment.yml              # Conda application/development environment
 ├── pyproject.toml               # Python package metadata
 ├── requirements.txt             # Unified local runtime, including vLLM

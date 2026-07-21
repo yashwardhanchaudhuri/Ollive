@@ -2,8 +2,7 @@
 
 Ollive uses **one Python environment** for Streamlit, retrieval, tests, the
 local Qwen server, and the frontier backend. Qwen and Streamlit are separate
-processes, but they use the same installed dependencies. Do not create a second
-another environment just for frontier; switch backend through `.env` or the UI instead.
+processes, but they use the same installed dependencies. Do not create another environment just for frontier; switch backend through `.env` or the UI instead.
 
 ## What this guide produces
 
@@ -13,21 +12,51 @@ another environment just for frontier; switch backend through `.env` or the UI i
 - A paragraph-level FAISS index under `data/indexes/`.
 - Streamlit at `127.0.0.1:8501`.
 
-## Choose a path
+## One-command local setup
+
+From the repository root, run the repository-root launcher:
+
+```bash
+./run_ollive.sh oss
+```
+
+The launcher creates or updates the single `ollive` Conda environment, installs
+the package, copies `.env.example` when `.env` is missing, builds a missing KB
+index, starts Qwen/vLLM on `127.0.0.1:8000`, waits for its health endpoint, and
+starts Streamlit on `127.0.0.1:8501`. It reuses already healthy local vLLM and Streamlit services rather than starting duplicates. When Streamlit exits, it stops only the
+vLLM process it started. The first invocation downloads the embedding and Qwen
+models, so it can take several minutes.
+
+For the frontier backend, first put `OPENAI_API_KEY` in `.env`, then run:
+
+```bash
+./run_ollive.sh frontier
+```
+
+This uses the same environment and starts only Streamlit. `TAVILY_API_KEY`
+remains optional for authoritative web-search completion. Both paths bind their
+services to loopback by default.
+
+Useful overrides are `OLLIVE_ENV_NAME`, `OLLIVE_STREAMLIT_PORT`,
+`OLLIVE_VLLM_PORT`, `OLLIVE_VLLM_MAX_LEN`, `OLLIVE_VLLM_TP`, and
+`OLLIVE_VLLM_READY_TIMEOUT`. The launcher writes the server output it starts to
+`data/vllm.log` and prints its last 40 lines if readiness fails.
+
+## Manual setup and control
 
 Choose Conda for the project-tested installer or Python venv when you already manage the local CUDA/vLLM prerequisites. Both choices create the same unified Ollive environment and can run either backend.
 
 ## Prerequisites
 
 - Linux or WSL2, Git, and internet access for packages and model downloads.
-- Either Conda/Miniconda or Python 3.11 with `venv`.
+- Conda or Miniconda for the one-command launcher; `curl` is also required for its local health check. Python 3.11 with `venv` remains supported for the manual path.
 - For local Qwen: a supported NVIDIA GPU, compatible driver/CUDA stack, and
   sufficient VRAM. Conda installs FFmpeg; a venv setup may need required
   system libraries from the operating-system package manager.
 
 Run all commands from the repository root.
 
-## 1. Create the unified environment
+## 1. Create the unified environment manually (optional)
 
 ### Conda (recommended)
 
@@ -53,7 +82,7 @@ vLLM server; the frontier backend simply does not start that server.
 **Checkpoint:** `python -m pip check` reports no broken requirements. This
 checks Python dependency resolution, not GPU or model availability.
 
-## 2. Configure environment variables
+## 2. Configure environment variables manually (optional)
 
 ```bash
 cp .env.example .env
@@ -78,7 +107,7 @@ OLLIVE_ACTIVE_BACKEND=frontier
 `TAVILY_API_KEY` is optional and enables authoritative-domain web completion.
 Never commit the populated `.env` file.
 
-## 3. Download models and build the KB index
+## 3. Download models and build the KB index manually (optional)
 
 The first index build downloads `BAAI/bge-small-en-v1.5`; the first vLLM launch
 downloads Qwen. To pre-download them, run:
@@ -98,7 +127,7 @@ python scripts/build_index.py
 This writes `faiss.index`, `chunks.pkl`, and `meta.json` under `data/indexes/`.
 Rebuild whenever a file in `assignment_kb/` changes.
 
-## 4. Start the selected backend
+## 4. Start the selected backend manually (optional)
 
 For OSS Qwen, keep this process running in a second terminal using the same
 environment:
@@ -126,7 +155,7 @@ curl http://127.0.0.1:8000/v1/models
 For the frontier backend, do not start vLLM; set `OLLIVE_ACTIVE_BACKEND=frontier`
 and a valid `OPENAI_API_KEY` instead.
 
-## 5. Start Streamlit
+## 5. Start Streamlit manually (optional)
 
 ```bash
 streamlit run src/ollive/ui/streamlit_app.py \

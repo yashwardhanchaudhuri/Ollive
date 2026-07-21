@@ -16,11 +16,13 @@ class StructuredSleepLLM:
     backend_name = "test"
 
     def __init__(self, malformed_final=False, recover_after_error=False):
+        """Configure whether the deterministic final submission is malformed."""
         self.malformed_final = malformed_final
         self.recover_after_error = recover_after_error
         self.answer_calls = 0
 
     def chat(self, messages, tools=None, tool_choice=None):
+        """Simulate routing, required KB lookup, and structured answer submission."""
         tool_name = tools[0]["function"]["name"] if tools else None
         if tool_name == "route_turn":
             return LLMResponse(
@@ -94,6 +96,7 @@ class SleepTools:
 
     @property
     def schemas(self):
+        """Expose deterministic KB and web-search tool schemas."""
         return [
             {
                 "type": "function",
@@ -112,6 +115,7 @@ class SleepTools:
         ]
 
     def execute(self, call, *, user_query=None):
+        """Return sleep evidence while asserting exact user-query fidelity."""
         assert call.name == "lookup_kb"
         assert user_query == "I want sleep tips"
         return ToolResult(
@@ -127,6 +131,7 @@ class SleepTools:
 
 
 def build_agent(llm):
+    """Build a test agent with deterministic tools and no-op tracing."""
     return WellnessAgent(
         llm=llm,
         tools=SleepTools(),
@@ -136,6 +141,7 @@ def build_agent(llm):
 
 
 def test_agent_forces_lookup_and_renders_structured_citations():
+    """Force retrieval before rendering a validated structured citation."""
     agent = build_agent(StructuredSleepLLM())
     result = agent.chat("I want sleep tips")
 
@@ -155,6 +161,7 @@ def test_agent_forces_lookup_and_renders_structured_citations():
 
 
 def test_structured_answer_recovers_after_validation_feedback():
+    """Retry a malformed submission and recover after validation feedback."""
     llm = StructuredSleepLLM(malformed_final=True, recover_after_error=True)
     result = build_agent(llm).chat("I want sleep tips")
 
@@ -164,6 +171,7 @@ def test_structured_answer_recovers_after_validation_feedback():
 
 
 def test_malformed_structured_answer_fails_closed_and_memory_stays_clean():
+    """Withhold an invalid answer without retaining internal tool messages."""
     agent = build_agent(StructuredSleepLLM(malformed_final=True))
     result = agent.chat("I want sleep tips")
 
@@ -181,9 +189,11 @@ class PartialEvidenceLLM:
     backend_name = "test"
 
     def __init__(self):
+        """Initialize the partial-evidence model-call counter."""
         self.answer_calls = 0
 
     def chat(self, messages, tools=None, tool_choice=None):
+        """Simulate a KB gap followed by web completion and grounded submission."""
         tool_names = [tool["function"]["name"] for tool in tools or []]
         if tool_names == ["route_turn"]:
             return LLMResponse(
@@ -285,6 +295,7 @@ class PartialEvidenceTools(SleepTools):
     )
 
     def execute(self, call, *, user_query=None):
+        """Return distinct KB or web citations for partial-evidence tests."""
         if call.name == "search_web":
             return ToolResult(
                 tool_call_id=call.id,
@@ -302,6 +313,7 @@ class PartialEvidenceTools(SleepTools):
 
 
 def test_agent_completes_partial_kb_evidence_with_cited_web_source():
+    """Complete a material KB gap with an explicitly cited web source."""
     agent = WellnessAgent(
         llm=PartialEvidenceLLM(),
         tools=PartialEvidenceTools(),
@@ -324,9 +336,11 @@ class NoEvidenceLLM:
     backend_name = "test"
 
     def __init__(self):
+        """Initialize the no-evidence model-call counter."""
         self.answer_calls = 0
 
     def chat(self, messages, tools=None, tool_choice=None):
+        """Simulate empty KB and web searches followed by a limitation."""
         tool_names = [tool["function"]["name"] for tool in tools or []]
         if tool_names == ["route_turn"]:
             return LLMResponse(
@@ -383,6 +397,7 @@ class NoEvidenceLLM:
 
 class NoEvidenceTools(SleepTools):
     def execute(self, call, *, user_query=None):
+        """Return an empty result for every evidence tool call."""
         return ToolResult(
             tool_call_id=call.id,
             name=call.name,
@@ -392,6 +407,7 @@ class NoEvidenceTools(SleepTools):
 
 
 def test_agent_returns_a_structured_limitation_when_all_sources_are_empty():
+    """Return a citation-free limitation when every source is empty."""
     agent = WellnessAgent(
         llm=NoEvidenceLLM(),
         tools=NoEvidenceTools(),

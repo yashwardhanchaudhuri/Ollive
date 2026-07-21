@@ -25,6 +25,8 @@ class LocalRetriever(RetrieverPort):
     ) -> "LocalRetriever":
         """Load the index, rebuilding it only when explicitly requested."""
         indexer = MarkdownParagraphIndexer(kb_dir, index_dir, embedder)
+        # Index files are derived caches. Rebuild only on explicit request or first
+        # use so ordinary agent construction does not repeatedly embed the corpus.
         if rebuild or not (index_dir / "faiss.index").exists():
             indexer.persist()
         else:

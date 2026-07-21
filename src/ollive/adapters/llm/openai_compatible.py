@@ -75,6 +75,8 @@ class OpenAICompatibleLLM(LLMPort):
             "model": self._model,
             "messages": messages_to_openai(messages),
         }
+            # OpenAI and vLLM expose different token-limit field names even though
+            # both use the same chat-completions shape.
         if self._temperature is not None:
             payload["temperature"] = self._temperature
         if self._provider == "openai":
@@ -101,6 +103,8 @@ class OpenAICompatibleLLM(LLMPort):
         if choice.tool_calls:
             for tc in choice.tool_calls:
                 try:
+                    # Preserve malformed arguments for downstream validation rather
+                    # than dropping the call or guessing a repaired object.
                     args = json.loads(tc.function.arguments or "{}")
                 except json.JSONDecodeError:
                     args = {"_raw": tc.function.arguments}

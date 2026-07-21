@@ -6,4 +6,4 @@ dependencies:
   - pip
   - ffmpeg
   - pip:
-      - -r requirements-dev.txt
+      - -r requirements.txt

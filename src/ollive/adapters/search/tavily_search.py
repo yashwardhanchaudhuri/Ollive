@@ -51,6 +51,8 @@ class TavilyWebSearch(WebSearchPort):
         )
         results = []
         for item in resp.get("results", []):
+        # Recheck provider output locally: include_domains is a request hint, not a
+        # sufficient defense against deceptive subdomains or malformed URLs.
             url = item.get("url", "")
             score = item.get("score")
             if not self._is_trusted_url(url):

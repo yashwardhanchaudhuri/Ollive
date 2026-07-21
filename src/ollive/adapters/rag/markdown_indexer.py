@@ -97,7 +97,13 @@ class MarkdownParagraphIndexer:
 
     def build(self) -> list[Chunk]:
         """Build paragraph chunks from the configured Markdown knowledge base."""
-        md_files = sorted(self.kb_dir.glob("*.md"))
+        # README documents the corpus for contributors; it is not wellness
+        # evidence and must never become a retrievable doc_type.
+        md_files = sorted(
+            path
+            for path in self.kb_dir.glob("*.md")
+            if path.name.casefold() != "readme.md"
+        )
         chunks: list[Chunk] = []
         descriptor_counts: dict[str, int] = {}
 

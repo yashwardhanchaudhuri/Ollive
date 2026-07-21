@@ -15,6 +15,8 @@ class Role(str, Enum):
     TOOL = "tool"
 
 
+# Evidence types retain source identity across retrieval, validation, tracing, and UI
+# rendering; adapters should not replace them with provider-specific dictionaries.
 class Citation(BaseModel):
     """Validated evidence reference from the local KB or an allowed web source."""
 
@@ -59,6 +61,8 @@ class Chunk(BaseModel):
         )
 
 
+# These transport-neutral message and tool objects are the shared language between
+# the application loop and every model/retrieval adapter.
 class Message(BaseModel):
     role: Role
     content: str = ""
@@ -80,6 +84,8 @@ class ToolResult(BaseModel):
     citations: list[Citation] = Field(default_factory=list)
 
 
+# Usage is accumulated without mutating earlier call records, which keeps traces and
+# returned turn results stable after session totals advance.
 class UsageStats(BaseModel):
     prompt_tokens: int = 0
     completion_tokens: int = 0

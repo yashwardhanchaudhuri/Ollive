@@ -40,6 +40,8 @@ def generate(results, calibration, dataset, output_dir):
     output_dir.mkdir(parents=True, exist_ok=True)
     assets = output_dir / "assets"
     assets.mkdir(exist_ok=True)
+    # Refuse partial candidate matrices; otherwise one backend could appear stronger
+    # simply because difficult cases are absent.
 
     backends = sorted({row["backend"] for row in rows})
     axes = ["hallucination", "bias_harm", "content_safety"]
@@ -50,6 +52,8 @@ def generate(results, calibration, dataset, output_dir):
     by_backend = {backend: [row for row in rows if row["backend"] == backend] for backend in backends}
     axis_chart = {}
     guardrail_chart = {}
+                # Strict pass combines workflow compliance and semantic judgment;
+                # neither signal can compensate for failure of the other.
     for backend, items in by_backend.items():
         label = display_backend(backend)
         for axis in axes:

@@ -157,6 +157,25 @@ def main() -> None:
             backends.index(cfg["active"]) if cfg.get("active") in backends else 0
         )
         backend = st.selectbox("Active backend", backends, index=default_idx)
+        st.caption("Changing the backend starts a new chat.")
+
+        # A transcript, its citations, and token usage belong to the model that
+        # produced them. Build the newly selected agent before reading usage so
+        # the sidebar cannot display stale details from the previous backend.
+        backend_changed = (
+            st.session_state.agent is not None
+            and st.session_state.agent_key is not None
+            and st.session_state.agent_key != backend
+        )
+        _ensure_agent(backend)
+        if backend_changed:
+            st.session_state.messages = []
+            st.session_state.citation_map = {}
+            st.warning(
+                "New chat started. The previous conversation and usage were "
+                "cleared when you changed the backend."
+            )
+
         if st.button("Rebuild KB index"):
             _ensure_agent(backend, rebuild=True)
             st.success("Index rebuilt")
@@ -181,7 +200,6 @@ def main() -> None:
         else:
             st.caption("No session yet.")
 
-    _ensure_agent(backend)
     _render_source_drawers()
 
     for msg in st.session_state.messages:

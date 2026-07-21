@@ -12,11 +12,13 @@ KB = ROOT / "assignment_kb"
 
 
 def test_doc_type_from_filename():
+    """Derive normalized document types from numbered KB filenames."""
     assert doc_type_from_filename(Path("01_Diet.md")) == "diet"
     assert doc_type_from_filename(Path("08_Natural_Supplements.md")) == "natural_supplements"
 
 
 def test_split_paragraphs_diet():
+    """Split evidence paragraphs while preserving their source line bounds."""
     text = (KB / "01_Diet.md").read_text(encoding="utf-8")
     paras = split_paragraphs(text)
     assert len(paras) >= 5
@@ -26,6 +28,7 @@ def test_split_paragraphs_diet():
 
 
 def test_build_chunks_without_embeddings(tmp_path):
+    """Build unique citation-aware chunks without loading an embedding model."""
     indexer = MarkdownParagraphIndexer(KB, tmp_path, embedder_name="unused")
     chunks = indexer.build()
     assert len(chunks) > 20
@@ -35,3 +38,4 @@ def test_build_chunks_without_embeddings(tmp_path):
     # Descriptors unique per doc_type+descriptor
     keys = [(c.doc_type, c.descriptor) for c in chunks]
     assert len(keys) == len(set(keys))
+    assert "readme" not in types

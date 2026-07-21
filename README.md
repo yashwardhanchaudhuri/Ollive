@@ -102,7 +102,7 @@ conda activate ollive
 ```
 
 The two services remain separate processes, but they share one dependency
-environment. `requirements-dev.txt` adds tests to the full local runtime.
+environment. `requirements.txt` includes runtime and test dependencies together.
 Traces land in `data/traces/*.jsonl`.
 
 ## Configuration

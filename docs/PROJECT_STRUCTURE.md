@@ -14,7 +14,9 @@ the agent; and the UI only presents results.
 
 This arrangement keeps model choice separate from safety and grounding behavior.
 The tree below describes the complete source-controlled layout. Generated files
-appear only as runtime placeholders.
+appear only as runtime placeholders. Every project folder also contains a local
+`README.md` explaining its role, immediate files, and relationship to this map;
+repeated folder guides are omitted from the tree for readability.
 
 ```text
 Ollive/
@@ -26,7 +28,6 @@ Ollive/
 ├── environment.yml              # Conda application/development environment
 ├── pyproject.toml               # Python package metadata
 ├── requirements.txt             # Unified local runtime, including vLLM
-├── requirements-dev.txt         # Unified runtime plus test dependencies
 ├── requirements.md              # Dependency rationale
 │
 ├── assignment_kb/               # Curated source documents used by local evidence retrieval
@@ -161,6 +162,14 @@ Ollive/
 
 The important insight is ownership: behavioral changes rarely belong to one file.
 This map keeps prompts, code, tests, and reports from drifting apart.
+
+## Folder-level guides
+
+Use this document to understand the architecture across folders, then use the
+nearest `README.md` while working inside a folder. Local guides name every
+immediate source file and explain why the folder exists. Documentation tests
+enforce guide coverage and file-map synchronization, while the KB indexer
+explicitly excludes `assignment_kb/README.md` from retrievable evidence.
 
 ## Runtime boundaries
 

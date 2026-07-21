@@ -6,6 +6,8 @@ from ollive.evaluation.models import EvalCase
 
 def grade_structure(case: EvalCase, result: object) -> dict[str, object]:
     """Grade route, tool, citation, and refusal invariants for one evaluation record."""
+    # This grader inspects observable workflow invariants only. Whether prose is
+    # truthful, biased, or appropriately refusing remains a semantic-judge task.
     tool_trace = getattr(result, "tool_trace", [])
     citations = getattr(result, "citations", [])
     invalid = getattr(result, "invalid_citations", [])
@@ -20,6 +22,8 @@ def grade_structure(case: EvalCase, result: object) -> dict[str, object]:
         (case.citation_policy == "required" and has_citations)
         or (case.citation_policy == "forbidden" and not has_citations)
     )
+        # The trace stores the application-bound query, making verbatim fidelity
+        # independently checkable instead of relying on the model's claim.
     lookup_queries = [
         call.get("arguments", {}).get("query")
         for call in tool_trace if call.get("name") == "lookup_kb"

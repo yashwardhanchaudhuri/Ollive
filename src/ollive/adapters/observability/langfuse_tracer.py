@@ -144,6 +144,8 @@ class LangfuseTracer(TracerPort):
 
 def build_tracer(enabled: bool = True) -> TracerPort:
     """Construct Langfuse tracing or a no-op fallback from credentials."""
+    # Missing credentials or SDK startup failure must not make the assistant
+    # unavailable; observability remains optional infrastructure.
     if not enabled:
         return NoOpTracer()
     flag = os.getenv("LANGFUSE_ENABLED", "true").lower()

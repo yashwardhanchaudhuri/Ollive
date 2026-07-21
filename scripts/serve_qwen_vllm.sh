@@ -3,10 +3,13 @@
 set -euo pipefail
 
 MODEL="${OLLIVE_OSS_MODEL:-Qwen/Qwen3.5-9B}"
+# Loopback is the safe default; network exposure requires an explicit override.
 PORT="${OLLIVE_VLLM_PORT:-8000}"
 HOST="${OLLIVE_VLLM_HOST:-127.0.0.1}"
 MAX_LEN="${OLLIVE_VLLM_MAX_LEN:-32768}"
 TP="${OLLIVE_VLLM_TP:-1}"
+# Disable FlashInfer sampling by default because the supported GPU/runtime is more
+# reliable with vLLM's standard sampler.
 export VLLM_USE_FLASHINFER_SAMPLER="${OLLIVE_VLLM_USE_FLASHINFER_SAMPLER:-0}"
 
 if ! command -v vllm >/dev/null 2>&1; then

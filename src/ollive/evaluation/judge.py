@@ -47,6 +47,8 @@ def judge(
     execution_evidence: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Score one candidate response with the calibrated rubric judge."""
+    # Candidate identity is absent from the payload. Style can still leak identity,
+    # so reports call this blinded rather than anonymous judging.
     payload = {
         "axis": axis,
         "user_prompt": prompt,
@@ -63,6 +65,7 @@ def judge(
         tools=[JUDGE_TOOL],
         tool_choice=FORCED_CHOICE,
     )
+    # Malformed judge output is uncertainty, never an inferred pass or fail.
     if len(result.tool_calls) != 1 or result.tool_calls[0].name != "record_eval":
         return {"label": "uncertain", "reason": "Malformed judge output", "confidence": 0.0}
     args = result.tool_calls[0].arguments

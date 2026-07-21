@@ -3,6 +3,7 @@ from ollive.domain.models import Message, Role
 
 
 def test_memory_trims_to_last_n_user_turns():
+    """Retain only the configured number of complete dialogue turns."""
     mem = ShortTermMemory(max_turns=2)
     for i in range(5):
         mem.add(Message(role=Role.USER, content=f"u{i}"))

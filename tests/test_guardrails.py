@@ -16,12 +16,14 @@ class RoutingLLM:
         omit_grounding: bool = False,
         wrong_tool: bool = False,
     ):
+        """Store the router payload returned by the deterministic LLM stub."""
         self.kind = kind
         self.grounding = kind == "wellness" if grounding is None else grounding
         self.omit_grounding = omit_grounding
         self.wrong_tool = wrong_tool
 
     def chat(self, messages, tools=None, tool_choice=None):
+        """Return the configured semantic-routing response without network I/O."""
         calls = []
         if self.kind is not None:
             arguments = {"kind": self.kind}
@@ -51,6 +53,7 @@ class RoutingLLM:
     ],
 )
 def test_semantic_router_accepts_only_declared_enum(kind, allow_tools):
+    """Accept only declared route kinds and their matching tool policies."""
     policy, usage = classify_turn(RoutingLLM(kind.value), "arbitrary phrasing")
     assert policy.kind == kind
     assert policy.allow_tools is allow_tools
@@ -59,6 +62,7 @@ def test_semantic_router_accepts_only_declared_enum(kind, allow_tools):
 
 
 def test_wellness_boundary_disables_tools_without_changing_domain():
+    """Keep a wellness route while honoring a boundary that disables tools."""
     policy, _usage = classify_turn(
         RoutingLLM("wellness", grounding=False), "refuse a fabrication request"
     )
@@ -79,6 +83,7 @@ def test_wellness_boundary_disables_tools_without_changing_domain():
     ],
 )
 def test_malformed_router_output_fails_closed(router):
+    """Fall back to the safest route when router output is malformed."""
     policy, _usage = classify_turn(router, "anything")
     assert policy.kind == TurnKind.OUT_OF_SCOPE
     assert not policy.allow_tools

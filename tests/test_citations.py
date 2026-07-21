@@ -7,10 +7,12 @@ from ollive.domain.models import Citation, ToolCallRequest
 
 
 def test_slugify_descriptor():
+    """Create stable citation descriptors from evidence text."""
     assert slugify_descriptor("Portion control plays a critical role") == "portion-control-plays-a-critical"
 
 
 def test_parse_citations():
+    """Parse single-line and bounded-line citation markers."""
     text = "Eat mindfully [diet:L9:portion-control-satiety] and move [exercise:L7-L8:cardio-strength]."
     cites = parse_citations(text)
     assert len(cites) == 2
@@ -22,6 +24,7 @@ def test_parse_citations():
 
 
 def test_validate_citations():
+    """Separate retrieved markers from unsupported citation claims."""
     allowed = [
         Citation(doc_type="diet", line=9, descriptor="portion-control-satiety", text="..."),
     ]
@@ -33,9 +36,11 @@ def test_validate_citations():
 
 class FakeTavilyClient:
     def __init__(self):
+        """Initialize the fake client with no recorded search call."""
         self.call = None
 
     def search(self, **kwargs):
+        """Record search bounds and return trusted, deceptive, and weak results."""
         self.call = kwargs
         return {
             "results": [
@@ -63,11 +68,13 @@ class FakeTavilyClient:
 
 class RetrieverStub:
     def list_doc_types(self):
+        """Return the single document type exposed by the retriever stub."""
         return ["daily_habits"]
 
 
 class WebStub:
     def search(self, query, max_results=5):
+        """Return one deterministic URL-backed web result."""
         return [
             {
                 "title": "CDC sleep guidance",
@@ -80,6 +87,7 @@ class WebStub:
 
 
 def test_tavily_search_enforces_domains_and_relevance_locally():
+    """Filter deceptive domains and low-scoring Tavily results locally."""
     client = FakeTavilyClient()
     search = TavilyWebSearch(
         api_key="test",
@@ -96,6 +104,7 @@ def test_tavily_search_enforces_domains_and_relevance_locally():
 
 
 def test_web_tool_returns_url_backed_citations():
+    """Preserve a trusted web result as a URL-backed citation."""
     router = ToolRouter(
         RetrieverStub(),
         WebStub(),

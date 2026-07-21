@@ -21,6 +21,8 @@ def generate_comparison(baseline, candidate, output_dir):
     after_ids = [r["case"]["id"] for r in after]
     if before_ids != after_ids:
         raise ValueError("Runs must contain the same ordered case IDs")
+    # Ordered identity is the control: comparing different case sets would confound
+    # prompt movement with dataset composition.
     output_dir.mkdir(parents=True, exist_ok=True)
     assets = output_dir / "assets"
     assets.mkdir(exist_ok=True)

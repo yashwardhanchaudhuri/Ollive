@@ -20,9 +20,8 @@ At the end of the local OSS path:
 
 | Goal | Installation | Model download |
 |---|---|---:|
-| Local Qwen | `requirements-dev.txt` or `environment.yml` | Qwen and embedding model |
+| Unified local setup | `requirements.txt` or `environment.yml` | Qwen and embedding model |
 | Frontier only | `pip install -e ".[dev]"` | Embedding model |
-| Local runtime without tests | `requirements.txt` | Qwen and embedding model |
 
 The unified local environment is simpler to operate. Its trade-off is that vLLM
 and its CUDA/PyTorch constraints now participate in the same dependency resolution.
@@ -59,12 +58,6 @@ source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 python -m pip install -e . --no-deps
-```
-
-For tests and development tools, use:
-
-```bash
-python -m pip install -r requirements-dev.txt
 ```
 
 For a frontier-only environment without vLLM:

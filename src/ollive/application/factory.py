@@ -24,6 +24,8 @@ def build_llm(cfg: dict[str, Any], backend_name: str | None = None) -> LLMPort:
     provider = backend["provider"]
 
     if provider == "local":
+        # Defer the heavyweight Transformers import so API deployments do not
+        # load the in-process model stack.
         from ollive.adapters.llm.local_transformers import LocalTransformersLLM
 
         return LocalTransformersLLM(
@@ -92,6 +94,8 @@ def build_agent(
     retriever = build_retriever(cfg, rebuild=rebuild_index)
     indexed_doc_types = retriever.list_doc_types()
     configured_doc_types = list(cfg["rag"].get("doc_types", indexed_doc_types))
+    # Require configuration and the physical index to agree so every offered
+    # filter resolves and no corpus category is hidden.
     if set(configured_doc_types) != set(indexed_doc_types):
         raise ValueError(
             "rag.doc_types must exactly match indexed doc types; "
@@ -108,6 +112,8 @@ def build_agent(
     tracer: TracerPort = build_tracer_from_config(obs)
     agent_cfg = cfg.get("agent", {})
     system_prompt = agent_cfg.get("system_prompt", "You are a wellness assistant.")
+    # Guide model choice in prose while ToolRouter independently enforces the same
+    # live enum as a hard validation boundary.
     system_prompt += (
         "\n\nlookup_kb doc_types are a closed enum. Select only from these exact "
         f"values: {', '.join(configured_doc_types)}. Never construct or guess a "

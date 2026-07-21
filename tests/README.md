@@ -1,0 +1,21 @@
+# Test suite
+
+## At a glance
+
+Tests exercise behavior at architectural seams with deterministic substitutes,
+so most safety and grounding regressions require no live model or network.
+
+| File | Responsibility |
+|---|---|
+| `test_agent_grounding.py` | Covers tool loops, partial evidence, web completion, failure closure, and memory rollback. |
+| `test_citations.py` | Covers marker parsing/validation and bounded Tavily results. |
+| `test_documentation.py` | Enforces reader orientation, link integrity, docstrings, and folder-guide coverage. |
+| `test_evaluation.py` | Covers dataset shape, balance, strict loading, and structural grading. |
+| `test_grounded_answer.py` | Covers answer-schema bounds and claim-to-citation validation. |
+| `test_guardrails.py` | Covers semantic route enums, boundaries, and malformed-output closure. |
+| `test_indexer.py` | Covers filename types, paragraph chunks, corpus indexing, and README exclusion. |
+| `test_memory.py` | Covers bounded dialogue retention. |
+| `README.md` | Explains test responsibilities. |
+
+Run `python -m pytest -q` from the repository root. Live service checks are
+operational verification and do not replace these deterministic tests.

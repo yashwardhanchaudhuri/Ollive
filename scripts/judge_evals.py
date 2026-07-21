@@ -12,10 +12,12 @@ from ollive.evaluation.judge import calibration_metrics, judge
 
 
 def load_jsonl(path):
+    """Load non-empty UTF-8 JSONL records from a path."""
     return [json.loads(line) for line in path.open(encoding="utf-8") if line.strip()]
 
 
 def main():
+    """Calibrate the configured judge and optionally grade a candidate run."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--input", type=Path)
     parser.add_argument("--output", type=Path, required=True)

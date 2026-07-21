@@ -11,6 +11,7 @@ from ollive.domain.models import Citation
 
 @pytest.fixture
 def citations():
+    """Provide two retrieved citations for schema and rendering tests."""
     return [
         Citation(
             doc_type="daily_habits",
@@ -28,6 +29,7 @@ def citations():
 
 
 def test_schema_constrains_citations_to_retrieved_markers(citations):
+    """Limit structured-answer citations to markers returned by retrieval."""
     schema = build_grounded_answer_schema(citations)
     marker_enum = schema["function"]["parameters"]["properties"]["items"]["items"][
         "properties"
@@ -38,6 +40,7 @@ def test_schema_constrains_citations_to_retrieved_markers(citations):
 
 
 def test_renderer_adds_exact_markers(citations):
+    """Render only the exact marker selected for each supported claim."""
     text, used = parse_and_render_grounded_answer(
         {
             "items": [
@@ -63,6 +66,7 @@ def test_renderer_adds_exact_markers(citations):
 
 
 def test_limitations_only_are_allowed_without_fabricated_citations(citations):
+    """Allow evidence limitations without manufacturing a supporting marker."""
     text, used = parse_and_render_grounded_answer(
         {
             "items": [
@@ -129,11 +133,13 @@ def test_limitations_only_are_allowed_without_fabricated_citations(citations):
     ],
 )
 def test_renderer_rejects_invalid_shapes_and_markers(citations, arguments):
+    """Reject malformed item shapes and citations outside retrieved bounds."""
     with pytest.raises(GroundedAnswerError):
         parse_and_render_grounded_answer(arguments, citations)
 
 
 def test_schema_allows_limitation_when_no_source_is_found():
+    """Permit a bounded limitation response when retrieval returns no source."""
     schema = build_grounded_answer_schema([])
     marker_enum = schema["function"]["parameters"]["properties"]["items"][
         "items"

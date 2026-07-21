@@ -103,6 +103,7 @@ class WellnessAgent:
             if message.role in {Role.USER, Role.ASSISTANT} and not message.tool_calls
         ]
         self._memory.restore(memory_checkpoint)
+        # Routing is separate so answer generation cannot choose its own safety boundary.
         policy, routing_usage = classify_turn(self._llm, user_text, memory_checkpoint)
         user_message = Message(role=Role.USER, content=user_text)
         self._memory.add(user_message)
@@ -128,6 +129,8 @@ class WellnessAgent:
             finalization_attempted = False
             web_completion_required = False
 
+            # Narrow tools according to completed evidence work so the model cannot
+            # skip required retrieval or return free text afterward.
             for _round in range(self._max_tool_rounds):
                 schemas = None
                 tool_choice = None
@@ -209,6 +212,8 @@ class WellnessAgent:
                     metadata={"latency_ms": response.usage.latency_ms},
                 )
 
+                # Final answers use a constrained tool call so the application can
+                # validate a typed object instead of trusting generated prose.
                 if any(call.name == SUBMIT_GROUNDED_ANSWER for call in response.tool_calls):
                     if (
                         len(response.tool_calls) != 1
@@ -358,6 +363,8 @@ class WellnessAgent:
                     turn_usage = turn_usage.add(response.usage)
                     assistant_text = response.content
 
+            # Validate markers again after rendering to catch non-grounded output
+            # and any drift between model, adapter, and application contracts.
             claimed = parse_citations(assistant_text)
             valid, invalid = validate_citations(claimed, turn_citations)
             missing_required_citations = (

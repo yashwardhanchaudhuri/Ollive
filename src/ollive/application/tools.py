@@ -114,6 +114,8 @@ class ToolRouter:
     @property
     def schemas(self) -> list[dict[str, Any]]:
         """Return tool schemas constrained by the live document-type enum."""
+        # Copy because this enum belongs to one retriever instance; mutating the
+        # module template would leak one agent's corpus into another session.
         schemas = deepcopy(TOOL_SCHEMAS)
         doc_types = schemas[0]["function"]["parameters"]["properties"]["doc_types"]
         doc_types["items"]["enum"] = self._allowed_doc_types
@@ -132,6 +134,8 @@ class ToolRouter:
         try:
             if call.name == "lookup_kb":
                 arguments = dict(call.arguments)
+                # Bind retrieval to the current user message; fallback_query exists
+                # only for direct callers that omit user_query.
                 fallback_query = arguments.pop("query", None)
                 arguments["query"] = user_query or fallback_query
                 return self._lookup_kb(
@@ -159,6 +163,8 @@ class ToolRouter:
         """Search allowed knowledge documents and return citation-bearing passages."""
         available = set(self._retriever.list_doc_types())
         unknown = sorted(set(args.doc_types or []) - available)
+        # Returning the live enum lets the next model round recover without
+        # inventing another category or calling a discovery tool.
         if unknown:
             return self._error(
                 call,
@@ -194,6 +200,8 @@ class ToolRouter:
     def _search_web(self, call: ToolCallRequest, args: SearchWebArguments) -> ToolResult:
         """Convert accepted authoritative web results into URL-backed citations."""
         results = self._web_search.search(args.query, max_results=args.max_results or 5)
+        # URL hashes provide stable local markers while the original URL remains
+        # attached for provenance and UI navigation.
         citations = [
             Citation(
                 doc_type="web",

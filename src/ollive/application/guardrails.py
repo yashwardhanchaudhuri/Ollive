@@ -26,6 +26,8 @@ class TurnPolicy:
     require_tools: bool = False
 
 
+# Policies are immutable capabilities: routing may select one, but it cannot
+# rewrite instructions or grant additional tools.
 CONVERSATION_POLICY = TurnPolicy(
     kind=TurnKind.CONVERSATION,
     allow_tools=False,
@@ -209,6 +211,8 @@ def classify_turn(
     history: list[Message] | None = None,
 ) -> tuple[TurnPolicy, UsageStats]:
     """Use constrained semantic classification; malformed output fails closed."""
+    # Semantic routing handles indirect intent that keyword or regex gates miss;
+    # a forced schema keeps that flexible decision inside a fixed enum.
     response = llm.chat(
         [
             Message(role=Role.SYSTEM, content=ROUTER_PROMPT),
@@ -226,6 +230,8 @@ def classify_turn(
     if call.name != "route_turn":
         return OUT_OF_SCOPE_POLICY, response.usage
 
+    # Validate exact shape and primitive types before conversion. Ambiguity chooses
+    # the no-tool fallback rather than guessing what the model meant.
     arguments = call.arguments
     if set(arguments) != {"kind", "needs_grounding"}:
         return OUT_OF_SCOPE_POLICY, response.usage

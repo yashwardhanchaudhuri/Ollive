@@ -14,6 +14,7 @@ from ollive.application.factory import build_retriever
 
 
 def main() -> None:
+    """Rebuild the configured KB index and print its available document types."""
     cfg = load_config()
     retriever = build_retriever(cfg, rebuild=True)
     types = retriever.list_doc_types()

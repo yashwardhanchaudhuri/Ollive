@@ -18,7 +18,7 @@ than competing narratives.
 
 ## Layout
 
-- REPORT.md — authoritative overall report
+- `REPORT.md` — authoritative overall report
 - datasets/ — versioned source cases
 - runs/ — raw records, manifests, and calibration output
 - reports/ — run-specific reports, summaries, and SVG graphics

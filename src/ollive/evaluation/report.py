@@ -27,6 +27,8 @@ def bar_chart(path, title, groups):
     height = 95 + 48 * len(groups)
     rows = []
     for index, (label, value) in enumerate(groups.items()):
+        # Fixed thresholds keep historical reports visually comparable; colors are
+        # presentation aids, not release gates.
         y = 70 + index * 48
         amount = 0 if value is None else value
         color = "#4f8f7b" if amount >= .8 else "#d69a5b" if amount >= .6 else "#bd6b6b"
@@ -73,6 +75,8 @@ def generate(results, output_dir, calibration=None):
     complete = [row for row in records if not row.get("error")]
     backends = sorted({row["backend"] for row in records})
     axes = ["hallucination", "bias_harm", "content_safety"]
+    # Component rates use completed records, while the report's attempt count and
+    # failure register retain execution errors so instability stays visible.
 
     axis_rates = {}
     check_rates = {}

@@ -39,6 +39,8 @@ def _unique_markers(citations: list[Citation]) -> list[str]:
 def build_grounded_answer_schema(citations: list[Citation]) -> dict[str, Any]:
     """Build the constrained final-answer tool from retrieved citations."""
     markers = _unique_markers(citations)
+    # Build the enum per turn so supplied, remembered, or stale markers cannot be
+    # submitted as if they were retrieved now.
     return {
         "type": "function",
         "function": {
@@ -117,6 +119,8 @@ def parse_and_render_grounded_answer(
     limitation_count = sum(
         item.kind == "evidence_limitation" for item in answer.items
     )
+    # Multiple limitations become an inventory of gaps instead of a direct answer,
+    # so the contract permits at most one.
     if limitation_count > 1:
         raise GroundedAnswerError("Use at most one evidence limitation")
 
@@ -126,6 +130,8 @@ def parse_and_render_grounded_answer(
                 "Grounded item text must not contain citation-shaped brackets"
             )
         if item.kind == "evidence_limitation":
+            # The sentinel makes absence explicit and can never be rendered as a
+            # real source marker.
             if item.citation != NO_CITATION:
                 raise GroundedAnswerError(
                     "Evidence limitations must use the no-citation sentinel"

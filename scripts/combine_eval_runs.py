@@ -8,6 +8,7 @@ from pathlib import Path
 
 
 def main():
+    """Validate compatible case order and combine evaluation run records."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--inputs", type=Path, nargs="+", required=True)
     parser.add_argument("--output", type=Path, required=True)

@@ -22,6 +22,7 @@ LOCAL_LINK_RE = re.compile(r"!?\[[^\]]*\]\(([^)#]+)(?:#[^)]+)?\)")
 
 
 def test_foundational_docs_expose_reader_orientation():
+    """Require foundational documents to expose their purpose and reading path."""
     for relative, phrases in FOUNDATIONAL_DOCS.items():
         text = (ROOT / relative).read_text(encoding="utf-8")
         for phrase in phrases:
@@ -29,6 +30,7 @@ def test_foundational_docs_expose_reader_orientation():
 
 
 def test_run_reports_explain_objective_variation_and_scope():
+    """Require run reports to interpret objectives, variation, and scope."""
     for path in (ROOT / "evaluation/reports").glob("*/report.md"):
         text = path.read_text(encoding="utf-8")
         assert "Objective" in text
@@ -37,7 +39,11 @@ def test_run_reports_explain_objective_variation_and_scope():
 
 
 def test_knowledge_documents_open_with_scope_without_shifting_content():
-    for path in sorted((ROOT / "assignment_kb").glob("*.md")):
+    """Preserve corpus scope metadata and the first evidence paragraph."""
+    for path in sorted(
+        path for path in (ROOT / "assignment_kb").glob("*.md")
+        if path.name.casefold() != "readme.md"
+    ):
         lines = path.read_text(encoding="utf-8").splitlines()
         assert len(lines) >= 5
         assert lines[2].startswith("*Scope:")
@@ -45,6 +51,7 @@ def test_knowledge_documents_open_with_scope_without_shifting_content():
 
 
 def test_markdown_local_links_resolve():
+    """Ensure every repository-local Markdown link resolves to an artifact."""
     missing = []
     for path in ROOT.rglob("*.md"):
         if ".git" in path.parts or ".pytest_cache" in path.parts:
@@ -58,30 +65,100 @@ def test_markdown_local_links_resolve():
 
 
 def test_local_setup_uses_one_requirements_path():
+    """Keep local installation on one unified requirements file."""
     requirements = (ROOT / "requirements.txt").read_text(encoding="utf-8")
     assert "vllm==0.25.0" in requirements
+    assert "pytest>=9.1,<10" in requirements
     assert not (ROOT / "requirements-vllm.txt").exists()
+    assert not (ROOT / "requirements-dev.txt").exists()
 
-    for relative in ("README.md", "docs/INSTALL.md", "requirements.md"):
+    for relative in (
+        "README.md",
+        "docs/INSTALL.md",
+        "requirements.md",
+        "environment.yml",
+    ):
         text = (ROOT / relative).read_text(encoding="utf-8")
         assert "requirements-vllm" not in text
+        assert "requirements-dev" not in text
 
 
 def test_source_functions_explain_their_contract():
+    """Require every project Python function to provide a contract docstring."""
     missing = []
-    for path in (ROOT / "src" / "ollive").rglob("*.py"):
-        tree = ast.parse(path.read_text(encoding="utf-8"))
-        for node in ast.walk(tree):
-            if (
-                isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
-                and not ast.get_docstring(node)
-            ):
-                missing.append((str(path.relative_to(ROOT)), node.name, node.lineno))
+    for folder in ("src", "scripts", "tests"):
+        for path in (ROOT / folder).rglob("*.py"):
+            tree = ast.parse(path.read_text(encoding="utf-8"))
+            for node in ast.walk(tree):
+                if (
+                    isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+                    and not ast.get_docstring(node)
+                ):
+                    missing.append(
+                        (str(path.relative_to(ROOT)), node.name, node.lineno)
+                    )
     assert not missing
 
 
 def test_streamlit_state_contains_only_consumed_objects():
+    """Keep Streamlit session state limited to objects used by the UI."""
     text = (ROOT / "src/ollive/ui/streamlit_app.py").read_text(encoding="utf-8")
     assert "session_state.citations" not in text
     for key in ("messages", "citation_map", "agent_key", "agent"):
         assert f'session_state.setdefault("{key}"' in text
+
+
+def test_project_folders_have_orienting_readmes():
+    """Require a concise local guide at every source-controlled folder boundary."""
+    excluded_parts = {
+        ".git",
+        ".pytest_cache",
+        "__pycache__",
+        ".venv",
+        "venv",
+    }
+    directories = [ROOT]
+    directories.extend(path for path in ROOT.rglob("*") if path.is_dir())
+
+    missing = []
+    unoriented = []
+    for directory in directories:
+        relative = directory.relative_to(ROOT)
+        if any(
+            part in excluded_parts or part.endswith(".egg-info")
+            for part in relative.parts
+        ):
+            continue
+        guide = directory / "README.md"
+        if not guide.exists():
+            missing.append(str(relative or Path(".")))
+            continue
+        if "At a glance" not in guide.read_text(encoding="utf-8"):
+            unoriented.append(str(relative or Path(".")))
+
+    assert not missing, f"folders missing README.md: {missing}"
+    assert not unoriented, f"folder guides missing 'At a glance': {unoriented}"
+
+
+def test_folder_guides_name_immediate_source_files():
+    """Keep local file maps synchronized with the source files beside them."""
+    generated_dirs = {Path("data/indexes"), Path("data/traces")}
+    missing = []
+    for guide in ROOT.rglob("README.md"):
+        directory = guide.parent
+        if directory == ROOT or ".git" in directory.parts:
+            continue
+        if any(part in {".pytest_cache", "__pycache__"} for part in directory.parts):
+            continue
+        text = guide.read_text(encoding="utf-8")
+        for path in directory.iterdir():
+            if not path.is_file() or path.name == "README.md" or path.suffix == ".orig":
+                continue
+            if (
+                directory.relative_to(ROOT) in generated_dirs
+                and path.name != ".gitkeep"
+            ):
+                continue
+            if f"`{path.name}`" not in text:
+                missing.append((str(directory.relative_to(ROOT)), path.name))
+    assert not missing, f"folder guides omit files: {missing}"

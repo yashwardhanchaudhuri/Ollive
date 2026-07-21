@@ -21,12 +21,11 @@ See [docs/INSTALL.md](docs/INSTALL.md) for commands and checkpoints.
 
 | File | Purpose |
 |---|---|
-| `requirements.txt` | Complete local runtime: application, retrieval, vLLM, and integrations |
-| `requirements-dev.txt` | Full local runtime plus the test runner |
+| `requirements.txt` | Unified application, retrieval, vLLM, integration, and test dependencies |
 | `environment.yml` | One reproducible Python 3.11 Conda environment |
 | `pyproject.toml` | Base frontier-capable package plus optional `local` and `dev` extras |
 
-The requirements files optimize for the local Qwen path. The package metadata
+The requirements file optimizes for the local Qwen path. The package metadata
 keeps vLLM in the `local` extra so `pip install -e .` can still support a
 frontier-only machine.
 
@@ -83,7 +82,7 @@ for every NVIDIA driver and GPU combination.
 | vLLM | 0.25.0 |
 | PyTorch | 2.11.0+cu130 |
 | FFmpeg | 8.0.1 |
-| Application tests | 47 passing |
+| Application tests | 49 passing |
 
 The application regression suite remains the behavioral checkpoint after
 installation. GPU startup and a request through vLLM remain machine-specific
@@ -92,7 +91,7 @@ acceptance checks.
 ## Variations and trade-offs
 
 - Frontier-only operation can use `pip install -e ".[dev]"` and omit vLLM.
-- Local Qwen uses `requirements.txt` or `requirements-dev.txt` in one environment.
+- Local Qwen and development checks use the same `requirements.txt` environment.
 - Langfuse and Tavily are optional integrations; local tracing works without them.
 - CPU FAISS fits the current small corpus but is not a scale benchmark.
 - Separate containers can still be used for deployment isolation without changing

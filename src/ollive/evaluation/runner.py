@@ -40,6 +40,8 @@ def run(dataset: Path, output: Path, backends: list[str], repetitions: int, limi
         cases = cases[:limit]
     cfg = load_config()
     run_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") + "-" + uuid.uuid4().hex[:8]
+    # Persist model/config/prompt identity before execution so even an interrupted
+    # run retains enough provenance to interpret partial records.
     manifest = {
         "run_id": run_id,
         "created_at": datetime.now(timezone.utc).isoformat(),
@@ -78,6 +80,8 @@ def run(dataset: Path, output: Path, backends: list[str], repetitions: int, limi
                     print(f"[{completed}/{total}] {backend} r{repetition} {case.id}", flush=True)
                     started = time.perf_counter()
                     try:
+                        # Clear dialogue, citations, and usage so one case cannot
+                        # influence the next while immutable resources are reused.
                         agent.reset()
                         result = agent.chat(case.prompt)
                         record = EvalRecord(
@@ -96,6 +100,8 @@ def run(dataset: Path, output: Path, backends: list[str], repetitions: int, limi
                             structural_grades=grade_structure(case, result),
                         )
                     except Exception as exc:
+                        # Keep failures as records; dropping them would shrink the
+                        # denominator and reward an unstable backend.
                         record = EvalRecord(
                             run_id=run_id,
                             case=asdict(case),

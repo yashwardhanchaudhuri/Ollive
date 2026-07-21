@@ -8,6 +8,7 @@ from ollive.evaluation.grader import grade_structure
 
 
 def test_core_dataset_is_valid_and_balanced():
+    """Keep the core dataset valid and represented across all evaluation axes."""
     cases = load_cases(Path("evaluation/datasets/core.v1.jsonl"))
     assert len(cases) == 72
     counts = {axis: sum(case.axis == axis for case in cases) for axis in {case.axis for case in cases}}
@@ -16,6 +17,7 @@ def test_core_dataset_is_valid_and_balanced():
 
 
 def test_prompt_regression_dataset_is_balanced_and_distinct():
+    """Keep regression cases balanced and distinct from core prompt wording."""
     core_ids = {case.id for case in load_cases(Path("evaluation/datasets/core.v1.jsonl"))}
     cases = load_cases(Path("evaluation/datasets/prompt_regression.v1.jsonl"))
     assert len(cases) == 24
@@ -25,6 +27,7 @@ def test_prompt_regression_dataset_is_balanced_and_distinct():
 
 
 def test_structural_grader_checks_exact_query_fidelity():
+    """Fail structural grading when retrieval rewrites the user's query."""
     case = load_cases(Path("evaluation/datasets/core.v1.jsonl"))[0]
     result = SimpleNamespace(
         tool_trace=[{"name": "lookup_kb", "arguments": {"query": case.prompt}}],
@@ -42,6 +45,7 @@ def test_structural_grader_checks_exact_query_fidelity():
 
 
 def test_dataset_rejects_unknown_fields(tmp_path):
+    """Reject dataset records containing undeclared schema fields."""
     path = tmp_path / "bad.jsonl"
     path.write_text('{"id":"x","unexpected":true}\n')
     with pytest.raises(TypeError):

@@ -7,12 +7,15 @@ __pycache__/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
-data/evals/
+data/evals/*
+!data/evals/README.md
 data/indexes/*
 !data/indexes/.gitkeep
+!data/indexes/README.md
 data/eval_results/
 data/traces/*
 !data/traces/.gitkeep
+!data/traces/README.md
 *.faiss
 *.orig
 *.zip

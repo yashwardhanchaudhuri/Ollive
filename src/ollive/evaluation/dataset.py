@@ -16,6 +16,8 @@ def load_cases(path: Path) -> list[EvalCase]:
     """Load and validate evaluation cases from a JSONL dataset."""
     cases: list[EvalCase] = []
     seen: set[str] = set()
+    # Validate while loading so malformed or duplicate cases cannot silently alter
+    # coverage counts and downstream denominators.
     with path.open("r", encoding="utf-8") as handle:
         for line_number, raw in enumerate(handle, 1):
             if not raw.strip():

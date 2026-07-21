@@ -31,6 +31,8 @@ class LocalFileTracer(TracerPort):
         metadata: dict[str, Any] | None = None,
         session_id: str | None = None,
     ) -> Iterator[str]:
+        # Buffer the whole turn under one trace ID, then append it to the daily file
+        # in the finally block even when generation or a tool raises.
         """Open a trace scope for one agent turn."""
         self._trace_id = str(uuid.uuid4())
         self._session_id = session_id

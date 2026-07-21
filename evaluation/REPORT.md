@@ -1,34 +1,11 @@
 # Ollive Wellness Assistant Evaluation
 
-**Post-guardrail matched comparison - Qwen 3.5 9B vs GPT-5.4 mini**
+**A controlled comparison of Qwen 3.5 9B and GPT-5.4 mini after grounding and citation changes**
 
-*72 matched cases per assistant · 144 completed attempts · one generation per case · run 2026-07-21*
+*72 matched cases per assistant · 144 completed attempts · one generation per case · 21 July 2026*
 
 ::: {.decision-band}
-**30-second conclusion.** The shared revision produces a backend divergence: **Qwen passes 63/72 (87.5%)**, up **13.9 points** from the prior matched run, while **GPT-5.4 mini passes 51/72 (70.8%)**, down **15.3 points**. Both reach **100% citation integrity and KB-query fidelity**, with **zero execution errors and zero citation-withheld responses**. This is structural regression evidence, not semantic safety certification.
-:::
-
-::: {.metric-grid}
-::: {.metric-card}
-<span class="metric-value">87.5%</span>
-
-**Qwen - overall**
-:::
-::: {.metric-card}
-<span class="metric-value">+13.9 pp</span>
-
-**Qwen - vs prior**
-:::
-::: {.metric-card}
-<span class="metric-value">-15.3 pp</span>
-
-**Frontier - vs prior**
-:::
-::: {.metric-card}
-<span class="metric-value">0</span>
-
-**Withheld / errors**
-:::
+**30-second conclusion.** **Abstract.** We place Qwen 3.5 9B and GPT-5.4 mini inside the same wellness-assistant workflow; only the model backend changes. Both share the prompt, memory boundary, KB, tools, medical policy, answer contract, and citation verifier. A case passes only when route, tool policy, citation policy, marker integrity, and KB-query fidelity all pass. Qwen scores **63/72 (87.5%)**, up **13.9 points** from the prior run; frontier scores **51/72 (70.8%)**, down **15.3 points**. Both complete every case with **100% citation integrity and query fidelity**. These are workflow-compliance results, not factual or safety certification.
 :::
 
 ::: {.plot-grid}
@@ -36,47 +13,38 @@
 ![](reports/oss_frontier_best_effort_20260721/assets/axis_pass_rates_one_page.svg)
 :::
 ::: {.plot-card}
-![](reports/oss_frontier_best_effort_20260721/assets/efficiency_comparison.svg)
+![](reports/oss_frontier_best_effort_20260721/baseline_comparison/assets/before_after_axes.svg)
 :::
 :::
 
-::: {.paper-columns}
-## Objective, control, and dataset
+::: {.paper-grid}
+::: {.paper-column}
+## Study design and measure
 
-**Objective.** Compare backends under one shared architecture. Every case starts with fresh memory; raw responses, routes, tools, citations, usage, and errors are retained.
+Ollive routes ordinary conversation, grounded non-clinical wellness guidance, and medical requests with a fixed boundary. Wellness turns call `lookup_kb` first; one trusted-domain `search_web` call is available when requested or when local evidence is incomplete. Every factual claim selects a current-turn marker, then an isolated verifier checks the claim against its passage before display.
 
-**Dataset construction.** `scripts/build_eval_dataset.py` serializes **72 manually authored cases**—26 hallucination, 26 bias/harm, and 20 content safety; neither candidate generates prompts or labels. Cases fix route, tool/citation policy, severity, and forbidden behavior across grounding, unsupported precision, citation attacks, ten identity pairs, stereotypes, harmful requests, jailbreaks, and benign controls. Design is informed by [BBQ](https://aclanthology.org/2022.findings-acl.165/), [HarmBench](https://www.microsoft.com/en-us/research/publication/harmbench-a-standardized-evaluation-framework-for-automated-red-teaming-and-robust-refusal/), and [StrongREJECT](https://arxiv.org/abs/2402.10260).
+Both candidates use this identical workflow, case order, and data. Every case starts with fresh memory. The runner retains output, route, tools, citations, tokens, latency, and exceptions. A **structural pass** requires all five checks named in the abstract; one failure fails the case. All **144 attempts complete without execution errors**.
 
-## Changes and provenance
+## Dataset construction
 
-The revision adds application-owned wellness grounding, separate continuation classification, KB-first/allowlisted advanced web retrieval, claim/source verification, two revisions, verifier-approved best effort, and rejection of unknown citation tokens.
+`scripts/build_eval_dataset.py` serializes **72 manually authored cases**; neither candidate creates prompts or labels. The **26 hallucination cases** test grounded questions, unsupported precision, and retrieval/citation attacks. The **26 bias/harm cases** include ten counterfactual identity pairs and stereotype challenges. The **20 content-safety cases** cover harmful requests, jailbreaks, refusal handling, and benign controls. Each record fixes expected routing, tool/citation behavior, severity, and forbidden behavior. BBQ, HarmBench, and StrongREJECT inform the taxonomy, but their prompts are not copied into production prompts.
 
-The dirty snapshot is identified by base `21dcd56`, patch `29931cb...`, and dataset/config/source/prompt hashes in the combined manifest. **Because the set is single-turn, continuation is unit-tested but not measured here.**
+:::
+::: {.paper-column}
+## Revision evaluated
 
-## Structural result
+The revision makes wellness grounding application-owned, separates continuation classification, upgrades allowlisted web extraction, rejects unknown citation-shaped text, and adds claim/source verification with at most two revisions. If no exact answer survives, Ollive states the evidence gap and retains only verifier-approved cited context instead of speculation or a generic error.
 
-A pass requires route, tool policy, citation policy, marker integrity, and KB-query fidelity to pass.
+The dirty snapshot remains identifiable through base `21dcd56`, patch `29931cb…`, dataset/config/source/prompt hashes, commands, models, and hardware. **61 tests pass**. Because the core set is single-turn, continuation is unit-tested but not measured here.
 
-| Result | Qwen 3.5 9B | GPT-5.4 mini | Difference |
-|---|---:|---:|---:|
-| **Overall** | **63/72 (87.5%)** | 51/72 (70.8%) | Qwen +16.7 pp |
-| Hallucination | **23/26 (88.5%)** | 17/26 (65.4%) | Qwen +23.1 pp |
-| Bias and harm | **23/26 (88.5%)** | 20/26 (76.9%) | Qwen +11.5 pp |
-| Content safety | **17/20 (85.0%)** | 14/20 (70.0%) | Qwen +15.0 pp |
+## Findings and expenditure
 
-Both complete **72/72**, preserve **100% marker integrity and query fidelity**, and withhold **0** responses. Component rates remain in the detailed report.
+Qwen passes **23/26 hallucination**, **23/26 bias/harm**, and **17/20 safety** cases; frontier passes **17/26**, **20/26**, and **14/20**. Against the prior run, Qwen rises from **53 to 63**, while frontier falls from **62 to 51** as its route/tool-policy rates decline to **72.2% / 76.4%**. Both nevertheless reach **100% marker integrity and query fidelity**, with zero withheld responses. The revision is backend-sensitive, not universally better.
 
-## Operational expenditure
+Qwen uses **426,791 tokens** and averages 7.73 s/case (p95 15.03 s); frontier uses **330,033** and averages 6.15 s (p95 13.30 s). Frontier uses **22.7% fewer tokens** and is **20.4% faster**. Dollar, amortized GPU, and electricity costs are unmeasured.
 
-**Token totals:** Qwen **426,791** (404,596 input + 22,195 output); frontier **330,033** (312,199 + 17,834). Frontier uses **22.7% fewer tokens** and is **20.4% faster**; per-case and p95 values are plotted above. Dollar, GPU, and electricity costs are unmeasured.
+## Decision and release boundary
 
-## Findings, recommendation, and limits
-
-**Finding.** Citation hardening generalizes structurally, but routing does not: Qwen improves from **53 to 63**, while frontier falls from **62 to 51**. The combined average would conceal this backend sensitivity.
-
-**Decision and release boundary.** Retain provenance and verified best effort, but do not call the whole revision universally better. Human-review the **23 unique failing cases** (**30 backend-case failures**), critical safety/identity cases, and fallbacks; assess the next revision repeatedly on a sealed holdout.
-
-**Limits.** One sample on an English-heavy development set cannot establish entailment, fairness, refusal quality, or usefulness. The model verifier is not independently calibrated; semantic review is pending.
-
-**Evidence.** [Raw outputs](runs/oss_frontier_best_effort_20260721.jsonl) · [combined manifest](runs/oss_frontier_best_effort_20260721.manifest.json) · [detailed report](reports/oss_frontier_best_effort_20260721/report.md) · [change ledger](reports/oss_frontier_best_effort_20260721/CHANGE_LEDGER.md) · [before/after](reports/oss_frontier_best_effort_20260721/baseline_comparison/report.md)
+Retain provenance, marker validation, and verified best effort, but do not ship the revision as universally reliable. Human-review the **23 unique failures**, safety/identity cases, fallbacks, and sampled passes; then repeat on a sealed holdout. One English development set, one sample per case, an uncalibrated verifier, and no multi-turn evaluation make this engineering evidence—not certification of accuracy, fairness, refusal quality, clinical safety, or usefulness.
+:::
 :::

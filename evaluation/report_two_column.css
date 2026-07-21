@@ -118,7 +118,7 @@ p {
 
 .plot-card img {
   display: block;
-  height: 40mm;
+  height: 32mm;
   object-fit: contain;
   width: 100%;
 }
@@ -153,3 +153,16 @@ strong {
   color: #203f35;
   font-weight: 700;
 }
+
+.paper-grid {
+  display: flex;
+  gap: 7mm;
+  align-items: flex-start;
+}
+.paper-column {
+  box-sizing: border-box;
+  flex: 1;
+  min-width: 0;
+}
+.paper-column h2:first-child { margin-top: 0; }
+.paper-column p, .paper-column table, .paper-column figure { break-inside: avoid; }

@@ -8,7 +8,7 @@ This directory is the single entry point for Ollive's evaluation work.
 |---|---|
 | Which candidates have matched archived runs? | Qwen 3.5 9B and GPT-5.4 mini |
 | Is there a valid comparison? | Yes for structural workflow behavior; semantic review is pending |
-| Are latest results semantically human-graded? | No |
+| Are archived results semantically human-graded? | No |
 | What is measured? | Routing, tool, citation, query, latency, and token behavior |
 | What should be read first? | [One-page evaluation paper](REPORT.md) |
 
@@ -31,7 +31,7 @@ than competing narratives.
 |---|---|
 | One-page evaluation PDF | [REPORT.pdf](REPORT.pdf) |
 | Overall interpretation | [REPORT.md](REPORT.md) |
-| Dataset creation and provenance | [REPORT.md — Dataset creation](REPORT.md#dataset-creation) |
+| Dataset creation and provenance | [REPORT.md — Study and dataset](REPORT.md#study-and-dataset) |
 | Core dataset | [datasets/core.v1.jsonl](datasets/core.v1.jsonl) |
 | Prompt regression | [datasets/prompt_regression.v1.jsonl](datasets/prompt_regression.v1.jsonl) |
 | Judge calibration | [datasets/judge_gold.v1.jsonl](datasets/judge_gold.v1.jsonl) |

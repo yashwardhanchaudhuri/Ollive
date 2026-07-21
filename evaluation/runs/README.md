@@ -1,8 +1,8 @@
-# Final evaluation runs
+# Archived matched evaluation runs
 
 ## At a glance
 
-This folder contains only the evidence needed for the submitted OSS–frontier comparison and judge-calibration disclosure. Each candidate JSONL preserves case outputs and structural grades; its manifest preserves model, dataset, prompt, and revision provenance.
+This folder contains only the evidence needed for the archived OSS–frontier comparison and judge-calibration disclosure. Each candidate JSONL preserves case outputs and structural grades; its manifest preserves model, dataset, prompt, and revision provenance.
 
 | File | Responsibility |
 |---|---|
@@ -15,4 +15,4 @@ This folder contains only the evidence needed for the submitted OSS–frontier c
 | `qwen35_9b_judge_probe.calibration.json` | Exploratory judge agreement against authored gold labels. |
 | `README.md` | Explains retained evidence. |
 
-Intermediate smoke, prompt-development, and superseded single-model runs are intentionally omitted. They can be regenerated through `scripts/run_evals.py`; retaining them would duplicate evidence without affecting the final comparison.
+Intermediate smoke, prompt-development, and superseded single-model runs are intentionally omitted. New runs should be written with `scripts/run_evals.py` and compared as a separate, dated snapshot.

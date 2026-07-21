@@ -1,6 +1,6 @@
 # Complete local Ollive runtime (Python 3.11, Linux/NVIDIA for vLLM).
 # Streamlit and vLLM run as separate processes from this one environment.
-# TorchCodec also needs FFmpeg shared libraries; environment.yml installs them.
+# The Conda environment includes FFmpeg for the validated local model stack.
 vllm==0.25.0
 huggingface-hub>=1.2,<2
 

@@ -2,7 +2,7 @@
 
 ## At a glance
 
-This folder retains one detailed matched comparison behind the one-page `evaluation/REPORT.md`. The report is derived from the final Qwen and GPT-5.4 mini run records and does not compete with the submission narrative.
+This folder retains one detailed archived matched comparison behind the one-page `evaluation/REPORT.md`. The report is derived from the Qwen and GPT-5.4 mini snapshot records and does not compete with the submission narrative.
 
 | Path | Responsibility |
 |---|---|

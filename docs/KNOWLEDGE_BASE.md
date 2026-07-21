@@ -61,12 +61,9 @@ types and indexed types differ, making configuration drift visible.
 
 ## Query fidelity
 
-The model does not author the local search query. The tool router replaces any
-model-supplied query with the current user message.
+The model does not author the local search query. For an independent request, the tool router binds lookup to the current user message. For a dependent follow-up, the application deterministically concatenates recent user-authored messages with the current one.
 
-This choice sacrifices aggressive query expansion, but it preserves user intent
-and makes evaluation exact: every recorded KB query should equal the input
-prompt.
+This preserves topic context without model-written query expansion. Single-turn evaluation cases therefore retain exact prompt fidelity; multi-turn cases must validate the application-selected contextual query instead of assuming the current message alone.
 
 ## Citation construction
 
@@ -80,9 +77,7 @@ paragraph in a source drawer.
 
 ## Authoritative web completion
 
-When a local passage is relevant but does not directly answer a material part of
-the request, the agent may search the configured authoritative-domain allowlist
-once. The allowlist is applied by Tavily and verified again against each returned
+When a distinct factual part of the request remains unsupported after local retrieval, the agent may search the configured authoritative-domain allowlist once. Asking for more detail alone is not a web-search trigger. The allowlist is applied by Tavily and verified again against each returned
 URL. Results below the configured relevance score are discarded.
 
 Accepted web results receive distinct `web` citation markers, retain their

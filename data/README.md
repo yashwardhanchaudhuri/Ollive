@@ -7,7 +7,6 @@ The index is rebuildable; traces support local debugging.
 
 | Child folder | Responsibility |
 |---|---|
-| `evals/` | Transient evaluation scratch output retained for compatibility. |
 | `indexes/` | Generated FAISS vectors and chunk metadata for local retrieval. |
 | `traces/` | Generated JSONL records from agent execution. |
 

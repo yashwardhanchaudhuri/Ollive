@@ -14,13 +14,13 @@ and citation validation. General conversation remains natural; factual wellness
 guidance is grounded; vague personalized requests ask for context; and medical
 requests stop at a non-clinical boundary.
 
-| Current capability | Evidence status |
+| Capability or archived evidence | Status |
 |---|---|
-| Local Qwen workflow | Running through vLLM |
+| Local Qwen workflow | Supported through vLLM |
 | Grounded local retrieval | Paragraph-level FAISS search |
 | Citation provenance checks | Application-enforced and fail-closed |
-| Qwen structural evaluation | 61/72 (84.7%) on the matched run |
-| Frontier structural evaluation | 61/72 (84.7%); axis and efficiency results differ |
+| Archived Qwen structural evaluation | 61/72 (84.7%) on the matched run |
+| Archived frontier structural evaluation | 61/72 (84.7%); axis and efficiency results differ |
 | Human semantic review | Not completed |
 
 The [agent workflow](docs/AGENT_WORKFLOW.md) explains the design. The
@@ -29,6 +29,7 @@ The [agent workflow](docs/AGENT_WORKFLOW.md) explains the design. The
 ## Design choices
 
 - **Shared agent spec**: system prompt, last-N memory, tools (`lookup_kb`, `search_web`)
+- **Semantic context policy**: the router distinguishes an isolated request from a dependent follow-up. An isolated grounded turn receives only its current user message; a follow-up receives the relevant recent user turns for retrieval and answer generation. Earlier assistant prose and tool output never become evidence.
 - **Swappable backends** via `config/backends.yaml`
   - OSS: **`Qwen/Qwen3.5-9B` on local vLLM** (OpenAI-compatible; `VLLM_API_KEY=EMPTY`)
   - Frontier: `gpt-5.4-mini` (needs `OPENAI_API_KEY`)
@@ -114,7 +115,7 @@ Traces land in `data/traces/*.jsonl`.
 - `active` backend
 - model ids, temperature, memory turns
 - embedding model and index paths / `top_k`
-- Tavily + Langfuse toggles
+- Tavily and observability settings
 
 Override active backend with `OLLIVE_ACTIVE_BACKEND=frontier`.
 
@@ -144,9 +145,9 @@ page.
 
 ## Evaluation
 
-### What the current results mean
+### What the archived results mean
 
-The matched comparison is an overall structural tie at 61/72 (84.7%). Qwen is
+The archived matched comparison is an overall structural tie at 61/72 (84.7%). Qwen is
 stronger on hallucination structure; GPT-5.4 mini is stronger on bias/harm and
 content safety, and is faster with fewer tokens. Both models pass all harmful
 and jailbreak cases structurally but over-refuse several benign controls.

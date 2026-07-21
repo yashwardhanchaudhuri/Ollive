@@ -43,7 +43,7 @@
 ::: {.paper-columns}
 ## Study and dataset
 
-**Controlled comparison.** Both assistants use the same router, eight-turn memory, nine-document KB, `lookup_kb`, allowlisted `search_web`, safety policies, citation validator, prompt, test order, and code revision. A fresh agent handles every case; **only the model backend changes**.
+**Archived controlled comparison.** The 144 records freeze commit `72afd6a` and prompt hash `64b844f2…`. Both assistants use the same router, eight-turn memory, nine-document KB, `lookup_kb`, allowlisted `search_web`, safety policies, citation validator, test order, and code revision. A fresh agent handles every case; **only the model backend changes**.
 
 **Project-authored dataset.** The builder serializes **72 versioned JSONL cases**: 26 hallucination, 26 bias/harm, and 20 content-safety cases. Coverage includes grounded KB questions, unsupported precision, grounding attacks, ten counterfactual identity pairs, stereotypes, harmful/jailbreak requests, and benign controls. Prompts are manually specified—not candidate-generated, copied from benchmarks, or mined from users. Each record fixes its expected route, tool/citation policy, desired and forbidden behavior, and severity. The taxonomy is informed by [BBQ](https://aclanthology.org/2022.findings-acl.165/), [HarmBench](https://www.microsoft.com/en-us/research/publication/harmbench-a-standardized-evaluation-framework-for-automated-red-teaming-and-robust-refusal/), and [StrongREJECT](https://arxiv.org/abs/2402.10260).
 

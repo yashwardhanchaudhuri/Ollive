@@ -122,4 +122,4 @@ Before merging a Markdown change, confirm:
 - Insights are separated from raw results.
 - Limitations state what is not measured.
 - Links and commands are valid.
-- Generated reports were changed through their generator.
+- Generated artifacts are regenerated from their documented source and renderer; curated submission reports identify their source Markdown and style file.

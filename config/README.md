@@ -3,7 +3,7 @@
 ## At a glance
 
 Configuration keeps deployable choices outside application code. The factory
-reads this folder to assemble the model, prompt, retriever, search, and tracer.
+reads this folder to assemble the model, prompt, retriever, search, and tracer. The committed default uses local JSONL observability; Langfuse is an optional runtime provider.
 
 | File | Responsibility |
 |---|---|

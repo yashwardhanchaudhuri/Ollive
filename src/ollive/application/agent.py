@@ -465,10 +465,16 @@ class WellnessAgent:
             )
         dialogue = self._memory.as_list()
         if policy.require_tools:
-            # The router sees full dialogue, but grounded generation may use only
-            # current retrieval as evidence. Prior assistant claims and markers are
-            # deliberately excluded so they cannot be recycled under a new citation.
-            dialogue = [message for message in dialogue if message.role is Role.USER]
+            # The router sees full dialogue, but grounded generation receives only
+            # the user turns selected by context_mode. This prevents an independent
+            # topic change from inheriting earlier user requests or stale claims.
+            user_turns = [message for message in dialogue if message.role is Role.USER]
+            context_turns = (
+                3
+                if policy.context_mode is ContextMode.PREVIOUS_AND_CURRENT
+                else 1
+            )
+            dialogue = user_turns[-context_turns:]
         return [
             Message(
                 role=Role.SYSTEM,

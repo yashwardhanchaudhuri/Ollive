@@ -2,7 +2,7 @@
 
 ## At a glance
 
-This folder compares Qwen 3.5 9B and GPT-5.4 mini under the same commit, prompt,
+This folder compares Qwen 3.5 9B and GPT-5.4 mini in an archived snapshot under the same commit, prompt,
 dataset order, retrieval index, and structural grader.
 
 | Entry | Responsibility |

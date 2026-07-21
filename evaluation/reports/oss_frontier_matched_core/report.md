@@ -21,7 +21,7 @@ This report follows one run from archived records to component failures. Read th
 
 ## Evaluation objective and method
 
-This run asks whether the candidate follows the expected policy route, uses tools and citations when required, preserves the original KB query, and avoids invalid citation output.
+This archived single-turn run asks whether the candidate follows the expected policy route, uses tools and citations when required, preserves the application-bound KB query, and avoids invalid citation output.
 
 Every case starts with fresh dialogue memory. The runner captures response and application state, retains execution errors, and applies deterministic checks. Structural passing is regression evidence, not a semantic quality judgment.
 
@@ -83,7 +83,7 @@ Every case starts with fresh dialogue memory. The runner captures response and a
 
 ## Scope and interpretation
 
-The run isolates conversation memory while reusing immutable retrieval resources. Structural grading measures visible application behavior: route, tool policy, citation policy and integrity, and exact query fidelity.
+The run isolates conversation memory while reusing immutable retrieval resources. Structural grading measures visible application behavior: route, tool policy, citation policy and integrity, and the application-bound query recorded for each case.
 
 It does not establish claim-to-source entailment, unbiased tone, or proportionate refusal. Counterfactual pairs still need pairwise human review, and one generation per case does not measure stochastic variation. Execution errors remain failures and are never removed from denominators.
 

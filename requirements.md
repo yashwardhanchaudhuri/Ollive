@@ -12,8 +12,7 @@ The default local setup uses one `ollive` environment. Streamlit and vLLM run
 as separate processes, but dependency resolution happens once.
 
 This removes duplicate activation and requirements flows. The trade-off is that
-vLLM's CUDA/PyTorch constraints now affect the full local environment. A lighter
-frontier-only package installation remains available.
+vLLM's CUDA/PyTorch constraints now affect the full local environment. The frontier backend is selected at runtime; it uses the same installed environment.
 
 See [docs/INSTALL.md](docs/INSTALL.md) for commands and checkpoints.
 
@@ -25,9 +24,7 @@ See [docs/INSTALL.md](docs/INSTALL.md) for commands and checkpoints.
 | `environment.yml` | One reproducible Python 3.11 Conda environment |
 | `pyproject.toml` | Base frontier-capable package plus optional `local` and `dev` extras |
 
-The requirements file optimizes for the local Qwen path. The package metadata
-keeps vLLM in the `local` extra so `pip install -e .` can still support a
-frontier-only machine.
+The requirements file is the supported unified runtime. Package extras remain available for packaging, but they are not a second recommended environment.
 
 ## Selection method
 
@@ -50,7 +47,7 @@ then archive an exact lock or image digest.
 | **openai** | Shared client for OpenAI and the local vLLM endpoint |
 | **vllm** | Local OpenAI-compatible Qwen server |
 | **huggingface-hub** | Model download and shared cache management |
-| **FFmpeg** | Conda or system shared libraries required by TorchCodec |
+| **FFmpeg** | Included by the Conda environment; a venv setup may require corresponding system libraries for the validated local stack. |
 | **sentence-transformers** | Local BGE embedding model |
 | **numpy** | Embedding arrays |
 | **faiss-cpu** | Local paragraph-vector index |
@@ -82,7 +79,7 @@ for every NVIDIA driver and GPU combination.
 | vLLM | 0.25.0 |
 | PyTorch | 2.11.0+cu130 |
 | FFmpeg | 8.0.1 |
-| Application tests | 49 passing |
+| Application tests | 56 passing |
 
 The application regression suite remains the behavioral checkpoint after
 installation. GPU startup and a request through vLLM remain machine-specific
@@ -90,7 +87,6 @@ acceptance checks.
 
 ## Variations and trade-offs
 
-- Frontier-only operation can use `pip install -e ".[dev]"` and omit vLLM.
 - Local Qwen and development checks use the same `requirements.txt` environment.
 - Langfuse and Tavily are optional integrations; local tracing works without them.
 - CPU FAISS fits the current small corpus but is not a scale benchmark.

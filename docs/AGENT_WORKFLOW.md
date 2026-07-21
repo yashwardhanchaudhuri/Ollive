@@ -91,9 +91,7 @@ line positions, descriptor, text, and stable citation marker.
 
 ### 3. The agent checks evidence completeness
 
-After local retrieval, the model must choose one of two constrained actions. It
-submits an answer when the passages directly support the material parts of the
-request, or calls `search_web` once when a material detail is missing. An empty
+After local retrieval, the model submits an answer when the passages directly support the requested factual parts, or calls `search_web` once when a distinct factual part remains unsupported. A request for more detail alone does not justify web search. An empty
 KB result forces the web path. This is a semantic decision rather than a keyword
 or regular-expression rule.
 
@@ -142,9 +140,7 @@ explicit quality failure over displaying unsupported wellness guidance.
 
 Only final user and assistant messages persist. Tool payloads and model tool-call
 envelopes remain in traces but are removed from conversational memory. The router sees
-that bounded dialogue to resolve intent; grounded answer generation receives user turns
-and current retrieval, but excludes prior assistant prose so stale claims cannot be
-reused as evidence.
+that bounded dialogue to resolve intent; grounded answer generation receives only the user turns selected by `context_mode` and current retrieval. An independent turn receives its current user message only; a dependent follow-up receives the same recent user context used for retrieval. Prior assistant prose is excluded so stale claims cannot be reused as evidence.
 
 This avoids two common problems:
 

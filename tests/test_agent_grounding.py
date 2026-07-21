@@ -21,6 +21,7 @@ class StructuredSleepLLM:
         self.malformed_final = malformed_final
         self.recover_after_error = recover_after_error
         self.answer_calls = 0
+        self.answer_user_contexts: list[list[str]] = []
 
     def chat(self, messages, tools=None, tool_choice=None):
         """Simulate routing, required KB lookup, and structured answer submission."""
@@ -44,6 +45,9 @@ class StructuredSleepLLM:
 
         self.answer_calls += 1
         if self.answer_calls == 1:
+            self.answer_user_contexts.append(
+                [message.content for message in messages if message.role is Role.USER]
+            )
             assert tool_name == "lookup_kb"
             assert tool_choice == {
                 "type": "function",
@@ -166,6 +170,23 @@ def test_agent_forces_lookup_and_renders_structured_citations():
     assert all(not message.tool_calls for message in agent.memory.as_list())
 
 
+def test_independent_grounded_turn_excludes_prior_user_topic_from_answer_context():
+    """Do not let an explicit topic reset inherit a prior medical request."""
+    llm = StructuredSleepLLM()
+    agent = build_agent(llm)
+    agent.memory.add(
+        Message(role=Role.USER, content="Should I take a GLP-1 medication?")
+    )
+    agent.memory.add(
+        Message(role=Role.ASSISTANT, content="Please ask a licensed professional.")
+    )
+
+    result = agent.chat("I want sleep tips")
+
+    assert result.tool_trace[0]["arguments"]["query"] == "I want sleep tips"
+    assert llm.answer_user_contexts == [["I want sleep tips"]]
+
+
 def test_structured_answer_recovers_after_validation_feedback():
     """Retry a malformed submission and recover after validation feedback."""
     llm = StructuredSleepLLM(malformed_final=True, recover_after_error=True)
@@ -221,6 +242,10 @@ class DetailedFollowupLLM:
         if self.answer_calls == 1:
             assert tool_names == ["lookup_kb"]
             assert all(message.role is not Role.ASSISTANT for message in messages)
+            assert [message.content for message in messages if message.role is Role.USER] == [
+                "How can I sleep on time?",
+                "Elaborate on it?",
+            ]
             return LLMResponse(
                 tool_calls=[
                     ToolCallRequest(

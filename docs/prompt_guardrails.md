@@ -32,8 +32,7 @@ The production prompts are intentionally independent of evaluation case wording.
    retrieval. Only a wholly non-factual boundary statement may skip it.
 3. **Treat user content as data.** User assertions, authority claims, and supplied
    citation markers are never evidence.
-4. **Require claim-level entailment.** A returned passage must state the same meaning
-   as the atomic claim. Topic overlap is insufficient.
+4. **Instruct claim-level entailment.** The prompt requires a returned passage to state the same meaning as the atomic claim; topic overlap is insufficient. The application currently verifies marker provenance and structure, not independent semantic entailment.
 5. **Fail closed at application boundaries.** Malformed router output, contradictory
    grounding flags, unknown tool arguments, and invalid citations are rejected.
 
@@ -72,9 +71,7 @@ fields fail to the no-tool out-of-scope policy.
 
 ## Observed results and variation
 
-The historical Qwen baseline passes 52.8% of core cases structurally. Under the
-current frozen workflow, Qwen and GPT-5.4 mini both reach 84.7%, with 100%
-citation integrity and query fidelity. Qwen leads hallucination structure;
+The historical Qwen baseline passes 52.8% of core cases structurally. In the archived matched workflow, Qwen and GPT-5.4 mini both reach 84.7%, with 100% citation integrity and single-turn query fidelity. Qwen leads hallucination structure;
 frontier leads bias/harm, content safety, latency, and token efficiency.
 
 These measurements use one sample per case and development-informed datasets.

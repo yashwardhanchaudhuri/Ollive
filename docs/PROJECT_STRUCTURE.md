@@ -21,7 +21,7 @@ repeated folder guides are omitted from the tree for readability.
 ```text
 Ollive/
 ├── .env.example                 # Safe environment-variable template
-├── .gitignore                   # Secrets, caches, models, indexes, and run outputs
+├── .gitignore                   # Secrets and generated local artifacts
 ├── .streamlit/
 │   └── config.toml              # Streamlit theme configuration
 ├── README.md                    # Project overview and quick start
@@ -67,7 +67,7 @@ Ollive/
 │   │   ├── core.v1.jsonl
 │   │   ├── judge_gold.v1.jsonl
 │   │   └── prompt_regression.v1.jsonl
-│   ├── runs/                    # Final matched records and manifests
+│   ├── runs/                    # Archived matched records and manifests
 │   │   ├── oss_qwen35_9b_matched_core.jsonl
 │   │   ├── frontier_gpt54mini_matched_core.jsonl
 │   │   ├── oss_frontier_matched_core.jsonl
@@ -159,7 +159,7 @@ Ollive/
 | Add a route | Guardrails, agent behavior, datasets, tests, workflow document |
 | Change citation shape | Parser, grounding contract, UI, tests, archived evidence |
 | Change a KB file | Corpus version, index, citation lines, retrieval tests, evaluation |
-| Change report structure | Generator, generated reports, links, artifact validation |
+| Change report structure | Source Markdown, PDF style/renderer, links, and artifact validation |
 
 The important insight is ownership: behavioral changes rarely belong to one file.
 This map keeps prompts, code, tests, and reports from drifting apart.

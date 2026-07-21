@@ -22,6 +22,10 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+local = [
+    "vllm==0.25.0",
+    "huggingface-hub>=1.2,<2",
+]
 dev = ["pytest>=9.1,<10"]
 
 [tool.setuptools.packages.find]

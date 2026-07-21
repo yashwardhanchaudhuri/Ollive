@@ -1,5 +1,8 @@
-# Ollive application runtime (Python 3.11)
-# vLLM is intentionally separate; see requirements-vllm.txt.
+# Complete local Ollive runtime (Python 3.11, Linux/NVIDIA for vLLM).
+# Streamlit and vLLM run as separate processes from this one environment.
+vllm==0.25.0
+huggingface-hub>=1.2,<2
+
 streamlit>=1.59,<2
 PyYAML>=6.0,<7
 python-dotenv>=1.2,<2
@@ -9,7 +12,6 @@ sentence-transformers>=5.6,<6
 numpy>=2.0,<3
 faiss-cpu>=1.14,<2
 
-# Optional at runtime, but installed by default so the configured integrations
-# work immediately when their environment variables are supplied.
+# Configured integrations. They remain inactive without their environment keys.
 tavily-python>=0.7,<1
 langfuse>=4.14,<5

@@ -1,4 +1,0 @@
-# Install in a dedicated Linux/NVIDIA GPU environment.
-# Let vLLM select its compatible PyTorch/CUDA wheels.
-vllm==0.25.0
-huggingface-hub>=1.2,<2

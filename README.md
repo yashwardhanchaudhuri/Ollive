@@ -93,17 +93,17 @@ python scripts/build_index.py
 streamlit run src/ollive/ui/streamlit_app.py --server.port 8501
 ```
 
-For the local OSS backend, create the separate vLLM environment described in the
-installation guide, then start Qwen in another terminal:
+The Conda environment includes both the application and vLLM. Start Qwen in
+another terminal using the same environment:
 
 ```bash
-conda activate ollive-vllm
+conda activate ollive
 ./scripts/serve_qwen_vllm.sh
 ```
 
-The application uses `requirements.txt`; development adds
-`requirements-dev.txt`; the GPU server uses `requirements-vllm.txt`. Traces
-land in `data/traces/*.jsonl`.
+The two services remain separate processes, but they share one dependency
+environment. `requirements-dev.txt` adds tests to the full local runtime.
+Traces land in `data/traces/*.jsonl`.
 
 ## Configuration
 

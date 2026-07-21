@@ -25,9 +25,8 @@ Ollive/
 ├── README.md                    # Project overview and quick start
 ├── environment.yml              # Conda application/development environment
 ├── pyproject.toml               # Python package metadata
-├── requirements.txt             # Application dependencies
-├── requirements-dev.txt         # Application plus test dependencies
-├── requirements-vllm.txt        # Separate GPU model-server dependencies
+├── requirements.txt             # Unified local runtime, including vLLM
+├── requirements-dev.txt         # Unified runtime plus test dependencies
 ├── requirements.md              # Dependency rationale
 │
 ├── assignment_kb/               # Curated source documents used by local evidence retrieval
@@ -144,7 +143,7 @@ Ollive/
 
 | Boundary | Why it exists |
 |---|---|
-| Application versus vLLM environments | Isolate CUDA-sensitive dependencies |
+| Unified environment versus separate processes | Simplify installation while isolating model serving from the UI runtime |
 | Ports versus adapters | Keep orchestration independent of vendors |
 | Dialogue memory versus traces | Prevent stale tool evidence entering later turns |
 | Evaluation source versus generated reports | Preserve reproducible inputs and derived evidence |

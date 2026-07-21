@@ -12,7 +12,7 @@ FOUNDATIONAL_DOCS = {
     "docs/PROJECT_STRUCTURE.md": ("Objective", "How to read the repository", "Design boundaries"),
     "docs/WRITING_STANDARD.md": ("The reader should understand the point first", "Use progressive disclosure", "Review checklist"),
     "docs/prompt_guardrails.md": ("Objective", "Threat model", "Design insight"),
-    "requirements.md": ("Objective", "At a glance", "Verified working versions"),
+    "requirements.md": ("Objective", "At a glance", "Resolution and known versions"),
     "evaluation/README.md": ("At a glance", "Evidence map", "Governance"),
     "evaluation/REPORT.md": ("How to read this report", "Key insights", "Limitations"),
 }
@@ -54,3 +54,13 @@ def test_markdown_local_links_resolve():
             if not (path.parent / target).resolve().exists():
                 missing.append((str(path.relative_to(ROOT)), target))
     assert not missing
+
+
+def test_local_setup_uses_one_requirements_path():
+    requirements = (ROOT / "requirements.txt").read_text(encoding="utf-8")
+    assert "vllm==0.25.0" in requirements
+    assert not (ROOT / "requirements-vllm.txt").exists()
+
+    for relative in ("README.md", "docs/INSTALL.md", "requirements.md"):
+        text = (ROOT / relative).read_text(encoding="utf-8")
+        assert "requirements-vllm" not in text

@@ -1,29 +1,31 @@
 # Ollive installation and model downloads
 
-This guide keeps the Streamlit application and the vLLM GPU server in separate
-Python environments. The application can also run against the OpenAI frontier
-backend without installing vLLM or downloading Qwen.
+This guide uses one Python environment for the local application, retrieval, tests,
+and vLLM. Qwen and Streamlit still run as separate processes.
+
+A frontier-only installation can omit vLLM through the package extras described
+below.
 
 ## What this guide produces
 
 At the end of the local OSS path:
 
+- One `ollive` environment contains application and model-server dependencies.
 - Qwen serves an OpenAI-compatible API on port 8000.
 - The application has a paragraph-level vector index built with FAISS.
 - Streamlit serves Ollive on port 8501.
-- Tests and dependency checks pass in the application environment.
-
-The application and model server deliberately use different environments. vLLM
-owns a CUDA-sensitive PyTorch stack; Streamlit and retrieval do not need that
-dependency surface.
+- Tests and dependency checks pass in the same environment.
 
 ## Choose a path
 
-| Goal | Application environment | vLLM environment | Model download |
-|---|---:|---:|---:|
-| Local Qwen | Required | Required | Qwen and embedding model |
-| Frontier only | Required | No | Embedding model |
-| Development and tests | Required with dev packages | Optional | Embedding model for index work |
+| Goal | Installation | Model download |
+|---|---|---:|
+| Local Qwen | `requirements-dev.txt` or `environment.yml` | Qwen and embedding model |
+| Frontier only | `pip install -e ".[dev]"` | Embedding model |
+| Local runtime without tests | `requirements.txt` | Qwen and embedding model |
+
+The unified local environment is simpler to operate. Its trade-off is that vLLM
+and its CUDA/PyTorch constraints now participate in the same dependency resolution.
 
 ## Prerequisites
 
@@ -61,6 +63,15 @@ For tests and development tools, use:
 python -m pip install -r requirements-dev.txt
 ```
 
+For a frontier-only environment without vLLM:
+
+```bash
+python3.11 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -e ".[dev]"
+```
+
 **Checkpoint:** `python -m pip check` should report no broken requirements.
 This verifies dependency consistency, not model access or GPU compatibility.
 
@@ -89,24 +100,18 @@ OLLIVE_ACTIVE_BACKEND=frontier
 `TAVILY_API_KEY` and Langfuse variables are optional. Never commit the populated
 `.env` file.
 
-## 3. Install the vLLM server
+## 3. Verify the local model server dependency
 
-Skip this section when using only the frontier backend.
-
-Create a dedicated environment so vLLM can manage its own PyTorch and CUDA
-dependencies:
+The full local requirements already install vLLM:
 
 ```bash
-conda create -n ollive-vllm python=3.11 -y
-conda activate ollive-vllm
-python -m pip install --upgrade pip
-python -m pip install -r requirements-vllm.txt
+conda activate ollive
 vllm --version
 ```
 
-If vLLM cannot find a compatible wheel, consult the vLLM installation guidance
-for the CUDA version installed on the machine. Do not install the application
-requirements into this environment.
+Skip this check for a frontier-only installation. If vLLM cannot find a
+compatible wheel during installation, consult its CUDA compatibility guidance
+for the driver and hardware on the machine.
 
 ## 4. Download the models
 
@@ -114,19 +119,13 @@ The first index build automatically downloads the embedding model, and the first
 vLLM launch automatically downloads Qwen. To download both ahead of time:
 
 ```bash
-conda activate ollive-vllm
+conda activate ollive
 hf auth login                     # optional for public models
 hf download Qwen/Qwen3.5-9B
-```
-
-Then download the embedding model from the application environment:
-
-```bash
-conda activate ollive
 hf download BAAI/bge-small-en-v1.5
 ```
 
-Hugging Face stores the files in its shared cache. Set `HF_HOME` in `.env` or
+Hugging Face stores both downloads in the same shared cache. Set `HF_HOME` in `.env` or
 the shell before downloading if the cache must live on a larger disk.
 
 To serve a pre-downloaded model from a specific directory, set
@@ -134,10 +133,10 @@ To serve a pre-downloaded model from a specific directory, set
 
 ## 5. Start Qwen through vLLM
 
-With the vLLM environment active:
+With the Ollive environment active:
 
 ```bash
-conda activate ollive-vllm
+conda activate ollive
 ./scripts/serve_qwen_vllm.sh
 ```
 
@@ -165,7 +164,7 @@ prove tool calling works.
 
 ## 6. Build the knowledge index
 
-In the application environment:
+From the same environment:
 
 ```bash
 conda activate ollive

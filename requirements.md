@@ -2,16 +2,18 @@
 
 | Field | Value |
 |---|---|
-| Objective | Explain why dependencies are split and what each environment owns |
+| Objective | Explain how one local environment supports Streamlit, retrieval, tests, and vLLM |
 | Audience | Operators, contributors, and deployment reviewers |
-| Verified environment | Python 3.11 application and separate Linux/NVIDIA vLLM environment |
+| Resolution target | One Python 3.11 Linux/NVIDIA environment for the full local runtime |
 
 ## At a glance
 
-Ollive separates the application from the GPU model server. vLLM owns a
-CUDA-sensitive PyTorch stack; the application owns Streamlit, retrieval,
-validation, and an HTTP client. Keeping them apart makes compatibility and
-failure diagnosis easier to reason about.
+The default local setup uses one `ollive` environment. Streamlit and vLLM run
+as separate processes, but dependency resolution happens once.
+
+This removes duplicate activation and requirements flows. The trade-off is that
+vLLM's CUDA/PyTorch constraints now affect the full local environment. A lighter
+frontier-only package installation remains available.
 
 See [docs/INSTALL.md](docs/INSTALL.md) for commands and checkpoints.
 
@@ -19,15 +21,14 @@ See [docs/INSTALL.md](docs/INSTALL.md) for commands and checkpoints.
 
 | File | Purpose |
 |---|---|
-| `requirements.txt` | Streamlit application, retrieval, model client, and configured integrations |
-| `requirements-dev.txt` | Application dependencies plus the test runner |
-| `requirements-vllm.txt` | Dedicated Linux/NVIDIA environment for serving Qwen |
-| `environment.yml` | Reproducible Python 3.11 Conda development environment |
-| `pyproject.toml` | Installable `ollive` package metadata |
+| `requirements.txt` | Complete local runtime: application, retrieval, vLLM, and integrations |
+| `requirements-dev.txt` | Full local runtime plus the test runner |
+| `environment.yml` | One reproducible Python 3.11 Conda environment |
+| `pyproject.toml` | Base frontier-capable package plus optional `local` and `dev` extras |
 
-Do not install `requirements-vllm.txt` into the application environment. vLLM
-selects PyTorch/CUDA packages for the host GPU, while the application needs only
-an OpenAI-compatible HTTP client.
+The requirements files optimize for the local Qwen path. The package metadata
+keeps vLLM in the `local` extra so `pip install -e .` can still support a
+frontier-only machine.
 
 ## Selection method
 
@@ -48,6 +49,8 @@ then archive an exact lock or image digest.
 | **python-dotenv** | Local environment-variable loading |
 | **pydantic** | Strict message, tool, and grounded-answer validation |
 | **openai** | Shared client for OpenAI and the local vLLM endpoint |
+| **vllm** | Local OpenAI-compatible Qwen server |
+| **huggingface-hub** | Model download and shared cache management |
 | **sentence-transformers** | Local BGE embedding model |
 | **numpy** | Embedding arrays |
 | **faiss-cpu** | Local paragraph-vector index |
@@ -55,13 +58,22 @@ then archive an exact lock or image digest.
 | **langfuse** | Optional external tracing; local JSONL remains the default |
 | **pytest** | Unit and workflow regression tests |
 
-`sentence-transformers` installs its compatible Transformers and PyTorch
-dependencies. The configured OSS chat model is not loaded by this application;
-Qwen runs in the separate vLLM process.
+vLLM and Sentence Transformers share the environment's compatible PyTorch
+resolution. Qwen still runs in a separate server process, so model memory and
+request handling remain isolated from Streamlit even though packages are shared.
 
-## Verified working versions
+## Resolution and known versions
 
-| Component | Verified version |
+A pip dry run resolves `requirements.txt` as one Python 3.11 dependency graph
+without conflicts. The resolver selects vLLM 0.25.0, PyTorch 2.11.0, and NumPy
+2.3.5 alongside the application packages. This checks package compatibility; it
+does not install the graph or prove compatibility with every NVIDIA driver.
+
+The versions below have worked for their respective components in this project.
+They are useful reference points rather than proof that the newly consolidated
+environment has completed an end-to-end GPU run.
+
+| Component | Known working version |
 |---|---:|
 | Streamlit | 1.59.2 |
 | Pydantic | 2.13.4 |
@@ -69,16 +81,20 @@ Qwen runs in the separate vLLM process.
 | Sentence Transformers | 5.6.0 |
 | FAISS CPU | 1.14.3 |
 | vLLM | 0.25.0 |
-| Application tests | 39 passing |
+| Application tests | 40 passing |
 
-These are observed working versions, not universal compatibility guarantees.
+The application regression suite remains the behavioral checkpoint after
+installation. GPU startup and a request through vLLM remain machine-specific
+acceptance checks.
 
 ## Variations and trade-offs
 
-- Frontier-only operation does not need the vLLM environment.
-- Local Qwen still needs the application environment for Streamlit and retrieval.
+- Frontier-only operation can use `pip install -e ".[dev]"` and omit vLLM.
+- Local Qwen uses `requirements.txt` or `requirements-dev.txt` in one environment.
 - Langfuse and Tavily are optional integrations; local tracing works without them.
 - CPU FAISS fits the current small corpus but is not a scale benchmark.
+- Separate containers can still be used for deployment isolation without changing
+  the development setup.
 
 ## Scope
 

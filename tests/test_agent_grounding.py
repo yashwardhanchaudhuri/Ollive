@@ -214,6 +214,29 @@ class PartialEvidenceLLM:
             return LLMResponse(
                 tool_calls=[
                     ToolCallRequest(
+                        id="gap",
+                        name=SUBMIT_GROUNDED_ANSWER,
+                        arguments={
+                            "items": [
+                                {
+                                    "kind": "evidence_limitation",
+                                    "text": "The KB does not establish adult sleep duration.",
+                                    "citation": "__NO_CITATION__",
+                                }
+                            ]
+                        },
+                    )
+                ]
+            )
+        if self.answer_calls == 3:
+            assert tool_names == ["search_web"]
+            assert tool_choice == {
+                "type": "function",
+                "function": {"name": "search_web"},
+            }
+            return LLMResponse(
+                tool_calls=[
+                    ToolCallRequest(
                         id="web",
                         name="search_web",
                         arguments={"query": "recommended sleep duration for adults"},

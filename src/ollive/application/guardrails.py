@@ -79,7 +79,7 @@ WELLNESS_POLICY = TurnPolicy(
         "the user's main question first, "
         "using the fewest items necessary and no more than three total. If the results do not directly "
         "establish a requested comparison, choice, or detail, make the first item one "
-        "precise evidence_limitation and return no more than two items total. Then include only cited guidance that supplies a decision criterion or action "
+        "precise evidence_limitation and return no more than three items total. Then include only cited guidance that directly answers another requested part or supplies a decision criterion or action "
         "for the user's question; accurate background facts are not relevant. Never "
         "inventory everything retrieved. Put "
         "each atomic fact in an item with "

@@ -119,6 +119,7 @@ class WellnessAgent:
             structured_error: str | None = None
             tool_names_used: set[str] = set()
             finalization_attempted = False
+            web_completion_required = False
 
             for _round in range(self._max_tool_rounds):
                 schemas = None
@@ -127,7 +128,17 @@ class WellnessAgent:
                 web_completed = "search_web" in tool_names_used
                 if lookup_completed:
                     grounded_schema = build_grounded_answer_schema(turn_citations)
-                    if finalization_attempted or web_completed:
+                    if web_completion_required and not web_completed:
+                        schemas = [
+                            schema
+                            for schema in self._tools.schemas
+                            if schema["function"]["name"] == "search_web"
+                        ]
+                        tool_choice = {
+                            "type": "function",
+                            "function": {"name": "search_web"},
+                        }
+                    elif finalization_attempted or web_completed:
                         schemas = [grounded_schema]
                         tool_choice = forced_grounded_answer_choice()
                     elif turn_citations:
@@ -192,7 +203,6 @@ class WellnessAgent:
                 )
 
                 if any(call.name == SUBMIT_GROUNDED_ANSWER for call in response.tool_calls):
-                    finalization_attempted = True
                     if (
                         len(response.tool_calls) != 1
                         or response.tool_calls[0].name != SUBMIT_GROUNDED_ANSWER
@@ -202,6 +212,18 @@ class WellnessAgent:
                             f"{SUBMIT_GROUNDED_ANSWER} call"
                         )
                         break
+                    answer_call = response.tool_calls[0]
+                    items = answer_call.arguments.get("items")
+                    requests_completion = isinstance(items, list) and any(
+                        isinstance(item, dict)
+                        and item.get("kind") == "evidence_limitation"
+                        for item in items
+                    )
+                    if requests_completion and not web_completed:
+                        web_completion_required = True
+                        finalization_attempted = False
+                        continue
+                    finalization_attempted = True
                     try:
                         assistant_text, _used = parse_and_render_grounded_answer(
                             response.tool_calls[0].arguments,

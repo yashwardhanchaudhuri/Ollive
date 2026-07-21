@@ -33,7 +33,8 @@ and its CUDA/PyTorch constraints now participate in the same dependency resoluti
 - Git
 - Conda/Miniconda, or Python 3.11 with `venv`
 - Internet access for Python packages and Hugging Face model downloads
-- For local Qwen: a supported NVIDIA GPU, driver, and sufficient VRAM
+- For local Qwen: a supported NVIDIA GPU, driver, sufficient VRAM, and FFmpeg
+  shared libraries. `environment.yml` installs FFmpeg automatically.
 
 Run every command from the repository root.
 
@@ -48,6 +49,9 @@ python -m pip install -e . --no-deps
 ```
 
 ### Python venv
+
+Install FFmpeg 4 through 8 with the operating-system package manager before using
+the local Qwen path; TorchCodec loads its shared libraries at import time. Then:
 
 ```bash
 python3.11 -m venv .venv
@@ -146,6 +150,7 @@ Optional server settings:
 export OLLIVE_VLLM_PORT=8000
 export OLLIVE_VLLM_TP=1
 export OLLIVE_VLLM_MAX_LEN=32768
+export OLLIVE_VLLM_USE_FLASHINFER_SAMPLER=0  # default; avoids optional sampler JIT
 export OLLIVE_OSS_MODEL=Qwen/Qwen3.5-9B
 ./scripts/serve_qwen_vllm.sh
 ```
@@ -184,16 +189,15 @@ and `meta.json`. Indexed document types must match the configured enum.
 ```bash
 conda activate ollive
 streamlit run src/ollive/ui/streamlit_app.py \
-  --server.address 0.0.0.0 \
+  --server.address 127.0.0.1 \
   --server.port 8501
 ```
 
 Open `http://localhost:8501`.
 
-If accessing a remote machine, allow TCP port 8501 only from trusted addresses
-in the host firewall or cloud security group. Streamlit is not configured with
-application-level authentication, so do not expose it directly to the public
-internet.
+The default command binds Streamlit to localhost only. Use an SSH tunnel or a
+trusted development port-forwarder for remote access; do not expose this unauthenticated
+interface directly to the public internet.
 
 ## 8. Verify the installation
 
@@ -217,6 +221,18 @@ not establish model quality; use the evaluation bundle for behavioral evidence.
 
 Confirm that vLLM is running and that `VLLM_BASE_URL` includes the `/v1`
 suffix. Test `curl http://127.0.0.1:8000/v1/models`.
+
+### TorchCodec cannot load FFmpeg
+
+Use `environment.yml`, or install FFmpeg shared libraries through the operating
+system package manager when using `venv`. `pip check` cannot detect missing shared
+libraries.
+
+### FlashInfer sampling compilation fails
+
+The launcher defaults `VLLM_USE_FLASHINFER_SAMPLER=0`, retaining vLLM native
+sampling while avoiding the optional FlashInfer sampling JIT. Override
+`OLLIVE_VLLM_USE_FLASHINFER_SAMPLER=1` only on a validated CUDA toolchain.
 
 ### CUDA out of memory
 

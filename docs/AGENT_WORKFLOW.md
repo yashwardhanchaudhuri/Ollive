@@ -94,6 +94,10 @@ request, or calls `search_web` once when a material detail is missing. An empty
 KB result forces the web path. This is a semantic decision rather than a keyword
 or regular-expression rule.
 
+If the model first submits an `evidence_limitation`, the application treats that
+structured signal as partial completion and forces the single web-search round
+before accepting a final answer.
+
 Web search is restricted twice: Tavily receives `include_domains` from the
 configured allowlist, and the adapter independently rejects off-domain URLs and
 results below the configured relevance score. Tavily documents `include_domains`

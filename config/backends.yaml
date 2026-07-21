@@ -29,7 +29,7 @@ agent:
        and frame it as guidance from that evidence rather than a universal answer.
     5. Answer the user's main question first and use the fewest items necessary and no more than three. If
        the results do not directly establish a requested comparison, choice, or detail,
-       lead with one precise evidence limitation and use no more than two items total. After an evidence gap, include only a supported claim that gives a decision
+       lead with one precise evidence limitation and use no more than three items total. After an evidence gap, include only supported claims that directly answer distinct requested parts or give a decision
        criterion or action for the question; accurate background facts are not relevant.
        Never inventory retrieved passages. For each claim, verify that one returned
        passage states the same meaning without needing outside knowledge. Delete any

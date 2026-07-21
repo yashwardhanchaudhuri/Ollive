@@ -4,8 +4,10 @@ set -euo pipefail
 
 MODEL="${OLLIVE_OSS_MODEL:-Qwen/Qwen3.5-9B}"
 PORT="${OLLIVE_VLLM_PORT:-8000}"
+HOST="${OLLIVE_VLLM_HOST:-127.0.0.1}"
 MAX_LEN="${OLLIVE_VLLM_MAX_LEN:-32768}"
 TP="${OLLIVE_VLLM_TP:-1}"
+export VLLM_USE_FLASHINFER_SAMPLER="${OLLIVE_VLLM_USE_FLASHINFER_SAMPLER:-0}"
 
 if ! command -v vllm >/dev/null 2>&1; then
   echo "vllm not found in the active environment." >&2
@@ -18,7 +20,7 @@ echo "Starting vLLM: model=${MODEL} port=${PORT}"
 echo "Client should use VLLM_BASE_URL=http://localhost:${PORT}/v1  VLLM_API_KEY=EMPTY"
 
 exec "${VLLM_BIN}" serve "${MODEL}" \
-  --host 0.0.0.0 \
+  --host "${HOST}" \
   --port "${PORT}" \
   --tensor-parallel-size "${TP}" \
   --max-model-len "${MAX_LEN}" \

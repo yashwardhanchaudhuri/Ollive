@@ -51,6 +51,7 @@ then archive an exact lock or image digest.
 | **openai** | Shared client for OpenAI and the local vLLM endpoint |
 | **vllm** | Local OpenAI-compatible Qwen server |
 | **huggingface-hub** | Model download and shared cache management |
+| **FFmpeg** | Conda or system shared libraries required by TorchCodec |
 | **sentence-transformers** | Local BGE embedding model |
 | **numpy** | Embedding arrays |
 | **faiss-cpu** | Local paragraph-vector index |
@@ -64,14 +65,13 @@ request handling remain isolated from Streamlit even though packages are shared.
 
 ## Resolution and known versions
 
-A pip dry run resolves `requirements.txt` as one Python 3.11 dependency graph
-without conflicts. The resolver selects vLLM 0.25.0, PyTorch 2.11.0, and NumPy
-2.3.5 alongside the application packages. This checks package compatibility; it
-does not install the graph or prove compatibility with every NVIDIA driver.
+The unified Python 3.11 environment resolves and runs on the project L40S host with
+vLLM 0.25.0, PyTorch 2.11.0, NumPy 2.3.5, and FFmpeg 8.0.1. A live Qwen request,
+local retrieval, trusted-domain web completion, citation validation, and the full
+test suite all complete from that environment.
 
-The versions below have worked for their respective components in this project.
-They are useful reference points rather than proof that the newly consolidated
-environment has completed an end-to-end GPU run.
+These versions describe the validated host, not a universal compatibility guarantee
+for every NVIDIA driver and GPU combination.
 
 | Component | Known working version |
 |---|---:|
@@ -81,6 +81,8 @@ environment has completed an end-to-end GPU run.
 | Sentence Transformers | 5.6.0 |
 | FAISS CPU | 1.14.3 |
 | vLLM | 0.25.0 |
+| PyTorch | 2.11.0+cu130 |
+| FFmpeg | 8.0.1 |
 | Application tests | 45 passing |
 
 The application regression suite remains the behavioral checkpoint after

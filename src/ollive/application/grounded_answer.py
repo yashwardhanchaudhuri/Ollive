@@ -44,9 +44,9 @@ def build_grounded_answer_schema(citations: list[Citation]) -> dict[str, Any]:
             "description": (
                 "Submit a concise, direct answer with at most three atomic items. The "
                 "first item must answer the user's main question or state the precise "
-                "evidence gap. Use the fewest items necessary. If you use evidence_limitation, return no more "
-                "than two items total: the limitation and at most one directly useful "
-                "supported item when a retrieved citation is available. After an evidence gap, include only "
+                "evidence gap. Use the fewest items necessary. An evidence_limitation may "
+                "occupy one of the three items; every remaining item must be a directly "
+                "useful supported claim. After an evidence gap, include only "
                 "an item that supplies a cited decision criterion or action for the "
                 "question; accurate background information is not relevant. Do not inventory the retrieved passages. A "
                 "supported_claim must select one exact retrieved marker. An "
@@ -115,10 +115,6 @@ def parse_and_render_grounded_answer(
     )
     if limitation_count > 1:
         raise GroundedAnswerError("Use at most one evidence limitation")
-    if limitation_count and len(answer.items) > 2:
-        raise GroundedAnswerError(
-            "An answer with an evidence limitation may use at most two items"
-        )
 
     for item in answer.items:
         if "[" in item.text or "]" in item.text:

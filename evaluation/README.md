@@ -10,14 +10,14 @@ This directory is the entry point for the current OSS-frontier comparison and it
 | Is there a valid comparison? | Yes for structural workflow behavior; semantic review remains pending |
 | Are current results human-graded? | No |
 | What is measured? | Routing, tools, citations, query fidelity, latency, and token expenditure |
-| What should be read first? | [One-page evaluation paper](REPORT.md) |
+| What should be read first? | [One-page evaluation paper](../REPORT.pdf) |
 
 The canonical paper summarizes the current 144-attempt run. Detailed records and the earlier archived snapshot remain available for audit, not as competing conclusions.
 
 ## Layout
 
 - `REPORT.md` - authoritative one-page paper source for the current run
-- `REPORT.pdf` - one-page two-column evaluation paper
+- `../REPORT.pdf` - one-page two-column evaluation paper
 - `report_two_column.css` - reproducible PDF layout
 - `datasets/` - versioned source cases
 - `runs/` - raw records, manifests, and calibration output
@@ -27,7 +27,7 @@ The canonical paper summarizes the current 144-attempt run. Detailed records and
 
 | Need | Canonical artifact |
 |---|---|
-| One-page evaluation PDF | [REPORT.pdf](REPORT.pdf) |
+| One-page evaluation PDF | [REPORT.pdf](../REPORT.pdf) |
 | Overall interpretation | [REPORT.md](REPORT.md) |
 | Dataset creation and provenance | [REPORT.md - Study and dataset](REPORT.md#study-and-dataset) |
 | Core dataset | [datasets/core.v1.jsonl](datasets/core.v1.jsonl) |

@@ -148,7 +148,7 @@ page.
 
 The current matched comparison favors GPT-5.4 mini: 62/72 (86.1%) versus Qwen 3.5 9B at 53/72 (73.6%). Frontier leads the three structural axes, averages 4.95 s versus 6.66 s per case, and uses 366,364 versus 423,556 total tokens. Both retain 100% KB-query fidelity; semantic human review remains pending.
 
-Start with the [one-page evaluation paper](evaluation/REPORT.pdf).
+Start with the [one-page evaluation paper](REPORT.pdf).
 Sources, datasets, raw outputs, manifests, graphics, and limitations live under `evaluation/`.
 
 The versioned core dataset covers hallucination, paired identity swaps (counterfactual bias), harmful

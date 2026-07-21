@@ -62,7 +62,6 @@ Ollive/
 ├── evaluation/                  # Complete, reader-facing evaluation evidence
 │   ├── README.md                # Navigation and reproduction guide
 │   ├── REPORT.md                # Single authoritative consolidated report
-│   ├── REPORT.pdf               # One-page two-column evaluation paper
 │   ├── report_two_column.css    # Reproducible one-page PDF style
 │   ├── datasets/                # Versioned source evaluation datasets
 │   │   ├── core.v1.jsonl

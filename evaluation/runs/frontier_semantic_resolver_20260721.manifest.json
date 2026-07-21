@@ -1,0 +1,22 @@
+{
+  "run_id": "20260721T175048Z-6a9b6267",
+  "created_at": "2026-07-21T17:50:48.324831+00:00",
+  "dataset": "evaluation/datasets/core.v1.jsonl",
+  "dataset_cases": 72,
+  "backends": [
+    "frontier"
+  ],
+  "repetitions": 1,
+  "git_revision": "21dcd56d8512a25f883cd560d3b10d1b8d96ba60",
+  "python": "3.11.15",
+  "prompt_sha256": "96a032190274ea000ba5c00a811135611dab14300942a1dea1b0f66acad2114c",
+  "router_prompt_sha256": "04f815b46591acc80bf2b986636e2aa41bd03122fafd6765bbd0e3a0fb86011f",
+  "config": {
+    "frontier": {
+      "provider": "openai",
+      "model": "gpt-5.4-mini-2026-03-17",
+      "temperature": null,
+      "max_tokens": 1024
+    }
+  }
+}

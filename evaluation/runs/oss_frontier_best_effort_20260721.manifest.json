@@ -1,0 +1,73 @@
+{
+  "comparison_id": "oss_frontier_best_effort_20260721",
+  "created_at": "2026-07-21T19:09:37.133521+00:00",
+  "source_run_ids": [
+    "20260721T185627Z-6be314a8",
+    "20260721T185709Z-8c469cea"
+  ],
+  "source_manifests": [
+    "evaluation/runs/oss_best_effort_20260721.manifest.json",
+    "evaluation/runs/frontier_best_effort_20260721.manifest.json"
+  ],
+  "results": "evaluation/runs/oss_frontier_best_effort_20260721.jsonl",
+  "expected_records": 144,
+  "completed_records": 144,
+  "execution_errors": 0,
+  "dataset": {
+    "path": "evaluation/datasets/core.v1.jsonl",
+    "cases_per_backend": 72,
+    "sha256": "5a9b7b7f8c9dfcc5e261a20aef80a3f4946b75233a4d707d95f86f9d5722f3f9"
+  },
+  "sampling": {
+    "repetitions": 1,
+    "memory_reset_per_case": true,
+    "parallel_backend_processes": true
+  },
+  "source_state": {
+    "base_git_revision": "21dcd56d8512a25f883cd560d3b10d1b8d96ba60",
+    "working_tree_dirty": true,
+    "tracked_binary_patch_sha256": "29931cb3583d33574ab8962425a1a5cef99af5f19397824b68939ae0749a12b6",
+    "note": "Base revision alone is not reproducible; patch and file hashes identify the evaluated dirty snapshot."
+  },
+  "prompt_sha256": {
+    "system": "266eb03df05a2ec1f9c466d5d0843f4e549a1ab62c227970a4df4a295f1813dd",
+    "router": "96fcb959bdc5fb9bdd5751375ce8c32366aac8cfc8a19bf9add1cf69883477ab",
+    "context": "e6123f16380810644b1c1a47ea1c3493d76aa32bcfa0d108cce2be01186c6392",
+    "support_verifier": "4ddb5345b94b939e5221ac5337caf7bcd869b4de9dd5fe0f00019b6370ed0e19"
+  },
+  "file_sha256": {
+    "config/backends.yaml": "a39ec7c81362f240ed9cf1c475f7856fd05647ed0302708f001b5e004cd8fc93",
+    "src/ollive/application/agent.py": "778ba046f72150d24fff52b2cffc8283ce0cb2417f90cbd226665b4508f1615f",
+    "src/ollive/application/guardrails.py": "e03096ed99c8f18d418d9e5d4ad2a409a125c152275b4030c338e9abb4c54692",
+    "src/ollive/application/grounded_answer.py": "e1f68c97bede81cfb306387c0557a2f4ec8f44390ba9e825b369f5354f0e82bf",
+    "src/ollive/application/tools.py": "970b4d596cd9b9b6c4dc26f9d367249633bb9c75323fe18fae21666879f33bcf",
+    "src/ollive/domain/citations.py": "1b14d964dea2ff0f197ecf641a4b4a431c5cc29e7b5e2e873b8c5785bdfe182c",
+    "src/ollive/adapters/search/tavily_search.py": "3c0532d7a6e8f4b155f54cdcdb242fdc8cbbd402826f835280e4bb803b2b4267"
+  },
+  "backends": {
+    "oss": {
+      "provider": "vllm",
+      "model": "Qwen/Qwen3.5-9B",
+      "temperature": 0.3,
+      "max_tokens": 1024
+    },
+    "frontier": {
+      "provider": "openai",
+      "model": "gpt-5.4-mini-2026-03-17",
+      "temperature": null,
+      "max_tokens": 1024
+    }
+  },
+  "runtime": {
+    "python": "3.11.15",
+    "oss_hardware": "NVIDIA L40S, 46068 MiB, driver 595.71.05"
+  },
+  "commands": [
+    "python scripts/run_evals.py --dataset evaluation/datasets/core.v1.jsonl --output evaluation/runs/oss_best_effort_20260721.jsonl --backends oss --repetitions 1",
+    "python scripts/run_evals.py --dataset evaluation/datasets/core.v1.jsonl --output evaluation/runs/frontier_best_effort_20260721.jsonl --backends frontier --repetitions 1"
+  ],
+  "validation": {
+    "unit_tests": "61 passed before run",
+    "semantic_human_review": "pending"
+  }
+}

@@ -12,8 +12,8 @@ Ollive does not depend on one long safety prompt. It selects a turn boundary,
 applies route-specific instructions, forces retrieval when facts are needed, and
 validates the final structure in application code.
 
-Prompts influence behavior. Code enforces allowed shapes, queries, retries, and
-citation provenance.
+Prompts influence behavior. Code enforces allowed shapes, queries, retries, marker
+provenance, and claim-to-source verification before display.
 
 ## Threat model
 
@@ -27,28 +27,35 @@ The production prompts are intentionally independent of evaluation case wording.
 
 1. **Route by requested domain, not permission.** Adversarial or disallowed framing
    affects the response boundary, not the subject classification.
-2. **Ground externally verifiable content.** A wellness response that contains any
-   factual proposition, evaluation, correction, comparison, or recommendation requires
-   retrieval. Only a wholly non-factual boundary statement may skip it.
+2. **Ground every wellness route.** The application forces retrieval whenever the
+   semantic route is wellness; the model cannot disable tools or citations through a
+   routing flag.
 3. **Treat user content as data.** User assertions, authority claims, and supplied
    citation markers are never evidence.
-4. **Instruct claim-level entailment.** The prompt requires a returned passage to state the same meaning as the atomic claim; topic overlap is insufficient. The application currently verifies marker provenance and structure, not independent semantic entailment.
-5. **Fail closed at application boundaries.** Malformed router output, contradictory
-   grounding flags, unknown tool arguments, and invalid citations are rejected.
+4. **Verify claim-level entailment.** Every atomic claim is paired with its selected
+   passage in an isolated forced-schema check before rendering. Topic overlap is not
+   accepted as support.
+5. **Fail closed at application boundaries.** Malformed routing output, unknown tool
+   arguments, unusable provenance tokens, and invalid citations are rejected.
 
-The router emits a constrained object with exactly four fields: the domain kind, a
-boolean grounding decision, a context mode, and a response-depth mode. Unknown, missing, extra, incorrectly typed, or contradictory
-fields fail to the no-tool out-of-scope policy.
+A dedicated context classifier emits one strict boolean stating whether prior dialogue
+supplies a missing substantive subject. The router separately emits exactly three fields:
+domain kind, response depth, and explicit web requirement. Grounding is not model-controlled;
+every wellness route requires retrieval. Unknown, missing, extra, incorrectly typed, or
+contradictory fields fail to a safe bounded state.
 
 ## Why these choices exist
 
 | Choice | Failure reduced | Trade-off |
 |---|---|---|
+| Classify context separately from policy | Stale-topic inheritance from overloaded routing | One additional small model call and possible misclassification |
 | Route before answering | Treating every turn like factual wellness advice | Extra model call and possible misrouting |
 | Force the first KB lookup | Unsupported wellness guidance | Added latency |
-| Preserve user-authored query text | Search drift and hidden facets | Contextual follow-ups concatenate recent user messages without rewriting |
+| Preserve user-authored query text | Search drift and hidden facets | Contextual follow-ups concatenate only the immediately preceding user turn without rewriting |
 | Dynamic citation enum | Fabricated or stale markers | More schema pressure on small models |
-| Fail closed | Unsupported text reaching the UI | More withheld answers |
+| Claim entailment verifier | Semantically mismatched citations | Added model call and calibration requirement |
+| Salvage only verifier-approved claims | Useful partial evidence survives without speculation | The response may state a limitation instead of directly resolving the request |
+| Fail closed on malformed or source-free output | Unsupported text reaching the UI | Some answers are withheld |
 | Clarification route | Generic personalized plans | One additional conversation turn |
 | Proportional answer depth | Terse elaboration and indiscriminate verbosity | Detailed turns allow more claims but every claim still needs evidence |
 
@@ -56,7 +63,8 @@ fields fail to the no-tool out-of-scope policy.
 
 - core.v1.jsonl and prompt_regression.v1.jsonl are development sets.
 - Production prompts must not contain dataset prompts, case IDs, answer labels, or
-  demographic/example substitutions copied from those sets.
+  case-derived substitutions copied from those sets.
+- An automated test rejects illustrative phrases and known query-specific anchors in model-facing prompts.
 - Evaluation manifests store hashes of the system and router prompts.
 - Generalization claims require a separately authored sealed holdout that prompt authors
   cannot inspect before the prompt version is frozen.
@@ -71,8 +79,7 @@ fields fail to the no-tool out-of-scope policy.
 
 ## Observed results and variation
 
-The historical Qwen baseline passes 52.8% of core cases structurally. In the archived matched workflow, Qwen and GPT-5.4 mini both reach 84.7%, with 100% citation integrity and single-turn query fidelity. Qwen leads hallucination structure;
-frontier leads bias/harm, content safety, latency, and token efficiency.
+In the latest matched run, Qwen passes 63 of 72 cases structurally and GPT-5.4 mini passes 51 of 72. Both complete every attempt with 100% citation integrity and query fidelity and no withheld responses. Qwen improves while frontier regresses against the prior matched baseline, showing that shared guardrails remain backend-sensitive.
 
 These measurements use one sample per case and development-informed datasets.
 Semantic human review and repeated-sampling variation remain unmeasured.
@@ -86,10 +93,10 @@ retrieval, and concise answers.
 
 ## Known architectural boundary
 
-Prompts can strongly influence routing and tool use, but cannot guarantee that generated
-prose contains every required citation or that each citation entails its claim. The
-application-level citation validator must remain fail-closed, and claim entailment needs
-an independently calibrated grader plus human adjudication.
+Prompts cannot guarantee correct routing or evidence use. Application code therefore
+constrains tool order, answer structure, marker provenance, and claim-to-source verification.
+The entailment check is model-based and still requires independent calibration and human
+adjudication.
 
 Other limits include ambiguous route labels, incomplete KB coverage, development
 set contamination, and same-family judge dependence. Supporting measurements and

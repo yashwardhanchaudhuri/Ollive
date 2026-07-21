@@ -185,8 +185,10 @@ class LocalTransformersLLM(LLMPort):
                     {
                         "role": "system",
                         "content": (
-                            "You may call tools by emitting:\n"
-                            '<tool_call>{"name": "TOOL", "arguments": {...}}</tool_call>\n'
+                            "To call a tool, emit one <tool_call> element containing a JSON "
+                            "object. Its name field must select an available tool and its "
+                            "arguments field must satisfy that tool schema. Do not emit "
+                            "placeholder values.\n"
                             f"Available tools:\n{tool_blob}"
                         ),
                     },

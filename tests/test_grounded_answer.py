@@ -3,6 +3,7 @@ import pytest
 from ollive.application.grounded_answer import (
     GroundedAnswerError,
     NO_CITATION,
+    build_best_effort_grounded_answer,
     build_grounded_answer_schema,
     parse_and_render_grounded_answer,
 )
@@ -160,3 +161,32 @@ def test_schema_allows_limitation_when_no_source_is_found():
     )
     assert text == "The available sources do not establish this detail."
     assert used == []
+
+
+
+def test_best_effort_keeps_only_supported_claims_and_states_exact_gap(citations):
+    """Salvage verified adjacent guidance without retaining a rejected claim."""
+    arguments = {
+        "items": [
+            {
+                "kind": "supported_claim",
+                "text": "Unsupported generated detail.",
+                "citation": citations[0].marker,
+            },
+            {
+                "kind": "supported_claim",
+                "text": "The source-supported adjacent guidance.",
+                "citation": citations[1].marker,
+            },
+        ]
+    }
+
+    fallback = build_best_effort_grounded_answer(
+        arguments, [0], citations, max_items=3
+    )
+    text, used = parse_and_render_grounded_answer(fallback, citations)
+
+    assert text.startswith("The available sources do not directly establish")
+    assert "Unsupported generated detail" not in text
+    assert "The source-supported adjacent guidance." in text
+    assert used == [citations[1]]

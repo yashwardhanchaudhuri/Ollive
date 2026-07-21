@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from functools import wraps
 import json
 from typing import Any
@@ -9,19 +10,27 @@ from typing import Any
 from ollive.application.grounded_answer import (
     SUBMIT_GROUNDED_ANSWER,
     GroundedAnswerError,
+    build_best_effort_grounded_answer,
     build_grounded_answer_schema,
     forced_grounded_answer_choice,
     parse_and_render_grounded_answer,
+    verify_claim_support,
 )
 from ollive.application.guardrails import (
     ContextMode,
     ResponseDepth,
     TurnPolicy,
+    TurnKind,
     classify_turn,
+    render_medical_boundary,
 )
 from ollive.application.memory import ShortTermMemory
 from ollive.application.tools import ToolRouter
-from ollive.domain.citations import parse_citations, validate_citations
+from ollive.domain.citations import (
+    find_citation_like_tokens,
+    parse_citations,
+    validate_citations,
+)
 from ollive.domain.models import (
     AgentTurnResult,
     Citation,
@@ -63,7 +72,7 @@ class WellnessAgent:
         tracer: TracerPort,
         system_prompt: str,
         memory_turns: int = 8,
-        max_tool_rounds: int = 4,
+        max_tool_rounds: int = 6,
         session_id: str | None = None,
     ) -> None:
         """Initialize WellnessAgent with its runtime collaborators."""
@@ -108,11 +117,22 @@ class WellnessAgent:
             if message.role in {Role.USER, Role.ASSISTANT} and not message.tool_calls
         ]
         self._memory.restore(memory_checkpoint)
-        # Routing is separate so answer generation cannot choose its own safety boundary.
         policy, routing_usage = classify_turn(self._llm, user_text, memory_checkpoint)
-        evidence_query = self._resolve_evidence_query(
-            policy, user_text, memory_checkpoint
-        )
+        evidence_query = user_text
+        if policy.require_tools:
+            prior_user_text = [
+                message.content
+                for message in memory_checkpoint
+                if message.role is Role.USER
+            ]
+            if policy.context_mode is ContextMode.PREVIOUS_AND_CURRENT:
+                evidence_query, uses_prior_context = self._tools.resolve_evidence_query(
+                    user_text, prior_user_text
+                )
+                # Semantic relevance bounds how much selected history is useful; it
+                # cannot independently turn a self-contained request into a follow-up.
+                if not uses_prior_context:
+                    policy = replace(policy, context_mode=ContextMode.CURRENT)
         max_answer_items = (
             5 if policy.response_depth is ResponseDepth.DETAILED else 3
         )
@@ -132,6 +152,33 @@ class WellnessAgent:
             },
             session_id=self._session_id,
         ):
+            if policy.kind is TurnKind.MEDICAL:
+                assistant_text, boundary_usage = render_medical_boundary(
+                    self._llm, user_text
+                )
+                turn_usage = turn_usage.add(boundary_usage)
+                self._tracer.log_span(
+                    name="medical_boundary",
+                    input={"route": policy.kind.value},
+                    output=assistant_text,
+                )
+                self._memory.restore(memory_checkpoint)
+                self._memory.add(user_message)
+                self._memory.add(Message(role=Role.ASSISTANT, content=assistant_text))
+                self._session_usage = self._session_usage.add(turn_usage)
+                self._tracer.flush()
+                return AgentTurnResult(
+                    assistant_message=assistant_text,
+                    citations=[],
+                    invalid_citations=[],
+                    citation_validation_failed=False,
+                    tool_trace=[],
+                    usage=turn_usage,
+                    backend=self._llm.backend_name,
+                    model=self._llm.model_name,
+                    policy_route=policy.kind.value,
+                )
+
             messages = self._build_messages(
                 policy, evidence_query, max_answer_items
             )
@@ -140,7 +187,11 @@ class WellnessAgent:
             structured_error: str | None = None
             tool_names_used: set[str] = set()
             finalization_attempted = False
-            web_completion_required = False
+            correction_attempts = 0
+            max_correction_attempts = 2
+            best_effort_arguments: dict[str, Any] | None = None
+            best_effort_claim_count = -1
+            web_completion_required = policy.web_search_requested
 
             # Narrow tools according to completed evidence work so the model cannot
             # skip required retrieval or return free text afterward.
@@ -257,6 +308,30 @@ class WellnessAgent:
                             turn_citations,
                             max_items=max_answer_items,
                         )
+                        unsupported, support_usage = verify_claim_support(
+                            self._llm,
+                            response.tool_calls[0].arguments,
+                            turn_citations,
+                        )
+                        turn_usage = turn_usage.add(support_usage)
+                        if unsupported:
+                            candidate = build_best_effort_grounded_answer(
+                                response.tool_calls[0].arguments,
+                                unsupported,
+                                turn_citations,
+                                max_items=max_answer_items,
+                            )
+                            candidate_claim_count = sum(
+                                item.get("kind") == "supported_claim"
+                                for item in candidate["items"]
+                            )
+                            if candidate_claim_count > best_effort_claim_count:
+                                best_effort_arguments = candidate
+                                best_effort_claim_count = candidate_claim_count
+                            positions = ", ".join(str(index) for index in unsupported)
+                            raise GroundedAnswerError(
+                                "Selected citations do not entail claim items: " + positions
+                            )
                         structured_grounded = True
                         structured_error = None
                         self._tracer.log_span(
@@ -277,6 +352,9 @@ class WellnessAgent:
                         break
                     except GroundedAnswerError as exc:
                         structured_error = str(exc)
+                        if correction_attempts >= max_correction_attempts:
+                            break
+                        correction_attempts += 1
                         invalid_call = response.tool_calls[0]
                         messages.append(
                             Message(
@@ -379,15 +457,38 @@ class WellnessAgent:
                     turn_usage = turn_usage.add(response.usage)
                     assistant_text = response.content
 
+            if structured_error and best_effort_arguments is not None:
+                assistant_text, _used = parse_and_render_grounded_answer(
+                    best_effort_arguments,
+                    turn_citations,
+                    max_items=max_answer_items,
+                )
+                structured_grounded = True
+                structured_error = None
+                self._tracer.log_span(
+                    name="best_effort_grounded_answer",
+                    input={"supported_claim_count": best_effort_claim_count},
+                    output=assistant_text,
+                )
+
             # Validate markers again after rendering to catch non-grounded output
             # and any drift between model, adapter, and application contracts.
             claimed = parse_citations(assistant_text)
             valid, invalid = validate_citations(claimed, turn_citations)
+            allowed_markers = {citation.marker for citation in turn_citations}
+            unexpected_citation_tokens = [
+                token
+                for token in find_citation_like_tokens(assistant_text)
+                if token not in allowed_markers
+            ]
             missing_required_citations = (
                 bool(turn_citations) and not claimed and not structured_grounded
             )
             citation_validation_failed = (
-                bool(structured_error) or bool(invalid) or missing_required_citations
+                bool(structured_error)
+                or bool(invalid)
+                or bool(unexpected_citation_tokens)
+                or missing_required_citations
             )
             if citation_validation_failed:
                 self._tracer.log_span(
@@ -395,6 +496,7 @@ class WellnessAgent:
                     input={"claimed": [c.marker for c in claimed]},
                     output={
                         "invalid": [c.marker for c in invalid],
+                        "unexpected_tokens": unexpected_citation_tokens,
                         "structured_error": structured_error,
                     },
                 )
@@ -425,20 +527,6 @@ class WellnessAgent:
                 model=self._llm.model_name,
                 policy_route=policy.kind.value,
             )
-
-    @staticmethod
-    def _resolve_evidence_query(
-        policy: TurnPolicy,
-        user_text: str,
-        history: list[Message],
-    ) -> str:
-        """Bind dependent follow-ups to recent user text without inventing a rewrite."""
-        if policy.context_mode is not ContextMode.PREVIOUS_AND_CURRENT:
-            return user_text
-        prior_user_text = [
-            message.content for message in history if message.role is Role.USER
-        ][-2:]
-        return "\n".join([*prior_user_text, user_text])
 
     def _build_messages(
         self,

@@ -32,7 +32,7 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
                         "minItems": 1,
                         "maxItems": 20,
                         "description": (
-                            "Optional doc_type filters, e.g. ['diet', 'natural_supplements']"
+                            "Optional doc_type filters selected only from the provided enum"
                         ),
                     },
                     "top_k": {
@@ -126,6 +126,14 @@ class ToolRouter:
         schemas[0]["function"]["parameters"]["additionalProperties"] = False
         schemas[1]["function"]["parameters"]["additionalProperties"] = False
         return schemas
+
+    def resolve_evidence_query(
+        self, current: str, prior_user_text: list[str]
+    ) -> tuple[str, bool]:
+        """Attach one bounded prior user turn after the LLM selects continuation."""
+        if not prior_user_text:
+            return current, False
+        return "\n".join([prior_user_text[-1], current]), True
 
     def execute(
         self, call: ToolCallRequest, *, user_query: str | None = None

@@ -1,11 +1,22 @@
 import pytest
+import json
 
 from ollive.application.guardrails import (
+    CONTEXT_PROMPT,
     ContextMode,
+    MEDICAL_BOUNDARY_PROMPT,
+    POLICIES,
+    ROUTER_PROMPT,
     ResponseDepth,
     TurnKind,
+    classify_context,
     classify_turn,
 )
+from ollive.application.config import load_config
+from ollive.application.grounded_answer import SUPPORT_VERIFIER_PROMPT
+from ollive.application.tools import TOOL_SCHEMAS
+from ollive.evaluation.judge import JUDGE_PROMPT
+
 from ollive.domain.models import (
     LLMResponse,
     Message,
@@ -23,33 +34,48 @@ class RoutingLLM:
         self,
         kind: str | None,
         *,
-        grounding: object | None = None,
-        omit_grounding: bool = False,
         wrong_tool: bool = False,
-        context_mode: object = "current",
         response_depth: object = "standard",
-        omit_context_mode: bool = False,
+        web_search_requested: bool = False,
+        context_mode: object = "current",
         omit_response_depth: bool = False,
+        extra_field: bool = False,
     ):
         """Store the router payload returned by the deterministic LLM stub."""
         self.kind = kind
-        self.grounding = kind == "wellness" if grounding is None else grounding
-        self.omit_grounding = omit_grounding
         self.wrong_tool = wrong_tool
-        self.context_mode = context_mode
         self.response_depth = response_depth
-        self.omit_context_mode = omit_context_mode
+        self.web_search_requested = web_search_requested
+        self.context_mode = context_mode
         self.omit_response_depth = omit_response_depth
+        self.extra_field = extra_field
 
     def chat(self, messages, tools=None, tool_choice=None):
-        """Return the configured semantic-routing response without network I/O."""
+        """Return configured context and route decisions without network I/O."""
+        tool_name = tools[0]["function"]["name"] if tools else None
+        if tool_name == "judge_context":
+            return LLMResponse(
+                tool_calls=[
+                    ToolCallRequest(
+                        id="context-1",
+                        name="judge_context",
+                        arguments={
+                            "requires_prior_dialogue": (
+                                self.context_mode == "previous_and_current"
+                            )
+                        },
+                    )
+                ],
+                usage=UsageStats(total_tokens=3, model="router", backend="test"),
+            )
         calls = []
         if self.kind is not None:
-            arguments = {"kind": self.kind}
-            if not self.omit_grounding:
-                arguments["needs_grounding"] = self.grounding
-            if not self.omit_context_mode:
-                arguments["context_mode"] = self.context_mode
+            arguments = {
+                "kind": self.kind,
+                "web_search_requested": self.web_search_requested,
+            }
+            if self.extra_field:
+                arguments["unexpected"] = True
             if not self.omit_response_depth:
                 arguments["response_depth"] = self.response_depth
             calls.append(
@@ -84,43 +110,36 @@ def test_semantic_router_accepts_only_declared_enum(kind, allow_tools):
     assert usage.total_tokens == 7
 
 
-def test_wellness_boundary_disables_tools_without_changing_domain():
-    """Keep a wellness route while honoring a boundary that disables tools."""
-    policy, _usage = classify_turn(
-        RoutingLLM("wellness", grounding=False), "refuse a fabrication request"
-    )
+def test_wellness_grounding_is_application_owned():
+    """Require evidence tools for every route classified as wellness."""
+    policy, _usage = classify_turn(RoutingLLM("wellness"), "wellness request")
+
     assert policy.kind is TurnKind.WELLNESS
-    assert not policy.allow_tools
-    assert not policy.require_tools
+    assert policy.allow_tools
+    assert policy.require_tools
 
-
-def test_router_marks_dependent_elaboration_as_contextual_and_detailed():
-    """Preserve the prior topic and allow more supported detail on follow-ups."""
+def test_explicit_web_request_enables_one_web_evidence_round():
+    """Carry an explicit web request into the grounded agent policy."""
     policy, _usage = classify_turn(
-        RoutingLLM(
-            "wellness",
-            context_mode="previous_and_current",
-            response_depth="detailed",
-        ),
-        "Elaborate on it?",
-        history=[
-            Message(role=Role.USER, content="How can I sleep on time?"),
-            Message(role=Role.ASSISTANT, content="Keep a regular schedule."),
-        ],
+        RoutingLLM("wellness", web_search_requested=True),
+        "Can you search the internet for healthy lifestyle tips",
+    )
+
+    assert policy.kind is TurnKind.WELLNESS
+    assert policy.require_tools
+    assert policy.web_search_requested
+
+
+def test_router_exposes_explicit_context_dependency():
+    """Carry semantic continuation independently of route and web policy."""
+    policy, usage = classify_turn(
+        RoutingLLM("wellness", context_mode="previous_and_current"),
+        "dependent request",
+        history=[Message(role=Role.USER, content="prior request")],
     )
 
     assert policy.context_mode is ContextMode.PREVIOUS_AND_CURRENT
-    assert policy.response_depth is ResponseDepth.DETAILED
-
-
-def test_contextual_mode_without_prior_user_turn_normalizes_to_current():
-    """Avoid manufacturing context when no earlier user request exists."""
-    policy, _usage = classify_turn(
-        RoutingLLM("wellness", context_mode="previous_and_current"),
-        "Elaborate on it?",
-    )
-
-    assert policy.context_mode is ContextMode.CURRENT
+    assert usage.total_tokens == 10
 
 
 @pytest.mark.parametrize(
@@ -129,13 +148,10 @@ def test_contextual_mode_without_prior_user_turn_normalizes_to_current():
         RoutingLLM(None),
         RoutingLLM("invented_route"),
         RoutingLLM("wellness", wrong_tool=True),
-        RoutingLLM("wellness", omit_grounding=True),
-        RoutingLLM("wellness", omit_context_mode=True),
+        RoutingLLM("wellness", extra_field=True),
+        RoutingLLM("conversation", web_search_requested=True),
         RoutingLLM("wellness", omit_response_depth=True),
-        RoutingLLM("wellness", context_mode="invented"),
         RoutingLLM("wellness", response_depth="invented"),
-        RoutingLLM("wellness", grounding="true"),
-        RoutingLLM("conversation", grounding=True),
     ],
 )
 def test_malformed_router_output_fails_closed(router):
@@ -143,3 +159,21 @@ def test_malformed_router_output_fails_closed(router):
     policy, _usage = classify_turn(router, "anything")
     assert policy.kind == TurnKind.OUT_OF_SCOPE
     assert not policy.allow_tools
+
+
+def test_model_prompts_are_free_of_content_examples():
+    """Prevent query-specific demonstrations from anchoring model decisions."""
+    prompt_texts = [
+        MEDICAL_BOUNDARY_PROMPT,
+        CONTEXT_PROMPT,
+        ROUTER_PROMPT,
+        SUPPORT_VERIFIER_PROMPT,
+        JUDGE_PROMPT,
+        load_config()["agent"]["system_prompt"],
+        *[policy.instruction for policy in POLICIES.values()],
+        json.dumps(TOOL_SCHEMAS),
+    ]
+    combined = "\n".join(prompt_texts).casefold()
+    forbidden = ("example:", "for example", "such as", "e.g.", "for instance")
+
+    assert all(marker not in combined for marker in forbidden)

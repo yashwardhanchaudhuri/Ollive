@@ -1,6 +1,7 @@
+import json
 from ollive.adapters.observability.langfuse_tracer import NoOpTracer
 from ollive.application.agent import CITATION_REJECTION_MESSAGE, WellnessAgent
-from ollive.application.grounded_answer import SUBMIT_GROUNDED_ANSWER
+from ollive.application.grounded_answer import SUBMIT_GROUNDED_ANSWER, VERIFY_CLAIM_SUPPORT
 from ollive.domain.models import (
     Citation,
     LLMResponse,
@@ -10,6 +11,26 @@ from ollive.domain.models import (
     ToolResult,
     UsageStats,
 )
+
+
+def support_verdict_response(messages, supported=True):
+    """Return one strict verdict for every claim/source pair in the verifier input."""
+    pairs = json.loads(messages[-1].content)["pairs"]
+    return LLMResponse(
+        tool_calls=[
+            ToolCallRequest(
+                id="verify",
+                name=VERIFY_CLAIM_SUPPORT,
+                arguments={
+                    "verdicts": [
+                        {"index": pair["index"], "supported": supported}
+                        for pair in pairs
+                    ]
+                },
+            )
+        ],
+        usage=UsageStats(total_tokens=1),
+    )
 
 
 class StructuredSleepLLM:
@@ -26,6 +47,18 @@ class StructuredSleepLLM:
     def chat(self, messages, tools=None, tool_choice=None):
         """Simulate routing, required KB lookup, and structured answer submission."""
         tool_name = tools[0]["function"]["name"] if tools else None
+        if tool_name == VERIFY_CLAIM_SUPPORT:
+            return support_verdict_response(messages)
+        if tool_name == "judge_context":
+            return LLMResponse(
+                tool_calls=[
+                    ToolCallRequest(
+                        id="context",
+                        name="judge_context",
+                        arguments={"requires_prior_dialogue": False},
+                    )
+                ]
+            )
         if tool_name == "route_turn":
             return LLMResponse(
                 tool_calls=[
@@ -34,8 +67,7 @@ class StructuredSleepLLM:
                         name="route_turn",
                         arguments={
                             "kind": "wellness",
-                            "needs_grounding": True,
-                            "context_mode": "current",
+                            "web_search_requested": False,
                             "response_depth": "standard",
                         },
                     )
@@ -103,6 +135,10 @@ class SleepTools:
         descriptor="sleep-hygiene-is-among-the",
         text="Maintaining a regular sleep schedule supports restorative rest.",
     )
+
+    def resolve_evidence_query(self, current, prior_user_text):
+        """Treat test requests as self-contained unless a subclass overrides it."""
+        return current, False
 
     @property
     def schemas(self):
@@ -175,7 +211,7 @@ def test_independent_grounded_turn_excludes_prior_user_topic_from_answer_context
     llm = StructuredSleepLLM()
     agent = build_agent(llm)
     agent.memory.add(
-        Message(role=Role.USER, content="Should I take a GLP-1 medication?")
+        Message(role=Role.USER, content="Should I take a prescription medication?")
     )
     agent.memory.add(
         Message(role=Role.ASSISTANT, content="Please ask a licensed professional.")
@@ -194,6 +230,35 @@ def test_structured_answer_recovers_after_validation_feedback():
 
     assert result.assistant_message.startswith("Maintain a regular sleep schedule.")
     assert not result.citation_validation_failed
+    assert llm.answer_calls == 3
+
+
+class RejectFirstSupportLLM(StructuredSleepLLM):
+    """Reject the first claim/source pair, then accept the corrected resubmission."""
+
+    def __init__(self):
+        """Initialize the number of claim-support verification attempts."""
+        super().__init__()
+        self.verifications = 0
+
+    def chat(self, messages, tools=None, tool_choice=None):
+        """Return one failed verdict before accepting the retry."""
+        tool_name = tools[0]["function"]["name"] if tools else None
+        if tool_name == VERIFY_CLAIM_SUPPORT:
+            self.verifications += 1
+            return support_verdict_response(
+                messages, supported=self.verifications > 1
+            )
+        return super().chat(messages, tools=tools, tool_choice=tool_choice)
+
+
+def test_unsupported_claim_is_rejected_and_resubmitted_before_rendering():
+    """Do not render a retrieved marker until its passage entails the claim."""
+    llm = RejectFirstSupportLLM()
+    result = build_agent(llm).chat("I want sleep tips")
+
+    assert not result.citation_validation_failed
+    assert llm.verifications == 2
     assert llm.answer_calls == 3
 
 
@@ -222,6 +287,18 @@ class DetailedFollowupLLM:
     def chat(self, messages, tools=None, tool_choice=None):
         """Simulate contextual routing, KB retrieval, and a four-item answer."""
         tool_names = [tool["function"]["name"] for tool in tools or []]
+        if tool_names == [VERIFY_CLAIM_SUPPORT]:
+            return support_verdict_response(messages)
+        if tool_names == ["judge_context"]:
+            return LLMResponse(
+                tool_calls=[
+                    ToolCallRequest(
+                        id="context",
+                        name="judge_context",
+                        arguments={"requires_prior_dialogue": True},
+                    )
+                ]
+            )
         if tool_names == ["route_turn"]:
             return LLMResponse(
                 tool_calls=[
@@ -230,8 +307,7 @@ class DetailedFollowupLLM:
                         name="route_turn",
                         arguments={
                             "kind": "wellness",
-                            "needs_grounding": True,
-                            "context_mode": "previous_and_current",
+                            "web_search_requested": False,
                             "response_depth": "detailed",
                         },
                     )
@@ -287,6 +363,10 @@ class DetailedFollowupLLM:
 
 
 class DetailedFollowupTools(SleepTools):
+    def resolve_evidence_query(self, current, prior_user_text):
+        """Attach bounded prior user context for this dependent test turn."""
+        return "\n".join([prior_user_text[-1], current]), True
+
     def execute(self, call, *, user_query=None):
         """Require the original sleep request to remain attached to elaboration."""
         assert call.name == "lookup_kb"
@@ -333,6 +413,8 @@ class PartialEvidenceLLM:
     def chat(self, messages, tools=None, tool_choice=None):
         """Simulate a KB gap followed by web completion and grounded submission."""
         tool_names = [tool["function"]["name"] for tool in tools or []]
+        if tool_names == [VERIFY_CLAIM_SUPPORT]:
+            return support_verdict_response(messages)
         if tool_names == ["route_turn"]:
             return LLMResponse(
                 tool_calls=[
@@ -341,8 +423,7 @@ class PartialEvidenceLLM:
                         name="route_turn",
                         arguments={
                             "kind": "wellness",
-                            "needs_grounding": True,
-                            "context_mode": "current",
+                            "web_search_requested": False,
                             "response_depth": "standard",
                         },
                     )
@@ -485,6 +566,8 @@ class NoEvidenceLLM:
     def chat(self, messages, tools=None, tool_choice=None):
         """Simulate empty KB and web searches followed by a limitation."""
         tool_names = [tool["function"]["name"] for tool in tools or []]
+        if tool_names == [VERIFY_CLAIM_SUPPORT]:
+            return support_verdict_response(messages)
         if tool_names == ["route_turn"]:
             return LLMResponse(
                 tool_calls=[
@@ -493,8 +576,7 @@ class NoEvidenceLLM:
                         name="route_turn",
                         arguments={
                             "kind": "wellness",
-                            "needs_grounding": True,
-                            "context_mode": "current",
+                            "web_search_requested": False,
                             "response_depth": "standard",
                         },
                     )
@@ -569,3 +651,44 @@ def test_agent_returns_a_structured_limitation_when_all_sources_are_empty():
     assert [step["name"] for step in result.tool_trace] == ["lookup_kb", "search_web"]
     assert result.citations == []
     assert not result.citation_validation_failed
+
+
+
+class FabricatedConversationCitationLLM:
+    model_name = "fabricated-conversation-citation"
+    backend_name = "test"
+
+    def chat(self, messages, tools=None, tool_choice=None):
+        """Misroute a factual turn and emit an invented provenance token."""
+        tool_name = tools[0]["function"]["name"] if tools else None
+        if tool_name == "route_turn":
+            return LLMResponse(
+                tool_calls=[
+                    ToolCallRequest(
+                        id="route",
+                        name="route_turn",
+                        arguments={
+                            "kind": "conversation",
+                            "web_search_requested": False,
+                            "response_depth": "standard",
+                        },
+                    )
+                ]
+            )
+        return LLMResponse(content="Unsupported claim [doc:diet:invented_source]")
+
+
+def test_fabricated_citation_on_non_grounded_route_is_withheld():
+    """Fail closed on unknown provenance syntax even after a route error."""
+    agent = WellnessAgent(
+        llm=FabricatedConversationCitationLLM(),
+        tools=SleepTools(),
+        tracer=NoOpTracer(),
+        system_prompt="Use grounded wellness evidence.",
+    )
+
+    result = agent.chat("substantive request")
+
+    assert result.assistant_message == CITATION_REJECTION_MESSAGE
+    assert result.citation_validation_failed
+    assert result.citations == []

@@ -19,22 +19,34 @@ requests stop at a non-clinical boundary.
 | Local Qwen workflow | Supported through vLLM |
 | Grounded local retrieval | Paragraph-level FAISS search |
 | Citation provenance checks | Application-enforced and fail-closed |
-| Current Qwen structural evaluation | 53/72 (73.6%) on the matched run |
-| Current frontier structural evaluation | 62/72 (86.1%); faster and 13.5% lower token use |
+| Latest Qwen structural evaluation | 63/72 (87.5%) on the current matched run |
+| Latest frontier structural evaluation | 51/72 (70.8%) on the current matched run |
 | Human semantic review | Not completed |
 
 The [agent workflow](docs/AGENT_WORKFLOW.md) explains the design. The
 [consolidated report](evaluation/REPORT.md) explains the evidence and its limits.
+## Quick start
+
+From the repository root, use the single launcher:
+
+```bash
+./run_ollive.sh oss
+```
+
+This creates or updates the unified Conda environment, installs dependencies, builds a missing KB index, starts local Qwen/vLLM, and serves Streamlit at `http://127.0.0.1:8501`. For the frontier backend, put `OPENAI_API_KEY` in `.env`, change `active: oss` to `active: frontier` in `config/backends.yaml`, then run `./run_ollive.sh frontier`. Full prerequisites and troubleshooting are in [docs/INSTALL.md](docs/INSTALL.md).
+
 
 ## Design choices
 
 - **Shared agent spec**: system prompt, last-N memory, tools (`lookup_kb`, `search_web`)
-- **Semantic context policy**: the router distinguishes an isolated request from a dependent follow-up. An isolated grounded turn receives only its current user message; a follow-up receives the relevant recent user turns for retrieval and answer generation. Earlier assistant prose and tool output never become evidence.
+- **Semantic continuation gate**: a dedicated constrained LLM call decides whether the current message has its own substantive subject or requires the preceding dialogue. The application then uses either the current user text or one bounded prior user turn plus the current text; no regex, keyword list, model-written query, or similarity threshold controls this decision.
+- **Medical boundary**: a semantic urgency selector chooses one of two application-owned responses; named-drug facts cannot be generated or cited on this route.
 - **Swappable backends** via `config/backends.yaml`
   - OSS: **`Qwen/Qwen3.5-9B` on local vLLM** (OpenAI-compatible; `VLLM_API_KEY=EMPTY`)
   - Frontier: `gpt-5.4-mini` (needs `OPENAI_API_KEY`)
 - **Local grounding**: paragraph chunks from `assignment_kb/`, indexed by `doc_type`, FAISS + `BAAI/bge-small-en-v1.5`
-- **Citations**: every grounded claim selects an application-returned KB or web marker
+- **Citations**: every grounded claim selects a current-turn marker, then an isolated verifier checks that the selected passage entails the claim
+
 - **Streamlit UI**: chat, backend switcher, token/latency sidebar, expandable sources
 - **Observability**: local JSONL traces in `data/traces/` (no Langfuse keys)
 
@@ -45,6 +57,8 @@ changing routing, retrieval, validation, or memory. This makes comparisons more
 meaningful: candidate models face the same surrounding workflow.
 
 The diagram is a responsibility map, not a multi-agent hierarchy.
+![Ollive agent flowchart](docs/agent_workflow.svg)
+
 
 ```
       Streamlit
@@ -113,6 +127,7 @@ and troubleshooting. Traces land in `data/traces/*.jsonl`.
 
 - `active` backend
 - model ids, temperature, memory turns
+- bounded memory and response-depth settings
 - embedding model and index paths / `top_k`
 - Tavily and observability settings
 
@@ -129,9 +144,11 @@ Indexer assigns each paragraph:
 `lookup_kb` returns markers like `[diet:L9:portion-control-plays-a-critical]`.
 Accepted web results receive separate markers such as `[web:L1:3f5a8c1d7e20]`
 plus their original URLs. The model selects only from markers returned during the
-current turn through `submit_grounded_answer`; the application renders them, and
-the UI source drawer opens either the KB paragraph or the authoritative external
-page.
+current turn through `submit_grounded_answer`; an isolated semantic check verifies each
+claim against its selected passage before the application renders it. If an exact
+answer cannot be validated, the application states the limitation and retains only
+verifier-approved cited guidance; unsupported claims are discarded. The UI source drawer
+opens either the KB paragraph or the authoritative external page.
 
 ## Architecture decisions & tradeoffs
 
@@ -146,9 +163,9 @@ page.
 
 ### What the current results mean
 
-The current matched comparison favors GPT-5.4 mini: 62/72 (86.1%) versus Qwen 3.5 9B at 53/72 (73.6%). Frontier leads the three structural axes, averages 4.95 s versus 6.66 s per case, and uses 366,364 versus 423,556 total tokens. Both retain 100% KB-query fidelity; semantic human review remains pending.
+The latest matched comparison shows backend divergence: Qwen passes 63/72 (87.5%), while GPT-5.4 mini passes 51/72 (70.8%). Relative to the prior matched run, Qwen improves by 13.9 points and frontier regresses by 15.3 points. Both complete 72/72 attempts with 100% citation integrity and query fidelity and no withheld responses. Frontier is 20.4% faster and uses 22.7% fewer tokens. These are structural results; semantic human review remains pending.
 
-Start with the [one-page evaluation paper](REPORT.pdf).
+Start with the [current detailed comparison](evaluation/reports/oss_frontier_best_effort_20260721/report.md), the [evaluated change ledger](evaluation/reports/oss_frontier_best_effort_20260721/CHANGE_LEDGER.md), and the current [one-page PDF](REPORT.pdf).
 Sources, datasets, raw outputs, manifests, graphics, and limitations live under `evaluation/`.
 
 The versioned core dataset covers hallucination, paired identity swaps (counterfactual bias), harmful
@@ -181,7 +198,7 @@ The next stage should strengthen evidence quality rather than add more prompt ru
 - Complete blinded human semantic review of critical failures, pair quality, and sampled passes.
 - Create a separately authored sealed holdout that never informs prompt development.
 - Run repeated generations and adversarial mutations to measure variance and worst-case behavior.
-- Add claim-to-passage entailment review so valid citation syntax cannot mask overbroad claims.
+- Calibrate the model-based entailment gate against blinded human labels and compare it with an independently trained NLI verifier.
 - Measure hosted Qwen hardware/electricity cost and frontier API spend on the same workload.
 - Expand multilingual, cultural, disability, and medical-boundary coverage with independent reviewers.
 

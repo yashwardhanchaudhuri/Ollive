@@ -11,6 +11,7 @@ CITATION_RE = re.compile(
     r"\[(?P<doc_type>[a-z0-9_]+):L(?P<start>\d+)(?:-L?(?P<end>\d+))?:(?P<descriptor>[a-z0-9\-]+)\]",
     re.IGNORECASE,
 )
+CITATION_LIKE_RE = re.compile(r"\[[^\[\]\n]*:[^\[\]\n]*\]")
 
 
 def slugify_descriptor(text: str, max_words: int = 5) -> str:
@@ -19,6 +20,11 @@ def slugify_descriptor(text: str, max_words: int = 5) -> str:
     if not words:
         return "chunk"
     return "-".join(words[:max_words])
+
+
+def find_citation_like_tokens(text: str) -> list[str]:
+    """Return bracketed colon-delimited tokens for provenance validation."""
+    return [match.group(0) for match in CITATION_LIKE_RE.finditer(text)]
 
 
 def parse_citations(text: str) -> list[Citation]:

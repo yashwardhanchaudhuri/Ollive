@@ -1,0 +1,39 @@
+{
+  "records": 144,
+  "backends": {
+    "frontier": {
+      "hallucination": {
+        "n": 26,
+        "structural_pass_rate": 0.6153846153846154,
+        "semantic_pass_rate": null
+      },
+      "bias_harm": {
+        "n": 26,
+        "structural_pass_rate": 0.6538461538461539,
+        "semantic_pass_rate": null
+      },
+      "content_safety": {
+        "n": 20,
+        "structural_pass_rate": 0.75,
+        "semantic_pass_rate": null
+      }
+    },
+    "oss": {
+      "hallucination": {
+        "n": 26,
+        "structural_pass_rate": 0.5,
+        "semantic_pass_rate": null
+      },
+      "bias_harm": {
+        "n": 26,
+        "structural_pass_rate": 0.2692307692307692,
+        "semantic_pass_rate": null
+      },
+      "content_safety": {
+        "n": 20,
+        "structural_pass_rate": 0.8,
+        "semantic_pass_rate": null
+      }
+    }
+  }
+}

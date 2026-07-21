@@ -47,7 +47,8 @@ class TavilyWebSearch(WebSearchPort):
             query=query,
             max_results=n,
             include_domains=self._trusted_domains,
-            search_depth="basic",
+            search_depth="advanced",
+            chunks_per_source=3,
         )
         results = []
         for item in resp.get("results", []):

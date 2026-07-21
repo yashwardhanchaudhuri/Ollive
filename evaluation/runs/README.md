@@ -2,19 +2,30 @@
 
 ## At a glance
 
-This folder contains versioned OSS-frontier evidence. The current run is the canonical comparison; the earlier matched snapshot is retained for provenance.
+This folder preserves current and historical raw evaluation evidence. The canonical current comparison is `oss_frontier_best_effort_20260721.jsonl`; its combined manifest records the dirty source snapshot beyond the base Git SHA.
 
 | File | Responsibility |
 |---|---|
-| `oss_frontier_current_core.jsonl` | Current combined 144-record OSS-frontier comparison. |
-| `oss_frontier_current_core.manifest.json` | Current model, dataset, prompt, and revision provenance. |
-| `oss_frontier_matched_core.jsonl` | Earlier archived combined comparison. |
-| `oss_frontier_matched_core.manifest.json` | Earlier snapshot provenance. |
-| `oss_qwen35_9b_matched_core.jsonl` | Earlier Qwen-only raw records. |
-| `oss_qwen35_9b_matched_core.manifest.json` | Earlier Qwen-only model and prompt provenance. |
-| `frontier_gpt54mini_matched_core.jsonl` | Earlier frontier-only raw records. |
-| `frontier_gpt54mini_matched_core.manifest.json` | Earlier frontier-only model and prompt provenance. |
-| `qwen35_9b_judge_probe.calibration.json` | Exploratory judge agreement against authored gold labels. |
-| `README.md` | Explains current versus retained evidence. |
+| `frontier_best_effort_20260721.jsonl` | Current backend-specific raw run or source manifest. |
+| `frontier_best_effort_20260721.manifest.json` | Current backend-specific raw run or source manifest. |
+| `frontier_gpt54mini_matched_core.jsonl` | Retained historical raw run or manifest. |
+| `frontier_gpt54mini_matched_core.manifest.json` | Retained historical raw run or manifest. |
+| `frontier_semantic_resolver_20260721.jsonl` | Retained historical raw run or manifest. |
+| `frontier_semantic_resolver_20260721.manifest.json` | Retained historical raw run or manifest. |
+| `oss_best_effort_20260721.jsonl` | Current backend-specific raw run or source manifest. |
+| `oss_best_effort_20260721.manifest.json` | Current backend-specific raw run or source manifest. |
+| `oss_frontier_best_effort_20260721.jsonl` | Current combined 144-record matched comparison. |
+| `oss_frontier_best_effort_20260721.manifest.json` | Current combined source-state, command, model, and completion provenance. |
+| `oss_frontier_current_core.jsonl` | Retained historical raw run or manifest. |
+| `oss_frontier_current_core.manifest.json` | Retained historical raw run or manifest. |
+| `oss_frontier_matched_core.jsonl` | Retained historical raw run or manifest. |
+| `oss_frontier_matched_core.manifest.json` | Retained historical raw run or manifest. |
+| `oss_frontier_semantic_resolver_20260721.jsonl` | Retained historical raw run or manifest. |
+| `oss_frontier_semantic_resolver_20260721.manifest.json` | Retained historical raw run or manifest. |
+| `oss_qwen35_9b_matched_core.jsonl` | Retained historical raw run or manifest. |
+| `oss_qwen35_9b_matched_core.manifest.json` | Retained historical raw run or manifest. |
+| `oss_semantic_resolver_20260721.jsonl` | Retained historical raw run or manifest. |
+| `oss_semantic_resolver_20260721.manifest.json` | Retained historical raw run or manifest. |
+| `qwen35_9b_judge_probe.calibration.json` | Exploratory judge calibration artifact. |
 
-Each JSONL record preserves case outputs and structural grades. Each manifest preserves model, dataset, prompt, and source-revision identity. New runs are written with `scripts/run_evals.py`; do not overwrite a prior snapshot.
+Each JSONL record preserves case outputs and structural grades. New runs must use unique names; never overwrite a retained snapshot.

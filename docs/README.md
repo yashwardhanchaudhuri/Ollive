@@ -7,6 +7,7 @@ writing practice.
 
 | File | Responsibility |
 |---|---|
+| `agent_workflow.svg` | Embeds the agent execution flow in the main README. |
 | `AGENT_WORKFLOW.md` | Walks through routing, tools, grounding, memory, and output. |
 | `INSTALL.md` | Covers installation, downloads, services, and troubleshooting. |
 | `KNOWLEDGE_BASE.md` | Explains corpus scope, retrieval, citations, and limits. |

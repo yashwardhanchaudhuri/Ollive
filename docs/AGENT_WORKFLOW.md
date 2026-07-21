@@ -12,50 +12,56 @@
 Ollive uses one orchestrating agent. It makes several constrained model calls,
 but those calls are stages of one workflow rather than independent agents.
 
-The central design choice is to select a safety and evidence boundary before
-answering. A greeting should remain conversational, a vague personalized request
-should ask for context, a factual wellness answer should retrieve evidence, and
-a medical request should stop at the medical boundary.
+The central design choice is to select context, safety, and evidence boundaries before
+answering. Non-substantive conversation remains natural, under-specified individualized
+requests seek constraints, factual wellness content requires evidence, and medical
+content stops at an application-owned boundary. The model cannot compose pharmaceutical
+facts on that route.
 
 ```text
 User message
     │
     ▼
-Semantic policy route
-    ├── conversation ───────────────► natural answer
-    ├── wellness clarification ─────► ask for missing context
-    ├── medical boundary ───────────► safe boundary response
-    ├── out of scope ───────────────► brief redirection
+Context-dependency classifier
+    │
+    ▼
+Policy router
+    ├── conversation / clarification / out of scope ──► bounded response
+    ├── medical ──► urgency selector ──► application-owned response
     └── grounded wellness
+            │
+            ▼
+      bounded query builder
             │
             ▼
        forced KB lookup
             │
-            ▼
-      evidence completeness
-        ├── sufficient ─────────────► structured answer submission
-        └── material gap ───────────► one authoritative web search
-                                           │
-                                           ▼
-                                  structured answer submission
+            ├── material evidence gap or required web retrieval ──► one web search
             │
             ▼
-      shape + citation validation
-            ├── valid ──────────────► render and remember
-            └── invalid ────────────► bounded correction or withholding
+      structured answer submission
+            │
+            ▼
+      shape, bounds, and marker validation
+            │
+            ▼
+      claim-to-source entailment validation
+            ├── valid ──► render and remember
+            └── invalid ──► bounded correction or withholding
 ```
 
-## Why routing happens first
+## Why staged decisions happen first
 
 A single universal prompt tended to produce two opposite failures: it could cite
 ordinary conversation unnecessarily, or answer medical and safety-sensitive
 requests too freely. Ollive therefore asks the selected model to return a small,
 strict routing object before it produces the response.
 
-The router receives recent dialogue only to resolve follow-ups. Alongside the route and
-grounding decision, it selects whether retrieval needs recent user context and whether
-the user explicitly requested a detailed answer. It cannot choose arbitrary values, and
-malformed output falls back to a no-tool, out-of-scope policy.
+A focused constrained call first decides whether prior dialogue supplies a missing
+substantive subject. It receives bounded history and the current message as explicit untrusted
+data and emits one boolean; no regex, keyword list, or retrieval score makes this decision.
+The policy router then selects the domain route, response depth, and explicit web requirement.
+Application policy makes every wellness route grounded.
 
 ## Route behavior
 
@@ -64,11 +70,8 @@ malformed output falls back to a no-tool, out-of-scope policy.
 | Conversation | Preserve natural greetings and assistant questions | No | Brief, uncited conversation |
 | Wellness clarification | Avoid generic plans when personal constraints are missing | No | Two to four useful questions |
 | Wellness | Ground factual lifestyle guidance | Required | Retrieved, structured, cited answer |
-| Medical | Prevent diagnosis, prescribing, dosing, and dangerous clinical guidance | No | Boundary or urgent-help response |
+| Medical | Prevent substantive clinical or pharmaceutical generation | No | Application-owned boundary or urgent-help response |
 | Out of scope | Keep the assistant within its supported purpose | No | Brief refusal or redirection |
-
-A wellness route can also disable tools for a purely non-factual boundary
-response. This keeps refusal text from acquiring irrelevant citations.
 
 ## Grounded wellness execution
 
@@ -78,10 +81,10 @@ On the first grounded round, the model can call only `lookup_kb`. The model may
 select a document type from the live enum and a result count, but the application
 controls the query.
 
-For an independent request, the query is the current user message. For a dependent
-follow-up such as “elaborate,” the application concatenates recent user-authored
-messages with the current message. It performs no model-written query expansion, so the
-original topic survives without introducing hidden facets.
+For a self-contained request, the query is the current user message. When the context
+classifier selects continuation, the application concatenates only the immediately preceding
+user message with the current message. It performs no model-written query expansion, so the
+original wording survives without introducing hidden facets or stale retrieved evidence.
 
 ### 2. Retrieval returns evidence objects
 
@@ -91,7 +94,7 @@ line positions, descriptor, text, and stable citation marker.
 
 ### 3. The agent checks evidence completeness
 
-After local retrieval, the model submits an answer when the passages directly support the requested factual parts, or calls `search_web` once when a distinct factual part remains unsupported. A request for more detail alone does not justify web search. An empty
+After local retrieval, the model submits an answer when the passages directly support the request, or calls `search_web` once when the router marks an explicit web request or a distinct factual part remains unsupported. A request for more detail alone does not justify web search. An empty
 KB result forces the web path. This is a semantic decision rather than a keyword
 or regular-expression rule.
 
@@ -99,9 +102,10 @@ If the model first submits an `evidence_limitation`, the application treats that
 structured signal as partial completion and forces the single web-search round
 before accepting a final answer.
 
-Web search is restricted twice: Tavily receives `include_domains` from the
-configured allowlist, and the adapter independently rejects off-domain URLs and
-results below the configured relevance score. Tavily documents `include_domains`
+Web search uses Tavily advanced extraction to obtain relevant prose rather than
+bibliography-heavy snippets. It is restricted twice: Tavily receives `include_domains`
+from the configured allowlist, and the adapter independently rejects off-domain URLs
+and results below the configured relevance score. Tavily documents `include_domains`
 in its [Search API reference](https://docs.tavily.com/documentation/api-reference/endpoint/search).
 The model cannot add domains through tool arguments.
 
@@ -121,26 +125,32 @@ pass validation.
 ### 5. The application validates before display
 
 Validation checks shape, field bounds, marker provenance, limitation count, and
-citation syntax. The application adds citation markers itself, so the model
-cannot type a plausible-looking replacement into the prose.
-
-This proves that a marker came from the current retrieval. It does not
-independently prove that the source passage entails every word of the claim.
+citation syntax. It then sends only the atomic claim/source pairs to an isolated,
+forced-schema entailment check. A claim passes only when its selected passage alone
+supports every factual assertion; topic similarity and outside knowledge are rejected.
+The application adds citation markers only after both boundaries pass.
 
 ## Correction and fail-closed behavior
 
-When structured output is malformed, the application returns the validation
-error to the model and requests a corrected submission using the same evidence.
-The entire loop is bounded by the configured maximum number of rounds.
+When structured output is malformed or a selected passage does not entail its
+claim, the application returns the precise validation error and the same evidence.
+The initial draft receives at most two corrected submissions, while the complete
+tool loop remains bounded by the configured maximum number of rounds.
 
-If correction still fails, Ollive withholds the answer. This design prefers an
-explicit quality failure over displaying unsupported wellness guidance.
+If correction still fails but the verifier approved part of a valid structured
+draft, Ollive returns an explicit exact-match limitation followed only by that supported,
+cited subset. When no generated claim survives, it may show a short verbatim excerpt from
+the highest-ranked retrieved source. Malformed output or absent evidence still fails
+closed. Unsupported generated claims are never softened into the fallback.
 
 ## Conversation memory
 
 Only final user and assistant messages persist. Tool payloads and model tool-call
 envelopes remain in traces but are removed from conversational memory. The router sees
-that bounded dialogue to resolve intent; grounded answer generation receives only the user turns selected by `context_mode` and current retrieval. An independent turn receives its current user message only; a dependent follow-up receives the same recent user context used for retrieval. Prior assistant prose is excluded so stale claims cannot be reused as evidence.
+bounded dialogue to resolve intent. The dedicated context classifier selects either
+the current request alone or the immediately preceding user turn plus the current request;
+assistant prose never enters the evidence query. The selected query also controls which user turns reach grounded answer
+generation, preventing stale assistant claims from becoming evidence.
 
 This avoids two common problems:
 
@@ -177,7 +187,7 @@ measurements and limitations.
 
 - This is one agent with staged model calls, not a multi-agent deliberation system.
 - Routing is model-based and can select a defensible route different from a test label.
-- Marker validation proves provenance, not semantic entailment.
+- Entailment validation is model-based; it improves on marker provenance but still requires calibration and human review.
 - The local KB limits what grounded answers can establish.
 - The authoritative-domain allowlist reduces source risk but does not guarantee that
   every returned excerpt is correct, current, or sufficient for the generated claim.

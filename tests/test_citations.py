@@ -2,7 +2,12 @@ import json
 
 from ollive.adapters.search.tavily_search import TavilyWebSearch
 from ollive.application.tools import ToolRouter
-from ollive.domain.citations import parse_citations, slugify_descriptor, validate_citations
+from ollive.domain.citations import (
+    find_citation_like_tokens,
+    parse_citations,
+    slugify_descriptor,
+    validate_citations,
+)
 from ollive.domain.models import Citation, ToolCallRequest
 
 
@@ -100,7 +105,8 @@ def test_tavily_search_enforces_domains_and_relevance_locally():
 
     assert [result["title"] for result in results] == ["Trusted"]
     assert client.call["include_domains"] == ["cdc.gov"]
-    assert client.call["search_depth"] == "basic"
+    assert client.call["search_depth"] == "advanced"
+    assert client.call["chunks_per_source"] == 3
 
 
 def test_web_tool_returns_url_backed_citations():
@@ -123,3 +129,43 @@ def test_web_tool_returns_url_backed_citations():
     assert citation.source_type == "web"
     assert citation.url == "https://www.cdc.gov/sleep/about/index.html"
     assert json.loads(result.content)["results"][0]["citation"] == citation.marker
+
+
+
+def test_contextual_query_uses_only_the_latest_prior_user_turn():
+    """Bound context after the LLM has already selected continuation."""
+    router = ToolRouter(
+        RetrieverStub(),
+        WebStub(),
+        allowed_doc_types=["daily_habits"],
+    )
+
+    query, uses_context = router.resolve_evidence_query(
+        "current request", ["older request", "directly preceding request"]
+    )
+
+    assert query == "directly preceding request\ncurrent request"
+    assert uses_context
+
+
+def test_contextual_query_stays_current_when_no_prior_user_turn_exists():
+    """Never manufacture continuation context when history is empty."""
+    router = ToolRouter(
+        RetrieverStub(),
+        WebStub(),
+        allowed_doc_types=["daily_habits"],
+    )
+
+    query, uses_context = router.resolve_evidence_query("current request", [])
+
+    assert query == "current request"
+    assert not uses_context
+
+
+
+def test_unknown_citation_grammar_is_still_detected_as_provenance_text():
+    """Expose fabricated marker shapes even when they are not valid citations."""
+    text = "Unsupported provenance [doc:diet:invented_source]"
+
+    assert parse_citations(text) == []
+    assert find_citation_like_tokens(text) == ["[doc:diet:invented_source]"]

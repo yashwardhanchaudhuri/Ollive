@@ -55,13 +55,13 @@ the query vector with those paragraph vectors using normalized inner product.
 The model sees the exact document types loaded by the index. It may select only
 those values or omit the filter.
 
-This prevents wasted calls to invented categories such as `sleep` when sleep
-content actually lives under `daily_habits`. Startup also fails when configured
+This prevents wasted calls to categories absent from the live enum and avoids teaching
+the model to invent taxonomy values. Startup also fails when configured
 types and indexed types differ, making configuration drift visible.
 
 ## Query fidelity
 
-The model does not author the local search query. For an independent request, the tool router binds lookup to the current user message. For a dependent follow-up, the application deterministically concatenates recent user-authored messages with the current one.
+The model does not author the local search query. A dedicated constrained classifier decides whether the current message depends on prior dialogue. For an independent request, the tool router binds lookup to the current user message. For a dependent follow-up, the application deterministically concatenates the immediately preceding user message with the current one.
 
 This preserves topic context without model-written query expansion. Single-turn evaluation cases therefore retain exact prompt fidelity; multi-turn cases must validate the application-selected contextual query instead of assuming the current message alone.
 

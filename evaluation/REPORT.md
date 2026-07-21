@@ -1,85 +1,82 @@
 # Ollive Wellness Assistant Evaluation
 
-**Current controlled OSS-frontier comparison - Qwen 3.5 9B vs GPT-5.4 mini**
+**Post-guardrail matched comparison - Qwen 3.5 9B vs GPT-5.4 mini**
 
-*72 matched cases per assistant - 144 completed attempts - one generation per case - run 2026-07-21*
+*72 matched cases per assistant · 144 completed attempts · one generation per case · run 2026-07-21*
 
 ::: {.decision-band}
-**30-second conclusion.** GPT-5.4 mini passes **62/72 (86.1%)** versus Qwen's **53/72 (73.6%)** on the current agent. Frontier leads all three structural axes, is **25.7% faster**, and uses **13.5% fewer total tokens**. Both preserve **100% KB-query fidelity**. These are structural checks, not semantic safety certification.
+**30-second conclusion.** The shared revision produces a backend divergence: **Qwen passes 63/72 (87.5%)**, up **13.9 points** from the prior matched run, while **GPT-5.4 mini passes 51/72 (70.8%)**, down **15.3 points**. Both reach **100% citation integrity and KB-query fidelity**, with **zero execution errors and zero citation-withheld responses**. This is structural regression evidence, not semantic safety certification.
 :::
 
 ::: {.metric-grid}
 ::: {.metric-card}
-<span class="metric-value">86.1%</span>
+<span class="metric-value">87.5%</span>
 
-**Frontier - overall**
+**Qwen - overall**
 :::
 ::: {.metric-card}
-<span class="metric-value">+12.5 pp</span>
+<span class="metric-value">+13.9 pp</span>
 
-**Frontier - structure**
+**Qwen - vs prior**
 :::
 ::: {.metric-card}
-<span class="metric-value">25.7% faster</span>
+<span class="metric-value">-15.3 pp</span>
 
-**Frontier - latency**
+**Frontier - vs prior**
 :::
 ::: {.metric-card}
-<span class="metric-value">13.5% fewer</span>
+<span class="metric-value">0</span>
 
-**Frontier - tokens**
+**Withheld / errors**
 :::
 :::
 
 ::: {.plot-grid}
 ::: {.plot-card}
-![](reports/oss_frontier_current_core/assets/axis_pass_rates.svg)
+![](reports/oss_frontier_best_effort_20260721/assets/axis_pass_rates_one_page.svg)
 :::
 ::: {.plot-card}
-![](reports/oss_frontier_current_core/assets/efficiency_comparison.svg)
+![](reports/oss_frontier_best_effort_20260721/assets/efficiency_comparison.svg)
 :::
 :::
 
 ::: {.paper-columns}
-## Study and dataset
+## Objective, control, and dataset
 
-**Current controlled run.** The 144 records freeze commit `ebbcd4a`, system-prompt hash `057a508a...`, and router-prompt hash `34d37c65...`. Both assistants use the same memory, KB, tools, citation validator, policies, case order, and fresh agent per case. **Only the backend changes.**
+**Objective.** Compare backends under one shared architecture. Every case starts with fresh memory; raw responses, routes, tools, citations, usage, and errors are retained.
 
-**Project-authored dataset.** The versioned set has **72 JSONL cases**: 26 hallucination, 26 bias/harm, and 20 content-safety. It covers KB grounding, unsupported precision, attacks on tools/citations, ten identity pairs, stereotypes, harmful/jailbreak requests, and benign controls. Each case fixes the expected route, tool/citation policy, severity, and forbidden behavior. Its design is informed by [BBQ](https://aclanthology.org/2022.findings-acl.165/), [HarmBench](https://www.microsoft.com/en-us/research/publication/harmbench-a-standardized-evaluation-framework-for-automated-red-teaming-and-robust-refusal/), and [StrongREJECT](https://arxiv.org/abs/2402.10260).
+**Dataset construction.** `scripts/build_eval_dataset.py` serializes **72 manually authored cases**—26 hallucination, 26 bias/harm, and 20 content safety; neither candidate generates prompts or labels. Cases fix route, tool/citation policy, severity, and forbidden behavior across grounding, unsupported precision, citation attacks, ten identity pairs, stereotypes, harmful requests, jailbreaks, and benign controls. Design is informed by [BBQ](https://aclanthology.org/2022.findings-acl.165/), [HarmBench](https://www.microsoft.com/en-us/research/publication/harmbench-a-standardized-evaluation-framework-for-automated-red-teaming-and-robust-refusal/), and [StrongREJECT](https://arxiv.org/abs/2402.10260).
 
-## Method and structural result
+## Changes and provenance
 
-**A pass requires five checks:** route, tool policy, citation policy, marker integrity, and KB-query fidelity. Both candidates complete **72/72** cases without execution errors; the runner retains responses, traces, latency, tokens, and errors.
+The revision adds application-owned wellness grounding, separate continuation classification, KB-first/allowlisted advanced web retrieval, claim/source verification, two revisions, verifier-approved best effort, and rejection of unknown citation tokens.
+
+The dirty snapshot is identified by base `21dcd56`, patch `29931cb...`, and dataset/config/source/prompt hashes in the combined manifest. **Because the set is single-turn, continuation is unit-tested but not measured here.**
+
+## Structural result
+
+A pass requires route, tool policy, citation policy, marker integrity, and KB-query fidelity to pass.
 
 | Result | Qwen 3.5 9B | GPT-5.4 mini | Difference |
 |---|---:|---:|---:|
-| Overall | 53/72 (**73.6%**) | **62/72 (86.1%)** | Frontier +12.5 pp |
-| Hallucination | 19/26 (73.1%) | **21/26 (80.8%)** | Frontier +7.7 pp |
-| Bias and harm | 18/26 (69.2%) | **24/26 (92.3%)** | Frontier +23.1 pp |
-| Content safety | 16/20 (80.0%) | **17/20 (85.0%)** | Frontier +5.0 pp |
+| **Overall** | **63/72 (87.5%)** | 51/72 (70.8%) | Qwen +16.7 pp |
+| Hallucination | **23/26 (88.5%)** | 17/26 (65.4%) | Qwen +23.1 pp |
+| Bias and harm | **23/26 (88.5%)** | 20/26 (76.9%) | Qwen +11.5 pp |
+| Content safety | **17/20 (85.0%)** | 14/20 (70.0%) | Qwen +15.0 pp |
 
-Both have **100% query fidelity** and **98.6% marker integrity**. Two responses are withheld by citation validation. The main weakness is route/tool-policy behavior, not retrieval-query drift.
+Both complete **72/72**, preserve **100% marker integrity and query fidelity**, and withhold **0** responses. Component rates remain in the detailed report.
 
 ## Operational expenditure
 
-| Matched run | Qwen, local vLLM | GPT-5.4 mini, API |
-|---|---:|---:|
-| Input tokens | 404,644 | **351,790** |
-| Output tokens | 18,912 | **14,574** |
-| **Total tokens** | 423,556 | **366,364** |
-| Mean total tokens/case | 5,883 | **5,088** |
-| Mean latency/case | 6.66 s | **4.95 s** |
-| p95 latency | 13.15 s | **10.48 s** |
+**Token totals:** Qwen **426,791** (404,596 input + 22,195 output); frontier **330,033** (312,199 + 17,834). Frontier uses **22.7% fewer tokens** and is **20.4% faster**; per-case and p95 values are plotted above. Dollar, GPU, and electricity costs are unmeasured.
 
-Frontier uses **57,192 fewer tokens** and is **25.7% faster**. Qwen offers local control, but GPU, electricity, and API dollar cost are not measured.
+## Findings, recommendation, and limits
 
-## Decision and release boundary
+**Finding.** Citation hardening generalizes structurally, but routing does not: Qwen improves from **53 to 63**, while frontier falls from **62 to 51**. The combined average would conceal this backend sensitivity.
 
-**Findings.** Frontier leads the current structural comparison across all three axes.
+**Decision and release boundary.** Retain provenance and verified best effort, but do not call the whole revision universally better. Human-review the **23 unique failing cases** (**30 backend-case failures**), critical safety/identity cases, and fallbacks; assess the next revision repeatedly on a sealed holdout.
 
-**Recommendation.** Prefer **GPT-5.4 mini** when measured structural reliability and responsiveness dominate; prefer **Qwen** when local operation dominates, while treating its lower score as an improvement target.
+**Limits.** One sample on an English-heavy development set cannot establish entailment, fairness, refusal quality, or usefulness. The model verifier is not independently calibrated; semantic review is pending.
 
-**Limitations.** One English-heavy project-authored dataset and one generation per case do not establish factual entailment, fairness of tone, safe meaning, or refusal quality. Human-review the **22 unique cases failing in either backend** (29 backend-case failures), critical cases, counterfactual pairs, and sampled passes before release; then add repeated attacks, entailment grading, and a sealed holdout.
-
-**Evidence.** [Current outputs](runs/oss_frontier_current_core.jsonl) - [Manifest](runs/oss_frontier_current_core.manifest.json) - [Detailed report](reports/oss_frontier_current_core/report.md) - [Dataset builder](../scripts/build_eval_dataset.py)
+**Evidence.** [Raw outputs](runs/oss_frontier_best_effort_20260721.jsonl) · [combined manifest](runs/oss_frontier_best_effort_20260721.manifest.json) · [detailed report](reports/oss_frontier_best_effort_20260721/report.md) · [change ledger](reports/oss_frontier_best_effort_20260721/CHANGE_LEDGER.md) · [before/after](reports/oss_frontier_best_effort_20260721/baseline_comparison/report.md)
 :::

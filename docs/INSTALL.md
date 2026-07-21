@@ -12,7 +12,7 @@ processes, but they use the same installed dependencies. Do not create another e
 - A paragraph-level FAISS index under `data/indexes/`.
 - Streamlit at `127.0.0.1:8501`.
 
-## One-command local setup
+## Choose a path: one-command local setup or manual control
 
 From the repository root, run the repository-root launcher:
 

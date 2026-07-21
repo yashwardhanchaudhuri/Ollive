@@ -4,14 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import html
-import sys
 from pathlib import Path
-
-# Allow `streamlit run src/ollive/ui/streamlit_app.py` without install
-ROOT = Path(__file__).resolve().parents[3]
-SRC = ROOT / "src"
-if str(SRC) not in sys.path:
-    sys.path.insert(0, str(SRC))
 
 import streamlit as st
 from openai import APIConnectionError, APIError

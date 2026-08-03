@@ -63,7 +63,7 @@ types and indexed types differ, making configuration drift visible.
 
 The model does not author the local search query. A dedicated constrained classifier decides whether the current message depends on prior dialogue. For an independent request, the tool router binds lookup to the current user message. For a dependent follow-up, the application deterministically concatenates the immediately preceding user message with the current one.
 
-This preserves topic context without model-written query expansion. Single-turn evaluation cases therefore retain exact prompt fidelity; multi-turn cases must validate the application-selected contextual query instead of assuming the current message alone.
+This preserves retrieval fidelity without model-written query expansion. A dependent grounded answer may also receive up to the three most recent user turns for conversational continuity, but those extra turns do not alter the application-bound lookup query or provide evidence. Single-turn evaluation cases therefore retain exact prompt fidelity; multi-turn cases must validate the application-selected contextual query instead of assuming the current message alone.
 
 ## Citation construction
 

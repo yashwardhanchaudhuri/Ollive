@@ -39,7 +39,7 @@ This creates or updates the unified Conda environment, installs dependencies, bu
 ## Design choices
 
 - **Shared agent spec**: system prompt, last-N memory, tools (`lookup_kb`, `search_web`)
-- **Semantic continuation gate**: a dedicated constrained LLM call decides whether the current message has its own substantive subject or requires the preceding dialogue. The application then uses either the current user text or one bounded prior user turn plus the current text; no regex, keyword list, model-written query, or similarity threshold controls this decision.
+- **Semantic continuation gate**: a dedicated constrained LLM call decides whether the current message has its own substantive subject or requires preceding dialogue. It binds retrieval to either the current user text or the immediately preceding user turn plus the current text. For a continuation, grounded answer generation receives up to the three most recent user turns for conversational continuity; no regex, keyword list, model-written query, or similarity threshold controls the decision.
 - **Medical boundary**: a semantic urgency selector chooses one of two application-owned responses; named-drug facts cannot be generated or cited on this route.
 - **Swappable backends** via `config/backends.yaml`
   - OSS: **`Qwen/Qwen3.5-9B` on local vLLM** (OpenAI-compatible; `VLLM_API_KEY=EMPTY`)

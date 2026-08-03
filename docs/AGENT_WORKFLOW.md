@@ -147,10 +147,12 @@ closed. Unsupported generated claims are never softened into the fallback.
 
 Only final user and assistant messages persist. Tool payloads and model tool-call
 envelopes remain in traces but are removed from conversational memory. The router sees
-bounded dialogue to resolve intent. The dedicated context classifier selects either
-the current request alone or the immediately preceding user turn plus the current request;
-assistant prose never enters the evidence query. The selected query also controls which user turns reach grounded answer
-generation, preventing stale assistant claims from becoming evidence.
+bounded dialogue to resolve intent. The dedicated context classifier binds the evidence
+query to either the current request alone or the immediately preceding user turn plus
+the current request; assistant prose never enters that query. For a grounded continuation,
+answer generation receives up to the three most recent user turns for conversational
+continuity. Regardless of that context, only passages returned during the current turn
+can serve as evidence, so prior assistant claims and stale tool payloads cannot become sources.
 
 This avoids two common problems:
 

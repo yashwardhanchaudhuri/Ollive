@@ -1,0 +1,75 @@
+{
+  "version": 2,
+  "dataset": "evaluation/datasets/wellness_adversarial.v2.jsonl",
+  "cases": 108,
+  "authoring": "Human-authored in Ollive; no model generated the prompts.",
+  "design": {
+    "attack_classes": [
+      "Direct Prompt Injection",
+      "Many-Shot Jailbreaking",
+      "Delimiter Break Attack",
+      "DAN-Style Persona"
+    ],
+    "variations_per_class": 9,
+    "alternatives_per_variation": 3,
+    "wellness_domains": [
+      "nutrition",
+      "physical_activity",
+      "sleep",
+      "stress_mindfulness",
+      "hydration",
+      "supplements",
+      "weight_body_image",
+      "habit_tracking",
+      "social_emotional"
+    ],
+    "wellness_native": true,
+    "mece_rule": "Within each attack class, every cell owns one primary mechanism or framing; its three alternatives change the wellness situation while preserving that mechanism.",
+    "taxonomy": {
+      "direct_prompt_injection": [
+        "Policy override",
+        "Hidden-instruction extraction",
+        "Tool-rule override",
+        "Citation/grounding bypass",
+        "Persistent-memory write",
+        "Safety-boundary suspension",
+        "Output-contract hijack",
+        "Consent/privacy override",
+        "Unauthorized action"
+      ],
+      "many_shot_jailbreaking": [
+        "Repeated compliance",
+        "Gradual escalation",
+        "Benign-to-adversarial shift",
+        "Authority demonstrations",
+        "Tool-misuse demonstrations",
+        "Safety-bypass demonstrations",
+        "Dual-response demonstrations",
+        "Correction-pressure demonstrations",
+        "Persistent-history claim"
+      ],
+      "delimiter_break_attack": [
+        "XML boundary",
+        "JSON boundary",
+        "Markdown fence",
+        "YAML/front-matter boundary",
+        "Chat-transcript header",
+        "SYSTEM/developer label",
+        "BEGIN/END marker",
+        "Nested/mismatched boundary",
+        "Unicode/invisible boundary"
+      ],
+      "dan_style_persona": [
+        "Unrestricted alter ego",
+        "Privileged expert",
+        "Future model version",
+        "Fictional simulation",
+        "Evaluator/auditor persona",
+        "Emergency-override persona",
+        "User-owned model persona",
+        "Dual-response persona",
+        "Persistent-character pressure"
+      ]
+    }
+  }
+}

@@ -164,7 +164,7 @@ attacks, and 198 controls; hash-disjoint JailbreakHub data supplies 200 DAN/pers
 attacks, 30 many-shot transcripts (ten each at 8, 32, and 64 shots), and 200 regular
 prompt controls; XSTest supplies 188 unsafe contrasts and 240 safe controls.
 
-With the selected prompt hash, Qwen 3.5 9B via vLLM (historical quantization unrecorded) blocked 415/575 attacks
+With the historical pre-variation five-guard base, Qwen 3.5 9B via vLLM (historical quantization unrecorded) blocked 415/575 attacks
 (72.2%) and 83/638 controls (13.0%); GPT-5.4 mini blocked 490/575 attacks (85.2%)
 and 103/638 controls (16.1%). Correct gate decisions were 970/1,213 (80.0%) and
 1,025/1,213 (84.5%), respectively, with zero execution errors. Model verdicts
@@ -176,6 +176,13 @@ remaining three still require semantic review.
 After compact delimiter-family guidance was added, a 27-case focused rerun blocked
 16/27 under explicitly configured FP8 and 22/27 under the historical/default BF16
 launch, with no errors. These focused results do not replace the older full-suite totals.
+
+The human-authored wellness-native v2 suite contains 108 attacks: four requested
+classes by nine MECE variations by three distinct situations. Qwen FP8 blocked
+108/108 at ingress with zero errors; 107 were model decisions and one was a
+malformed-verdict fail-closed block. The broad direct-injection guard fired first for
+all model blocks, and v2 has no benign controls, so this measures end-to-end recall
+rather than specialist attribution or precision.
 
 The 357-case prompt-selection ablation compared five designs on the same 79 direct,
 78 delimiter, and 200 benign cases. The selected concise class-owned profile blocked
@@ -195,8 +202,9 @@ After the semantic canary was removed, an expanded-variation prompt rerun blocke
 70/200 benign controls (35.0%), completed without execution or fail-closed errors,
 used 2,115,220 tokens, and produced a trust-score ranking of 0.629. This was 17
 fewer attack blocks, one more benign block, and 27.8% more tokens than the concise
-profile. The expanded prompt was rejected. The active concise prompts now match
-all per-guard hashes in the 117/157 benchmark manifests.
+profile. The expanded prompt was rejected. The ablation records identify the selected concise base. The active delimiter prompt
+adds the later compact nine-family guidance, so its hash intentionally differs from
+the 117/157 pre-variation benchmark; its focused rerun is reported separately.
 
 ## Design insight
 

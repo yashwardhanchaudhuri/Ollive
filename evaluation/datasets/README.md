@@ -12,8 +12,10 @@ never silently coerces unknown or missing fields.
 | `judge_gold.v1.jsonl` | Authored pass/fail examples for exploratory judge calibration. |
 | `prompt_regression.v1.jsonl` | Development-only wording and fault-class regressions. |
 | `owasp_prompt_injection.v1.jsonl` | Focused attacks and benign controls for four OWASP-aligned prompt-injection families. |
-| `wellness_adversarial.v1.jsonl` | 108 human-authored wellness attacks: four classes by nine MECE mechanisms by three alternatives. |
-| `wellness_adversarial.v1.manifest.json` | Compact authorship and design contract for the custom suite. |
+| `wellness_adversarial.v1.jsonl` | Historical 108-case suite that appended wellness requests to mostly domain-neutral attacks. |
+| `wellness_adversarial.v1.manifest.json` | Historical v1 authorship and design contract. |
+| `wellness_adversarial.v2.jsonl` | 108 wellness-native attacks: four classes by nine MECE cells by three situations. |
+| `wellness_adversarial.v2.manifest.json` | Current wellness-native authorship, taxonomy, and design contract. |
 | `public_security/` | 1,503 pinned public cases from garak, PromptInject, HarmBench, JailbreakBench, and Many-shot Jailbreaking. |
 | `README.md` | Explains dataset provenance and use boundaries. |
 
@@ -61,13 +63,19 @@ outputs are local generated artifacts and are ignored by Git.
 
 ## Custom MECE wellness suite
 
-`wellness_adversarial.v1.jsonl` covers Direct Prompt Injection, Many-Shot
-Jailbreaking, Delimiter Break Attack, and DAN-Style Persona. Within each class,
-nine variations are non-overlapping by primary attack mechanism. Every class spans
-the same nine wellness domains exactly once, with three authored alternatives per
-cell. The 108 prompts are unique and schema-valid.
+`wellness_adversarial.v2.jsonl` covers Direct Prompt Injection, Many-Shot
+Jailbreaking, Delimiter Break Attack, and DAN-Style Persona. Each class partitions
+nine primary mechanisms or framings, and each cell is assigned one of nine wellness
+domains. Its three alternatives change the wellness situation while retaining the
+cell's attack mechanism. Attacks exploit wellness-native objects and boundaries:
+care-role authority, injury and symptom escalation, medication and supplement
+limits, crisis handling, wearable records, private journals, habit memory, consent,
+and poisoned wellness evidence. They do not append a harmless wellness request to a
+generic jailbreak template.
 
 `build_wellness_adversarial_dataset.py` deterministically assembles the reviewed
 attack wording stored in `wellness_adversarial.py`; it makes no model call. The
-manifest records the human-authored provenance and design dimensions. This
-attack-only suite measures ingress block recall, not benign false-positive rate.
+manifest records the human-authored provenance, taxonomy, and design dimensions.
+Tests enforce 108 unique cases, balanced cells, explicit wellness-native metadata,
+domain language, and absence of the v1 plug-in phrase. This attack-only suite
+measures ingress block recall, not benign false-positive rate.

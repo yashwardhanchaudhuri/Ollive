@@ -16,4 +16,5 @@ operations.
 | `README.md` | Provides this folder-level navigation. |
 
 Measured results stay under `evaluation/`; these documents explain the system
-and link to evidence where needed.
+and link to evidence where needed. The final ACL-style report is retained at
+[`../ollive_acl_report.pdf`](../ollive_acl_report.pdf).

@@ -15,7 +15,7 @@ logic stays under `src/ollive/`.
 | `build_public_security_benchmark.py` | Fetches pinned public sources and builds the 1,503-case hard suite. |
 | `build_security_split_suite.py` | Builds the original source-separated security train/dev/test corpus. |
 | `build_security_tuning_suite.py` | Builds the authority-aligned security train/dev/test corpus with paired benign controls. |
-| `build_wellness_adversarial_dataset.py` | Builds the 108-case human-authored, four-class MECE wellness attack suite and compact design manifest. |
+| `build_wellness_adversarial_dataset.py` | Builds the 108-case human-authored, wellness-native v2 MECE attack suite and design manifest. |
 | `run_evals.py` | Executes a dataset through configured backends. |
 | `run_security_ingress_evals.py` | Measures the Security LM ingress boundary without invoking routing, evidence, or answer generation. |
 | `summarize_security_evals.py` | Reports gate bypass, false-positive, worst-case, confidence-interval, and trust-score metrics. |

@@ -15,7 +15,7 @@ archived outputs live in the repository-level `evaluation/` folder.
 | `runner.py` | Executes cases across backends and records manifests. |
 | `security_runner.py` | Executes cases through only the application ingress Security LM boundary. |
 | `security_summary.py` | Computes ingress-block, bypass, terminal benign false-positive, and trust-score metrics. |
-| `wellness_adversarial.py` | Stores the human-authored four-by-nine MECE taxonomy, attack wording, validation, and deterministic builder. |
+| `wellness_adversarial.py` | Stores the human-authored wellness-native four-by-nine MECE taxonomy, validation, and deterministic v2 builder. |
 | `prompt_audit.py` | Inventories prompt surfaces and detects benchmark-specific coupling. |
 | `grader.py` | Computes deterministic structural checks from expected behavior. |
 | `judge.py` | Applies semantic judging and calculates calibration metrics. |

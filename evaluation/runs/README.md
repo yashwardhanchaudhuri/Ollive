@@ -2,20 +2,20 @@
 
 ## At a glance
 
-This folder preserves current and historical raw evaluation evidence. The canonical current comparison is `oss_frontier_best_effort_20260721.jsonl`; its combined manifest records the dirty source snapshot beyond the base Git SHA.
+This folder preserves reviewed historical records and locally generated current security evidence. The July `oss_frontier_best_effort_20260721.jsonl` comparison is the archived answer-workflow baseline. The current 1,213-case ingress comparison uses local `qwen_fp8_security_full_20260804.shard*` and `gpt54mini_security_full_20260804.shard*` records; generated dated runs remain ignored by Git.
 
 | File | Responsibility |
 |---|---|
-| `frontier_best_effort_20260721.jsonl` | Current backend-specific raw run or source manifest. |
-| `frontier_best_effort_20260721.manifest.json` | Current backend-specific raw run or source manifest. |
+| `frontier_best_effort_20260721.jsonl` | Archived backend-specific raw run or source manifest. |
+| `frontier_best_effort_20260721.manifest.json` | Archived backend-specific raw run or source manifest. |
 | `frontier_gpt54mini_matched_core.jsonl` | Retained historical raw run or manifest. |
 | `frontier_gpt54mini_matched_core.manifest.json` | Retained historical raw run or manifest. |
 | `frontier_semantic_resolver_20260721.jsonl` | Retained historical raw run or manifest. |
 | `frontier_semantic_resolver_20260721.manifest.json` | Retained historical raw run or manifest. |
-| `oss_best_effort_20260721.jsonl` | Current backend-specific raw run or source manifest. |
-| `oss_best_effort_20260721.manifest.json` | Current backend-specific raw run or source manifest. |
-| `oss_frontier_best_effort_20260721.jsonl` | Current combined 144-record matched comparison. |
-| `oss_frontier_best_effort_20260721.manifest.json` | Current combined source-state, command, model, and completion provenance. |
+| `oss_best_effort_20260721.jsonl` | Archived backend-specific raw run or source manifest. |
+| `oss_best_effort_20260721.manifest.json` | Archived backend-specific raw run or source manifest. |
+| `oss_frontier_best_effort_20260721.jsonl` | Archived combined 144-record matched comparison. |
+| `oss_frontier_best_effort_20260721.manifest.json` | Archived combined source-state, command, model, and completion provenance. |
 | `oss_frontier_current_core.jsonl` | Retained historical raw run or manifest. |
 | `oss_frontier_current_core.manifest.json` | Retained historical raw run or manifest. |
 | `oss_frontier_matched_core.jsonl` | Retained historical raw run or manifest. |

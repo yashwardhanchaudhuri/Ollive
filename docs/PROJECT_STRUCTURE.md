@@ -25,7 +25,8 @@ Ollive/
 ├── .streamlit/
 │   └── config.toml              # Streamlit theme configuration
 ├── README.md                    # Project overview and quick start
-├── REPORT.pdf                   # One-page two-column evaluation paper
+├── REPORT.pdf                   # Archived one-page workflow evaluation
+├── ollive_acl_report.pdf         # Final ACL-style architecture and security report
 ├── run_ollive.sh                # One-command local environment and service launcher
 ├── environment.yml              # Conda application/development environment
 ├── pyproject.toml               # Python package metadata
@@ -60,12 +61,15 @@ Ollive/
 │
 ├── evaluation/                  # Complete, reader-facing evaluation evidence
 │   ├── README.md                # Navigation and reproduction guide
-│   ├── REPORT.md                # Single authoritative consolidated report
+│   ├── REPORT.md                # Archived workflow report with current security notice
 │   ├── report_two_column.css    # Reproducible one-page PDF style
 │   ├── datasets/                # Versioned source evaluation datasets
 │   │   ├── core.v1.jsonl
 │   │   ├── judge_gold.v1.jsonl
-│   │   └── prompt_regression.v1.jsonl
+│   │   ├── prompt_regression.v1.jsonl
+│   │   ├── wellness_adversarial.v1.jsonl # Historical contextualized custom attacks
+│   │   ├── wellness_adversarial.v2.jsonl # Human-authored wellness-native MECE attacks
+│   │   └── wellness_adversarial.v2.manifest.json
 │   ├── runs/                    # Archived matched records and manifests
 │   │   ├── oss_qwen35_9b_matched_core.jsonl
 │   │   ├── frontier_gpt54mini_matched_core.jsonl
@@ -76,7 +80,8 @@ Ollive/
 │
 ├── scripts/
 │   ├── audit_prompt_specificity.py # Detect benchmark-specific prompt coupling
-│   ├── build_heldout_security_suite.py # Build the sealed security holdout locally
+│   ├── build_heldout_security_suite.py # Build the frozen public-source suite locally
+│   ├── build_wellness_adversarial_dataset.py # Build the reviewed 108-case v2 suite
 │   ├── build_eval_dataset.py    # Build the core evaluation dataset
 │   ├── build_owasp_security_dataset.py # Build focused prompt-injection regressions
 │   ├── build_index.py           # Build/rebuild the local FAISS knowledge index
@@ -155,6 +160,7 @@ Ollive/
 │       │   ├── prompt_audit.py   # Benchmark-coupling audit mechanics
 │       │   ├── security_corpus.py # Reusable security corpus construction and splitting
 │       │   ├── security_summary.py # Security-run aggregate metrics
+│       │   ├── wellness_adversarial.py # Human-authored v2 taxonomy and builder
 │       │   ├── runner.py
 │       │   └── security_runner.py # Ingress-only Security LM evaluator
 │       └── ui/
@@ -174,7 +180,8 @@ Ollive/
     ├── test_request_limits.py
     ├── test_script_quality.py
     ├── test_security.py
-    └── test_security_controls.py
+    ├── test_security_controls.py
+    └── test_wellness_adversarial.py
 ```
 
 ## Design boundaries
@@ -217,6 +224,6 @@ explicitly excludes `assignment_kb/README.md` from retrievable evidence.
 - `data/indexes/` and `data/traces/` are generated locally and ignored.
 - `evaluation/runs/` retains the reviewed baseline archive; new run output is ignored.
 - `evaluation/reports/` retains reviewed baseline reports; dated security reports are ignored.
-- Security corpora and manifests are reproducible local artifacts and are ignored.
+- Downloaded security corpora and dated run manifests are reproducible local artifacts and are ignored; the reviewed wellness v2 dataset and design manifest are versioned.
 - Model weights live in the Hugging Face cache, not in this repository.
 - Local credentials belong only in `.env`, which is excluded from Git.

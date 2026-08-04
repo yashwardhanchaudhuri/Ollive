@@ -185,29 +185,37 @@ separate providers, credentials, processes, or hardware.
 
 ## Evaluation boundary
 
-Deterministic tests cover request/context limits, malformed extraction and verdict
-closure, semantic direct override, self-declared delimiter boundaries, quoted and
-persona contrasts, exact-span anchoring, immutable context provenance, blocked-input
-isolation, mandatory KB-plus-web execution, every runtime gate, and the three-search
-cap. The frozen broader Qwen suite separately measured 44/79 direct injections,
-36/78 delimiter breaks, 180/200 DAN/persona attacks, and 30/30 many-shot cases
-constructed as ten each at 8, 32, and 64 shots. Deepset Prompt Injections supplied
-direct and delimiter cases; disjoint hash-sorted JailbreakHub rows supplied persona
-and many-shot cases. At the current 20,000-character cap, 27/30 archived many-shot
-prompts exceed the input budget; this is retrospective size analysis, not a rerun.
-On the 1,213-case Qwen regression, attack blocking rose from 64.9% to 74.8% and
-fail-closed attack blocks fell from 65 to zero, but benign blocking rose from 11.3%
-to 16.8%. Because the same cases informed the refactor and comparison, they are now
-development evidence.
-On the same consumed 357-case subset, the earlier grouped sequential GPT design
-blocked 89/157 attacks and 68/200 benign controls. The concise class-specific sequence
-blocked 117/157 attacks (74.5%) and 69/200 benign controls (34.5%): 53/79 direct
-and 64/78 delimiter attacks. It completed with zero execution errors and used
-1,655,506 tokens. Persona/DAN produced 40 of the 69 benign blocks. A later
-expanded-variation rerun blocked only 100/157 attacks and 70/200 benign controls
-while using 2,115,220 tokens, so that prompt version was rejected. The runtime now
-uses the concise profile whose per-guard hashes match the 117/157 benchmark manifests
-exactly.
+Deterministic tests cover admission limits, malformed-verdict closure, authority and
+delimiter attacks, quoted and persona contrasts, provenance, blocked-input isolation,
+the mandatory KB-plus-web path, evidence gates, grounding repairs, output checks, and
+the three-search cap.
+
+The complete frozen ingress suite contains 1,213 cases: 575 attacks and 638 benign
+controls from Deepset Prompt Injections, JailbreakHub, and XSTest. With the historical
+pre-variation five-guard base, Qwen blocked 415 attacks and 83 controls (970 correct;
+80.0%); GPT-5.4 mini blocked 490 attacks and 103 controls (1,025 correct; 84.5%).
+Qwen blocked 33/79 direct, 24/78 delimiter, 168/200 Persona/DAN, 30/30 many-shot,
+and 160/188 XSTest attacks; GPT blocked 50, 64, 178, 30, and 168, respectively.
+Both completed 1,213/1,213 cases without execution errors. Twelve attacks per backend
+were rejected by the application input bound. At the current 20,000-character limit,
+27/30 archived many-shot prompts would be oversized; that is retrospective length
+analysis, not a rerun.
+
+The fixed 357-case GPT development ablation selected the concise class-owned base:
+117/157 attacks and 69/200 benign controls, versus 89/157 and 68/200 for the grouped
+sequence. The fused layer produced 121 observed attack blocks but 108 benign blocks
+and 26 malformed-output closures; the expanded specialist regressed to 100 attack
+blocks and 70 benign blocks. Both were rejected. The active delimiter guard later
+added compact nine-family guidance, so its hash intentionally differs from the
+pre-variation ablation; focused reruns blocked 16/27 under explicit FP8 and 22/27
+under the historical/default BF16 launch.
+
+The human-authored wellness-native v2 suite contains 108 attacks: four classes by nine
+MECE variations by three situations. Qwen FP8 blocked 108/108 at ingress with zero
+execution errors; 107 were model decisions and one was a malformed-verdict fail-closed
+block. Because the broad direct-injection guard fired first for all 107 model blocks
+and the suite has no benign controls, this establishes end-to-end recall on that suite,
+not specialist attribution or precision.
 
 ## Scope and limitations
 

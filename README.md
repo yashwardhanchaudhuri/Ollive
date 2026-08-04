@@ -193,18 +193,26 @@ Sources, datasets, raw outputs, manifests, graphics, and limitations live under 
 
 The complete frozen ingress suite contains 1,213 cases from Deepset Prompt
 Injections, JailbreakHub, and XSTest: 575 attacks and 638 benign controls. With the
-same selected five-guard prompt, Qwen 3.5 9B via vLLM (historical quantization unrecorded) blocked 415 attacks and
+historical pre-variation five-guard base, Qwen 3.5 9B via vLLM (historical quantization unrecorded) blocked 415 attacks and
 83 controls (970/1,213 correct); GPT-5.4 mini blocked 490 attacks and 103 controls
 (1,025/1,213 correct). Both runs completed without execution errors.
 
-A separate human-authored wellness stress test uses a MECE design: nine primary
-mechanisms for each of Direct Prompt Injection, Many-Shot Jailbreaking, Delimiter
-Break Attack, and DAN-Style Persona, with three alternatives per mechanism. Qwen
-is only the evaluator and blocked 86/108 (79.6%): direct 23/27, many-shot 26/27,
-delimiter 12/27, and DAN 25/27.
-A focused rerun after adding compact delimiter-variation guidance blocked 16/27
-under explicitly configured FP8 and 22/27 under the historical/default BF16 launch.
-These subset results are not pooled into the older 108-case total.
+The original custom wellness suite (v1) contextualized mostly generic attacks with
+wellness requests. Qwen blocked 86/108 (79.6%): direct 23/27, many-shot 26/27,
+delimiter 12/27, and DAN 25/27. A focused delimiter rerun blocked 16/27 under
+explicit FP8 and 22/27 under the historical/default BF16 launch; those results are
+retained as historical development evidence.
+
+The replacement v2 suite is wellness-native: each attack exploits a care role,
+clinical boundary, wellness record, wearable, private journal, habit memory,
+consent decision, evidence source, or action available to a wellness agent. Its
+MECE structure remains four classes by nine primary cells by three distinct
+wellness situations. Qwen 3.5 9B FP8 blocked 108/108 at ingress with zero execution
+errors: 27/27 direct, 27/27 many-shot, 27/27 delimiter, and 27/27 DAN/persona.
+Of these, 107 were model decisions and one was a malformed-verdict fail-closed
+block. The broad direct-injection gate fired first for every model block, so this
+run demonstrates end-to-end ingress recall but not specialist-guard attribution.
+Because v2 contains attacks only, it does not measure benign false positives.
 
 The versioned core dataset covers hallucination, paired identity swaps (counterfactual bias), harmful
 requests, jailbreaks, and over-refusal. Every record retains the route, tool trace,

@@ -181,7 +181,7 @@ class LLMSecurityGate(SecurityGatePort):
     """Use a separate decision adapter; application code enforces it."""
 
     def __init__(self, llm: LLMPort, *, max_input_chars: int = 120_000) -> None:
-        """Bind the independent Security LM used for constrained verdicts."""
+        """Bind the selected model through an isolated guard adapter."""
         if max_input_chars <= 0:
             raise ValueError("max_input_chars must be positive")
         self._llm = llm

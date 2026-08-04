@@ -59,9 +59,21 @@ def build_llm(cfg: dict[str, Any], backend_name: str | None = None) -> LLMPort:
     raise ValueError(f"Unsupported provider: {provider}")
 
 
-def build_security_broker(cfg: dict[str, Any]) -> SecurityBroker:
-    """Build the mandatory, independently configured runtime Security LM."""
-    security_cfg = cfg.get("security", {})
+def build_security_broker(
+    cfg: dict[str, Any], backend_name: str | None = None
+) -> SecurityBroker:
+    """Build the mandatory guard adapter on the selected model backend."""
+    security_settings = cfg.get("security", {})
+    selected_name = backend_name or cfg.get("active")
+    selected_backend = cfg.get("backends", {}).get(selected_name, {})
+    # Explicit provider/model fields remain supported for focused tests and
+    # standalone security evaluations. Runtime configuration normally inherits
+    # the backend selected for the answer pipeline.
+    security_cfg = (
+        {**selected_backend, **security_settings}
+        if selected_backend
+        else dict(security_settings)
+    )
     if not security_cfg.get("enabled", True):
         raise ValueError("The runtime Security LM cannot be disabled")
     model = str(security_cfg.get("model") or "").strip()
@@ -71,7 +83,9 @@ def build_security_broker(cfg: dict[str, Any]) -> SecurityBroker:
         )
     provider = str(security_cfg.get("provider", "openai"))
     if provider == "openai" and not security_cfg.get("api_key"):
-        raise ValueError("SECURITY_LM_API_KEY is required for the Security LM")
+        raise ValueError(
+            "The selected OpenAI backend requires its configured API key"
+        )
     shadow_cfg = {
         "active": "security",
         "backends": {"security": security_cfg},
@@ -134,7 +148,7 @@ def build_agent(
     """Compose the agent used by Streamlit and evaluation runners."""
     cfg = cfg or load_config()
     llm = build_llm(cfg, backend_name)
-    security = build_security_broker(cfg)
+    security = build_security_broker(cfg, backend_name)
     retriever = build_retriever(cfg, rebuild=rebuild_index)
     indexed_doc_types = retriever.list_doc_types()
     configured_doc_types = list(cfg["rag"].get("doc_types", indexed_doc_types))

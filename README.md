@@ -38,8 +38,9 @@ From the repository root, use the single launcher:
 ./run_ollive.sh oss
 ```
 
-Before launching, configure `SECURITY_LM_MODEL`, `SECURITY_LM_API_KEY`, and
-`TAVILY_API_KEY` in `.env`; the Security LM runs in a separate constrained adapter and may share local model weights with the answer model.
+Before launching, configure `TAVILY_API_KEY` in `.env` and, for frontier mode,
+`OPENAI_API_KEY`. The security adapter uses the selected answer model through
+separate constrained guard calls.
 The launcher creates or updates the unified Conda environment, builds a missing KB index,
 starts local Qwen/vLLM when selected, and serves Streamlit at `http://127.0.0.1:8501`.
 Full prerequisites and troubleshooting are in [docs/INSTALL.md](docs/INSTALL.md).
@@ -112,12 +113,9 @@ enforces shapes, query fidelity, retries, and allowed citations.
 Complete installation, GPU/vLLM setup, model downloads, port configuration, and
 troubleshooting are in [docs/INSTALL.md](docs/INSTALL.md).
 
-Configure the mandatory independent Security LM and Tavily key in `.env`, then use
-the single launcher:
+Configure Tavily, then use the single launcher:
 
 ```dotenv
-SECURITY_LM_MODEL=your-independent-security-model
-SECURITY_LM_API_KEY=replace_me
 TAVILY_API_KEY=replace_me
 ```
 
@@ -137,7 +135,9 @@ For the frontier backend, set `OPENAI_API_KEY` in `.env`, change `active: oss` t
 ./run_ollive.sh frontier
 ```
 
-The launcher verifies that its mode matches YAML and starts Streamlit without vLLM. Restore `active: oss` before the OSS path. See
+The launcher verifies that its mode matches YAML and starts Streamlit without
+vLLM. In this mode GPT-5.4 mini runs both answer generation and the separate
+security guard calls. Restore `active: oss` before the OSS path. See
 [installation details](docs/INSTALL.md) for prerequisites, ports, manual control,
 and troubleshooting. Traces land in `data/traces/*.jsonl`.
 
@@ -149,7 +149,7 @@ and troubleshooting. Traces land in `data/traces/*.jsonl`.
 - model ids, temperature, memory turns
 - bounded memory, response-depth, request-frequency, message-size, and context-size settings
 - embedding model and index paths / `top_k`
-- independent Security LM settings and separate mandatory pipeline/web-search bounds
+- security guard settings and separate mandatory pipeline/web-search bounds
 - Tavily trusted domains and observability settings
 
 Set the active backend only in `config/backends.yaml`; it is the single source of truth. The launcher verifies its mode against this value and does not override it.

@@ -61,6 +61,32 @@ def test_security_adapter_may_share_answer_model_weights():
     assert isinstance(broker, SecurityBroker)
 
 
+def test_security_adapter_inherits_selected_answer_backend():
+    """Use the selected model for both answer and isolated guard calls."""
+    cfg = {
+        "active": "oss",
+        "backends": {
+            "oss": {
+                "provider": "vllm",
+                "model": "qwen-test",
+                "base_url": "http://localhost:8000/v1",
+            },
+            "frontier": {
+                "provider": "openai",
+                "model": "gpt-test",
+                "api_key": "test-key",
+            },
+        },
+        "security": {"enabled": True, "temperature": 0.0},
+    }
+
+    oss = build_security_broker(cfg, "oss")._gate._llm
+    frontier = build_security_broker(cfg, "frontier")._gate._llm
+
+    assert oss.model_name == "qwen-test"
+    assert frontier.model_name == "gpt-test"
+    assert oss.backend_name == frontier.backend_name == "security"
+
 def test_mandatory_web_provider_fails_startup_without_key():
     """Reject a null search backend when the evidence sequence requires web."""
     with pytest.raises(ValueError, match="TAVILY_API_KEY is required"):

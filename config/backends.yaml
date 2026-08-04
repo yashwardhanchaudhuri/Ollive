@@ -75,12 +75,9 @@ request_limits:
   max_context_chars: 48000
 
 security:
-  # Mandatory independent decision model. It never generates user-facing text.
+  # Mandatory decision adapter. It uses the selected answer backend while
+  # running separate guard prompts and never generating user-facing prose.
   enabled: true
-  provider: vllm
-  model: Qwen/Qwen3.5-9B
-  api_key_env: VLLM_API_KEY
-  base_url_env: VLLM_BASE_URL
   canary_token_env: SECURITY_CANARY_TOKEN
   temperature: 0.0
   max_tokens: 512

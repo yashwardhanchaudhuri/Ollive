@@ -82,7 +82,7 @@ if [[ "${MODE}" != "${CONFIGURED_BACKEND}" ]]; then
   exit 1
 fi
 
-for REQUIRED_VAR in SECURITY_LM_MODEL SECURITY_LM_API_KEY TAVILY_API_KEY; do
+for REQUIRED_VAR in TAVILY_API_KEY; do
   if [[ -z "${!REQUIRED_VAR:-}" ]] && ! grep -Eq "^[[:space:]]*${REQUIRED_VAR}=[^[:space:]#]+" .env; then
     echo "Ollive requires ${REQUIRED_VAR} in .env or the shell environment." >&2
     exit 1

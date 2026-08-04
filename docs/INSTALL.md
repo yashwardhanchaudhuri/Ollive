@@ -35,8 +35,9 @@ For the frontier backend, put `OPENAI_API_KEY` in `.env`, change `active: oss` t
 
 The launcher verifies that its mode matches YAML and starts only Streamlit. Restore
 `active: oss` before the OSS path. Both modes require `TAVILY_API_KEY` because every
-grounded wellness turn performs at least one web search. Both also require a separately
-configured Security LM. Services started by Ollive bind to loopback by default.
+grounded wellness turn performs at least one web search. The security adapter uses
+the selected backend: Qwen in OSS mode and GPT-5.4 mini in frontier mode. Its guard
+prompts and typed contracts remain separate. Services bind to loopback by default.
 
 Useful overrides are `OLLIVE_ENV_NAME`, `OLLIVE_STREAMLIT_PORT`,
 `OLLIVE_VLLM_PORT`, `OLLIVE_VLLM_MAX_LEN`, `OLLIVE_VLLM_TP`, and
@@ -113,18 +114,14 @@ OPENAI_API_KEY=replace_me
 OPENAI_BASE_URL=https://api.openai.com/v1
 ```
 
-Every mode also requires an independent Security LM and Tavily:
+Every mode also requires Tavily:
 
 ```dotenv
-SECURITY_LM_MODEL=replace_with_a_model_different_from_the_answer_model
-SECURITY_LM_API_KEY=replace_me
-SECURITY_LM_BASE_URL=https://api.openai.com/v1
 TAVILY_API_KEY=replace_me
 ```
 
-The Security LM must expose an OpenAI-compatible chat-completions interface and support
-forced tool schemas. The factory rejects a missing, disabled, or answer-model-identical
-configuration. Never commit the populated `.env` file.
+The selected model must support forced tool schemas because the security adapter
+returns typed decisions. Never commit the populated `.env` file.
 
 ## 3. Download models and build the KB index manually (optional)
 
@@ -236,9 +233,8 @@ unset or an OpenAI-compatible `/v1` endpoint.
 
 ### Security LM startup fails
 
-Set `SECURITY_LM_MODEL` and `SECURITY_LM_API_KEY`, verify the optional
-`SECURITY_LM_BASE_URL`, and confirm the security model differs from the selected answer
-model. Security-model timeouts and malformed verdicts fail closed during requests.
+Check the selected backend: vLLM health in OSS mode or `OPENAI_API_KEY` in frontier
+mode. Security-model timeouts and malformed verdicts fail closed during requests.
 
 ### Grounded turns have no web evidence
 

@@ -8,6 +8,7 @@ provides it. They make the agent independently testable and adapters replaceable
 | File | Responsibility |
 |---|---|
 | `llm.py` | Defines chat completion with messages, tools, and normalized usage. |
+| `security.py` | Defines the independent runtime security-review capability. |
 | `retriever.py` | Defines evidence search and document-type discovery. |
 | `web_search.py` | Defines bounded external search results. |
 | `tracer.py` | Defines model, tool, and turn observability events. |

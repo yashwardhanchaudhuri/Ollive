@@ -6,6 +6,8 @@ import json
 import statistics
 from pathlib import Path
 
+from ollive.evaluation.artifacts import write_json, write_text
+
 
 def load_records(path):
     """Load non-empty JSONL evaluation records from disk."""
@@ -44,7 +46,7 @@ def bar_chart(path, title, groups):
         f'<text x="20" y="38" font-size="22" font-weight="600" fill="#26352f">{html.escape(title)}</text>'
         + "".join(rows) + "</svg>"
     )
-    path.write_text(svg, encoding="utf-8")
+    write_text(path, svg)
 
 
 def pipeline_svg(path):
@@ -63,7 +65,7 @@ def pipeline_svg(path):
         '<text x="20" y="32" font-size="21" font-weight="600" fill="#26352f">Evaluation evidence flow</text>'
         + "".join(blocks) + "</svg>"
     )
-    path.write_text(svg, encoding="utf-8")
+    write_text(path, svg)
 
 
 def generate(results, output_dir, calibration=None):
@@ -75,6 +77,18 @@ def generate(results, output_dir, calibration=None):
     complete = [row for row in records if not row.get("error")]
     backends = sorted({row["backend"] for row in records})
     axes = ["hallucination", "bias_harm", "content_safety"]
+    guardrail_checks = (
+        "route",
+        "tool_policy",
+        "citation_policy",
+        "citation_integrity",
+        "query_fidelity",
+    )
+    if complete and all(
+        "security_integrity" in row.get("structural_grades", {})
+        for row in complete
+    ):
+        guardrail_checks += ("security_integrity",)
     # Component rates use completed records, while the report's attempt count and
     # failure register retain execution errors so instability stays visible.
 
@@ -85,7 +99,7 @@ def generate(results, output_dir, calibration=None):
             subset = [r for r in complete if r["backend"] == backend and r["case"]["axis"] == axis]
             values = [r["structural_grades"]["overall"]["pass"] for r in subset if r.get("structural_grades")]
             axis_rates[f"{backend} · {axis.replace('_', ' ')}"] = rate(values)
-        for check in ("route", "tool_policy", "citation_policy", "citation_integrity", "query_fidelity"):
+        for check in guardrail_checks:
             values = [r["structural_grades"][check]["pass"] for r in complete if r["backend"] == backend and r.get("structural_grades")]
             check_rates[f"{backend} · {check.replace('_', ' ')}"] = rate(values)
 
@@ -168,11 +182,19 @@ def generate(results, output_dir, calibration=None):
             lines.append(f"| {backend} | {axis.replace('_', ' ')} | {len(subset)} | {percent(rate(structural))} | {percent(rate(semantic))} |")
             summary["backends"][backend][axis] = {"n": len(subset), "structural_pass_rate": rate(structural), "semantic_pass_rate": rate(semantic)}
 
-    lines.extend(["", "## Guardrail diagnostics", "", "![Check rates](assets/check_pass_rates.svg)", "",
-                  "| Backend | Route | Tool policy | Citation policy | Citation integrity | Query fidelity |", "|---|---:|---:|---:|---:|---:|"])
+    diagnostic_labels = [check.replace("_", " ").title() for check in guardrail_checks]
+    lines.extend([
+        "",
+        "## Guardrail diagnostics",
+        "",
+        "![Check rates](assets/check_pass_rates.svg)",
+        "",
+        "| Backend | " + " | ".join(diagnostic_labels) + " |",
+        "|---|" + "---:|" * len(diagnostic_labels),
+    ])
     for backend in backends:
         values = []
-        for check in ("route", "tool_policy", "citation_policy", "citation_integrity", "query_fidelity"):
+        for check in guardrail_checks:
             checks = [r["structural_grades"][check]["pass"] for r in complete if r["backend"] == backend and r.get("structural_grades")]
             values.append(percent(rate(checks)))
         lines.append(f"| {backend} | " + " | ".join(values) + " |")
@@ -240,7 +262,8 @@ def generate(results, output_dir, calibration=None):
         "", "## Scope and interpretation", "",
         "The run isolates conversation memory while reusing immutable retrieval "
         "resources. Structural grading measures visible application behavior: route, "
-        "tool policy, citation policy and integrity, and exact query fidelity.",
+        "tool policy, citation policy and integrity, exact query fidelity, and "
+        "Security LM gate completion when present in the run format.",
         "",
         "It does not establish claim-to-source entailment, unbiased tone, or "
         "proportionate refusal. Counterfactual pairs still need pairwise human review, "
@@ -259,6 +282,6 @@ def generate(results, output_dir, calibration=None):
         "- Judge calibration dataset: evaluation/datasets/judge_gold.v1.jsonl",
     ])
     report = output_dir / "report.md"
-    report.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    (output_dir / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
+    write_text(report, "\n".join(lines) + "\n")
+    write_json(output_dir / "summary.json", summary)
     return report

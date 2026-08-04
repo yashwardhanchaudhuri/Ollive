@@ -7,14 +7,30 @@ owns policy, sequencing, memory, grounding, and dependency composition.
 
 | File | Responsibility |
 |---|---|
-| `agent.py` | Runs classification, model/tool rounds, grounded submission, tracing, and failure rollback. |
+| `agent.py` | Owns session memory and delegates immutable turn snapshots to `RuntimePipeline`. |
+| `canary.py` | Creates and detects an opaque output marker that signals prompt-context disclosure. |
 | `config.py` | Resolves repository paths, YAML settings, and environment-backed secrets. |
 | `factory.py` | Composes configured ports and adapters into a ready `WellnessAgent`. |
 | `grounded_answer.py` | Defines the structured answer contract, verifies claim-to-source entailment, then renders exact citations. |
 | `guardrails.py` | Runs one policy-routing call, then maps medical urgency to application-owned boundary text. |
 | `memory.py` | Keeps a bounded dialogue history without stale tool evidence. |
+| `request_limits.py` | Enforces per-session request frequency, current-message size, and accumulated-context budgets before model calls. |
+| `pipeline/` | Contains explicit ingress, routing, evidence, grounded, medical, non-grounded, and output stages. |
+| `security.py` | Creates immutable untrusted-text envelopes, shortcuts empty history, labels decision sources, enforces Security LM results, and rebuilds approved evidence payloads. |
 | `tools.py` | Declares tool schemas, validates bounds and shapes, and dispatches calls. |
 | `__init__.py` | Marks the application namespace. |
 | `README.md` | Maps orchestration responsibilities. |
 
-A focused LLM call first decides whether the current turn depends on prior dialogue; the policy router then selects domain, depth, and explicit web requirements. Grounded turns bind retrieval either to the current user text or to the immediately preceding user turn plus the current text. When continuation is selected, grounded answer generation receives up to the three most recent user turns, while assistant prose and prior tool evidence remain excluded. Grounding then enforces structured items, bounded answer length, current-turn marker provenance, and an isolated claim-to-source entailment check before rendering.
+`WellnessAgent` owns only bounded session state, including the local sliding request window. It applies request and context admission before delegating accepted traffic.
+
+`WellnessAgent` contains no routing, tool, or validation logic. A separate Security LM
+extracts authority semantics, then runs the ordered checks declared for the current
+stage. Application code stops on the first block and uses the weakest per-check trust
+score when all checks allow. Application-authored provenance—not delimiters inside
+content—defines whether text came from the user, history, or another source.
+
+Every grounded wellness turn then performs KB lookup and at least one web search; each
+source result and their combined evidence set are approved before entering answer-model
+context. Grounding enforces structured items, current-turn marker provenance, and isolated
+claim entailment. Final output integrity, harm, and medical checks run before rendering.
+Application code—not either model—enforces every transition and the three-search cap.

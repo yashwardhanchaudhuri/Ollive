@@ -12,4 +12,6 @@
 | `oss_frontier_semantic_resolver_20260721/` | Pre-fix revised-workflow snapshot. |
 | `oss_frontier_matched_core/` | Earlier archive. |
 
+Dated Security LM reports are reproducible local output and are ignored by Git.
+
 The root `REPORT.pdf` and `evaluation/REPORT.md` summarize the current best-effort matched run. Qualitative human checks informed the fixes; the report does not invent a blinded numeric human score.

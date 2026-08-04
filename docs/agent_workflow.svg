@@ -1,91 +1,145 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1320" viewBox="0 0 1200 1320">
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="2050" viewBox="0 0 1400 2050">
 <defs>
-  <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="#55766a"/></marker>
-  <style>.title{font:700 28px Arial;fill:#244f41}.label{font:700 17px Arial;fill:#24352f}.small{font:14px Arial;fill:#42534c}.box{stroke:#799989;stroke-width:2;rx:14}.arrow{stroke:#55766a;stroke-width:3;fill:none;marker-end:url(#arrow)}.dash{stroke:#9b7d58;stroke-width:3;stroke-dasharray:7 6;fill:none;marker-end:url(#arrow)}.edge{font:700 12px Arial;fill:#55766a}.failEdge{font:700 12px Arial;fill:#8b6845}</style>
+  <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+    <path d="M0 0 L10 5 L0 10z" fill="#55766a"/>
+  </marker>
+  <style>
+    .title{font:700 32px Arial,sans-serif;fill:#244f41}
+    .subtitle{font:17px Arial,sans-serif;fill:#42534c}
+    .label{font:700 20px Arial,sans-serif;fill:#24352f}
+    .body{font:16px Arial,sans-serif;fill:#42534c}
+    .edge{font:700 15px Arial,sans-serif;fill:#55766a}
+    .warn{font:700 15px Arial,sans-serif;fill:#8b6845}
+    .box{stroke:#799989;stroke-width:2.5}
+    .arrow{stroke:#55766a;stroke-width:3.5;fill:none;marker-end:url(#arrow)}
+    .dash{stroke:#9b7d58;stroke-width:3.5;stroke-dasharray:9 7;fill:none;marker-end:url(#arrow)}
+  </style>
 </defs>
-<rect width="1200" height="1320" fill="#fbfaf7"/>
-<text x="40" y="48" class="title">Ollive agent workflow</text>
-<text x="40" y="76" class="small">One bounded turn: classify context, select policy, retrieve current-turn evidence, then validate before display.</text>
 
-<rect x="450" y="105" width="300" height="62" class="box" fill="#dce9e1"/>
-<text x="600" y="132" text-anchor="middle" class="label">Streamlit UI</text>
-<text x="600" y="153" text-anchor="middle" class="small">user turn + session state</text>
-<path d="M600 167V200" class="arrow"/>
+<rect width="1400" height="2050" fill="#fbfaf7"/>
+<text x="55" y="55" class="title">Ollive runtime security and grounding workflow</text>
+<text x="55" y="86" class="subtitle">Every grounded-wellness run performs a KB lookup and at least one web search. Three web searches is the hard upper limit.</text>
 
-<rect x="390" y="200" width="420" height="68" class="box" fill="#e8f0ec"/>
-<text x="600" y="228" text-anchor="middle" class="label">WellnessAgent.chat()</text>
-<text x="600" y="251" text-anchor="middle" class="small">memory checkpoint + usage + trace</text>
-<path d="M600 268V300" class="arrow"/>
+<rect x="55" y="112" width="1290" height="72" rx="16" class="box" fill="#eef4f2"/>
+<circle cx="90" cy="148" r="12" fill="#3e8fb0"/>
+<text x="120" y="143" class="label">Security LM gate</text>
+<text x="120" y="168" class="body">Every external runtime input must receive a typed allow/block or item-level allow/exclude verdict before entering the main pipeline.</text>
 
-<rect x="355" y="300" width="490" height="70" class="box" fill="#f7f4ed"/>
-<text x="600" y="329" text-anchor="middle" class="label">Context-dependency classifier</text>
-<text x="600" y="352" text-anchor="middle" class="small">focused LLM decision: current or prior + current</text>
-<path d="M600 370V402" class="arrow"/>
+<rect x="470" y="220" width="460" height="80" rx="16" class="box" fill="#dce9e1"/>
+<text x="700" y="252" text-anchor="middle" class="label">User message + admission budget</text>
+<text x="700" y="278" text-anchor="middle" class="body">Untrusted input · rate, message, and context caps</text>
+<path d="M700 300V330" class="arrow"/>
 
-<rect x="355" y="402" width="490" height="70" class="box" fill="#f7f4ed"/>
-<text x="600" y="431" text-anchor="middle" class="label">Policy router</text>
-<text x="600" y="454" text-anchor="middle" class="small">domain route + depth + explicit web requirement</text>
+<rect x="400" y="330" width="600" height="105" rx="16" class="box" fill="#dcecf5"/>
+<circle cx="435" cy="382" r="12" fill="#3e8fb0"/>
+<text x="700" y="368" text-anchor="middle" class="label">Authority extraction + ordered input checks</text>
+<text x="700" y="397" text-anchor="middle" class="body">Authority → direct injection → delimiter/role confusion → Persona/DAN</text>
+<text x="700" y="420" text-anchor="middle" class="body">Then harm → medical; application early stop and weakest-score aggregation</text>
+<path d="M700 435V480" class="arrow"/>
+<path d="M400 382H230V490" class="dash"/>
+<text x="258" y="370" class="warn">blocked</text>
 
-<path d="M355 437H190V505" class="arrow"/>
-<rect x="35" y="505" width="310" height="82" class="box" fill="#f3f0ea"/>
-<text x="190" y="536" text-anchor="middle" class="label">Non-grounded routes</text>
-<text x="190" y="560" text-anchor="middle" class="small">conversation / clarification / out of scope</text>
+<rect x="70" y="490" width="320" height="100" rx="16" class="box" fill="#f7eeee"/>
+<text x="230" y="528" text-anchor="middle" class="label">Application-owned refusal</text>
+<text x="230" y="557" text-anchor="middle" class="body">Safe redirect and audit record</text>
 
-<path d="M600 472V505" class="arrow"/>
-<rect x="440" y="505" width="320" height="82" class="box" fill="#f7eeee"/>
-<text x="600" y="536" text-anchor="middle" class="label">Medical urgency selector</text>
-<text x="600" y="560" text-anchor="middle" class="small">forced standard-or-urgent schema</text>
-<path d="M600 587V620" class="arrow"/>
-<rect x="440" y="620" width="320" height="78" class="box" fill="#f7eeee"/>
-<text x="600" y="651" text-anchor="middle" class="label">Application-owned boundary</text>
-<text x="600" y="675" text-anchor="middle" class="small">model cannot compose clinical facts</text>
+<rect x="430" y="480" width="540" height="90" rx="16" class="box" fill="#f7f4ed"/>
+<text x="700" y="515" text-anchor="middle" class="label">Context security gate + selector</text>
+<text x="700" y="543" text-anchor="middle" class="body">Security LM reviews approved bounded dialogue; no historical tool payloads</text>
+<path d="M700 570V620" class="arrow"/>
 
-<path d="M845 437H1010V505" class="arrow"/>
-<rect x="855" y="505" width="310" height="82" class="box" fill="#e8f0ec"/>
-<text x="1010" y="536" text-anchor="middle" class="label">Bounded query builder</text>
-<text x="1010" y="560" text-anchor="middle" class="small">verbatim user text; no query rewriting</text>
-<path d="M1010 587V620" class="arrow"/>
+<rect x="430" y="620" width="540" height="90" rx="16" class="box" fill="#f7f4ed"/>
+<text x="700" y="655" text-anchor="middle" class="label">Policy router</text>
+<text x="700" y="683" text-anchor="middle" class="body">Conversation · clarification · medical risk · refusal · wellness</text>
 
-<rect x="855" y="620" width="310" height="78" class="box" fill="#e8f0ec"/>
-<text x="1010" y="651" text-anchor="middle" class="label">lookup_kb</text>
-<text x="1010" y="675" text-anchor="middle" class="small">application-bound query + retrieved passages</text>
-<path d="M1010 698V730" class="arrow"/>
-<text x="1032" y="719" class="edge">gap / required</text>
-<path d="M855 659H810V842H855" class="arrow"/>
-<text x="798" y="758" text-anchor="end" class="edge">sufficient</text>
+<path d="M430 665H230V760" class="arrow"/>
+<rect x="70" y="760" width="320" height="130" rx="16" class="box" fill="#f3f0ea"/>
+<text x="230" y="798" text-anchor="middle" class="label">Non-grounded routes</text>
+<text x="230" y="827" text-anchor="middle" class="body">Conversation · clarification</text>
+<text x="230" y="851" text-anchor="middle" class="body">Medical boundary · refusal</text>
+<text x="230" y="875" text-anchor="middle" class="body">No KB or web tools</text>
+<path d="M230 890V1862H400" class="arrow"/>
+<text x="247" y="935" class="edge">final alignment</text>
 
-<rect x="855" y="730" width="310" height="78" class="box" fill="#fff1df"/>
-<text x="1010" y="761" text-anchor="middle" class="label">search_web, at most once</text>
-<text x="1010" y="785" text-anchor="middle" class="small">advanced extraction from allowlisted domains</text>
-<path d="M1010 808V842" class="arrow"/>
+<path d="M700 710V760" class="arrow"/>
+<rect x="470" y="760" width="460" height="80" rx="16" class="box" fill="#e8f0ec"/>
+<text x="700" y="792" text-anchor="middle" class="label">Grounded wellness route</text>
+<text x="700" y="818" text-anchor="middle" class="body">KB and web evidence are required on every run</text>
+<path d="M700 840V880" class="arrow"/>
 
-<rect x="855" y="842" width="310" height="78" class="box" fill="#dce9e1"/>
-<text x="1010" y="873" text-anchor="middle" class="label">submit_grounded_answer</text>
-<text x="1010" y="897" text-anchor="middle" class="small">bounded items + current-turn markers</text>
-<path d="M1010 920V952" class="arrow"/>
+<rect x="470" y="880" width="460" height="80" rx="16" class="box" fill="#e8f0ec"/>
+<text x="700" y="912" text-anchor="middle" class="label">1. Required KB lookup</text>
+<text x="700" y="938" text-anchor="middle" class="body">Typed, application-controlled tool request</text>
+<path d="M700 960V1000" class="arrow"/>
 
-<rect x="855" y="952" width="310" height="78" class="box" fill="#dce9e1"/>
-<text x="1010" y="983" text-anchor="middle" class="label">Contract validation</text>
-<text x="1010" y="1007" text-anchor="middle" class="small">shape + bounds + marker provenance</text>
-<path d="M1010 1030V1062" class="arrow"/>
+<rect x="400" y="1000" width="600" height="105" rx="16" class="box" fill="#dcecf5"/>
+<circle cx="435" cy="1052" r="12" fill="#3e8fb0"/>
+<text x="700" y="1038" text-anchor="middle" class="label">Security LM: KB evidence gate</text>
+<text x="700" y="1067" text-anchor="middle" class="body">Each retrieved KB passage is approved or excluded</text>
+<text x="700" y="1090" text-anchor="middle" class="body">before reaching the answer model</text>
+<path d="M700 1105V1135" class="arrow"/>
 
-<rect x="855" y="1062" width="310" height="78" class="box" fill="#dce9e1"/>
-<text x="1010" y="1093" text-anchor="middle" class="label">Claim entailment verifier</text>
-<text x="1010" y="1117" text-anchor="middle" class="small">isolated claim/source verdicts</text>
+<rect x="470" y="1135" width="460" height="90" rx="16" class="box" fill="#fff1df"/>
+<text x="700" y="1170" text-anchor="middle" class="label">2. Required web search #1</text>
+<text x="700" y="1198" text-anchor="middle" class="body">Trusted-domain filter and typed result</text>
+<path d="M700 1225V1255" class="arrow"/>
 
-<rect x="450" y="1190" width="300" height="78" class="box" fill="#e8f0ec"/>
-<text x="600" y="1221" text-anchor="middle" class="label">Render + remember</text>
-<text x="600" y="1245" text-anchor="middle" class="small">answer + clickable source context</text>
-<path d="M855 1101H800V1229H750" class="arrow"/>
-<path d="M190 587H390V1229H450" class="arrow"/>
-<path d="M600 698V1190" class="arrow"/>
+<rect x="400" y="1255" width="600" height="105" rx="16" class="box" fill="#dcecf5"/>
+<circle cx="435" cy="1307" r="12" fill="#3e8fb0"/>
+<text x="700" y="1293" text-anchor="middle" class="label">Security LM: web + combined-evidence gates</text>
+<text x="700" y="1322" text-anchor="middle" class="body">Each filtered web result is approved or excluded; then KB + web are rechecked</text>
+<text x="700" y="1345" text-anchor="middle" class="body">before reaching the answer model</text>
+<path d="M700 1360V1390" class="arrow"/>
 
-<rect x="35" y="952" width="300" height="104" class="box" fill="#f7eeee"/>
-<text x="185" y="985" text-anchor="middle" class="label">Best effort or withhold</text>
-<text x="185" y="1010" text-anchor="middle" class="small">exact-gap notice + verified cited subset;</text>
-<text x="185" y="1033" text-anchor="middle" class="small">unsupported output is never displayed</text>
-<path d="M855 991H335" class="dash"/>
-<text x="570" y="982" text-anchor="middle" class="failEdge">invalid contract</text>
-<path d="M855 1123H790V1290H365V1030H335" class="dash"/>
-<text x="575" y="1308" text-anchor="middle" class="failEdge">unsupported claim</text>
+<rect x="470" y="1390" width="460" height="100" rx="16" class="box" fill="#fff1df"/>
+<text x="700" y="1425" text-anchor="middle" class="label">3. Evidence ready to finalize?</text>
+<text x="700" y="1453" text-anchor="middle" class="body">Finalize when sufficient, or after attempt 3</text>
+<text x="700" y="1476" text-anchor="middle" class="body">with an explicit evidence limitation</text>
+
+<path d="M700 1490V1540" class="arrow"/>
+<text x="716" y="1522" class="edge">finalize</text>
+
+<path d="M930 1440H1030" class="arrow"/>
+<text x="948" y="1427" class="warn">gap + attempts remain</text>
+<rect x="1030" y="1380" width="320" height="120" rx="16" class="box" fill="#fff1df"/>
+<text x="1190" y="1415" text-anchor="middle" class="label">Web search #2 or #3</text>
+<text x="1190" y="1444" text-anchor="middle" class="body">Query only the named</text>
+<text x="1190" y="1467" text-anchor="middle" class="body">remaining evidence gap</text>
+<path d="M1190 1500V1540" class="arrow"/>
+
+<rect x="1030" y="1540" width="320" height="125" rx="16" class="box" fill="#dcecf5"/>
+<circle cx="1063" cy="1602" r="12" fill="#3e8fb0"/>
+<text x="1190" y="1577" text-anchor="middle" class="label">Security LM gate</text>
+<text x="1190" y="1607" text-anchor="middle" class="body">Approve or exclude result,</text>
+<text x="1190" y="1630" text-anchor="middle" class="body">then reassess sufficiency</text>
+<path d="M1350 1602H1375V1515H960V1465H930" class="arrow"/>
+<text x="972" y="1504" class="edge">reassess</text>
+
+<rect x="470" y="1540" width="460" height="100" rx="16" class="box" fill="#dce9e1"/>
+<text x="700" y="1575" text-anchor="middle" class="label">Structured grounded answer</text>
+<text x="700" y="1604" text-anchor="middle" class="body">Atomic claims + current-turn source IDs</text>
+<text x="700" y="1627" text-anchor="middle" class="body">+ explicit evidence limitations</text>
+<path d="M700 1640V1680" class="arrow"/>
+
+<rect x="470" y="1680" width="460" height="95" rx="16" class="box" fill="#dce9e1"/>
+<text x="700" y="1715" text-anchor="middle" class="label">Grounding validation</text>
+<text x="700" y="1744" text-anchor="middle" class="body">JSON contract → provenance → claim entailment</text>
+<path d="M700 1775V1810" class="arrow"/>
+
+<rect x="400" y="1810" width="600" height="105" rx="16" class="box" fill="#dcecf5"/>
+<circle cx="435" cy="1862" r="12" fill="#3e8fb0"/>
+<text x="700" y="1848" text-anchor="middle" class="label">Canary guard + Security LM final alignment</text>
+<text x="700" y="1877" text-anchor="middle" class="body">User constraints + wellness objective</text>
+<text x="700" y="1900" text-anchor="middle" class="body">+ no harmful or integrity-marker disclosure</text>
+<path d="M700 1915V1940" class="arrow"/>
+<path d="M400 1862H230V1940" class="dash"/>
+<text x="248" y="1848" class="warn">unsafe / invalid</text>
+
+<rect x="70" y="1940" width="320" height="85" rx="16" class="box" fill="#f7eeee"/>
+<text x="230" y="1974" text-anchor="middle" class="label">Fail closed</text>
+<text x="230" y="2002" text-anchor="middle" class="body">Final-output blocks are not repaired</text>
+
+<rect x="470" y="1940" width="460" height="85" rx="16" class="box" fill="#e8f0ec"/>
+<text x="700" y="1974" text-anchor="middle" class="label">Render answer + source summary</text>
+<text x="700" y="2002" text-anchor="middle" class="body">Citations, gathered information, and audit trace</text>
 </svg>

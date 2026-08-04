@@ -30,7 +30,6 @@ Ollive/
 ├── environment.yml              # Conda application/development environment
 ├── pyproject.toml               # Python package metadata
 ├── requirements.txt             # Unified local runtime, including vLLM
-├── requirements.md              # Dependency rationale
 │
 ├── assignment_kb/               # Curated source documents used by local evidence retrieval
 │   ├── 01_Diet.md
@@ -44,7 +43,7 @@ Ollive/
 │   └── 09_Nature_General_Welfare.md
 │
 ├── config/
-│   └── backends.yaml            # Agent prompt, backends, retrieval, tools, tracing
+│   └── backends.yaml            # Answer/Security LMs, evidence bounds, tools, tracing
 │
 ├── data/                        # Ephemeral runtime output
 │   ├── indexes/
@@ -57,7 +56,6 @@ Ollive/
 │   ├── INSTALL.md               # Installation, downloads, ports, troubleshooting
 │   ├── KNOWLEDGE_BASE.md        # Corpus scope, retrieval, citations, and limits
 │   ├── PROJECT_STRUCTURE.md     # This annotated repository tree
-│   ├── WRITING_STANDARD.md      # Narrative and evidence rules for Markdown
 │   └── prompt_guardrails.md     # Guardrail threats, choices, results, and limits
 │
 ├── evaluation/                  # Complete, reader-facing evaluation evidence
@@ -77,36 +75,62 @@ Ollive/
 │       └── oss_frontier_matched_core/
 │
 ├── scripts/
+│   ├── audit_prompt_specificity.py # Detect benchmark-specific prompt coupling
+│   ├── build_heldout_security_suite.py # Build the sealed security holdout locally
 │   ├── build_eval_dataset.py    # Build the core evaluation dataset
+│   ├── build_owasp_security_dataset.py # Build focused prompt-injection regressions
 │   ├── build_index.py           # Build/rebuild the local FAISS knowledge index
 │   ├── build_prompt_regression_dataset.py
+│   ├── build_public_security_benchmark.py # Build pinned public security cases
+│   ├── build_security_split_suite.py # Thin CLI for group-separated security splits
+│   ├── build_security_tuning_suite.py # Build authority-aligned tuning splits
 │   ├── combine_eval_runs.py
 │   ├── compare_eval_runs.py
 │   ├── generate_eval_report.py
 │   ├── judge_evals.py           # Run calibrated model judging
 │   ├── run_evals.py             # Execute evaluation cases
+│   ├── run_security_ingress_evals.py # Execute only the Security LM ingress boundary
+│   ├── score_strongreject.py     # Score downstream attack leakage
+│   ├── summarize_security_evals.py # Summarize ingress security runs
 │   └── serve_qwen_vllm.sh       # Start Qwen through the vLLM server
 │
 ├── src/
 │   └── ollive/
 │       ├── __init__.py
 │       ├── application/         # Agent orchestration and use cases
-│       │   ├── agent.py         # Main bounded agent/tool loop
+│       │   ├── agent.py         # Thin session-memory facade
 │       │   ├── config.py        # YAML and environment loading
 │       │   ├── factory.py       # Composition root
 │       │   ├── grounded_answer.py # Strict grounded-answer contract
 │       │   ├── guardrails.py    # Semantic routing and turn policies
 │       │   ├── memory.py        # Bounded dialogue-only memory
+│       │   ├── request_limits.py # Per-session request, message, and context budgets
+│       │   ├── pipeline/        # Explicit runtime stage state machine
+│       │   │   ├── contracts.py # Typed configuration and per-turn state
+│       │   │   ├── ingress.py   # Input and aggregate-context Security LM gates
+│       │   │   ├── routing.py   # Route, context, and evidence-query selection
+│       │   │   ├── evidence.py  # Segregated tools and evidence Security LM gates
+│       │   │   ├── grounded.py  # Bounded sufficiency and grounded-answer loop
+│       │   │   ├── medical.py   # Application-owned medical boundary
+│       │   │   ├── non_grounded.py # Tool-free conversation, clarification, refusal
+│       │   │   ├── output.py    # Citation and final-alignment gates
+│       │   │   └── runtime.py   # Only legal stage ordering
+│       │   ├── security.py      # Security verdict enforcement and safe evidence rebuild
 │       │   └── tools.py         # Tool schemas, validation, dispatch
 │       ├── domain/              # Infrastructure-free domain types
 │       │   ├── citations.py
-│       │   └── models.py
+│       │   ├── models.py
+│       │   └── security.py      # Security stages and strict verdict contracts
 │       ├── ports/               # Adapter interfaces
 │       │   ├── llm.py
+│       │   ├── security.py      # Independent Security LM capability
 │       │   ├── retriever.py
 │       │   ├── tracer.py
 │       │   └── web_search.py
 │       ├── adapters/            # Concrete infrastructure integrations
+│       │   ├── security/
+│       │   │   ├── checks.py    # Ordered single-purpose security checks and prompts
+│       │   │   └── llm_security.py # Sequential forced-schema Security LM adapter
 │       │   ├── llm/
 │       │   │   ├── local_transformers.py
 │       │   │   └── openai_compatible.py
@@ -121,12 +145,18 @@ Ollive/
 │       │       └── tavily_search.py
 │       ├── evaluation/          # Dataset, grading, judging, comparison, reports
 │       │   ├── compare.py
+│       │   ├── artifacts.py      # Atomic generated-artifact I/O and hashing
+│       │   ├── cases.py          # Shared authored-case constructor
 │       │   ├── dataset.py
 │       │   ├── grader.py
 │       │   ├── judge.py
 │       │   ├── models.py
 │       │   ├── report.py
-│       │   └── runner.py
+│       │   ├── prompt_audit.py   # Benchmark-coupling audit mechanics
+│       │   ├── security_corpus.py # Reusable security corpus construction and splitting
+│       │   ├── security_summary.py # Security-run aggregate metrics
+│       │   ├── runner.py
+│       │   └── security_runner.py # Ingress-only Security LM evaluator
 │       └── ui/
 │           ├── streamlit_app.py # Streamlit entry point
 │           └── styles.css       # UI styling kept outside Python
@@ -139,7 +169,12 @@ Ollive/
     ├── test_grounded_answer.py
     ├── test_guardrails.py
     ├── test_indexer.py
-    └── test_memory.py
+    ├── test_memory.py
+    ├── test_pipeline_architecture.py
+    ├── test_request_limits.py
+    ├── test_script_quality.py
+    ├── test_security.py
+    └── test_security_controls.py
 ```
 
 ## Design boundaries
@@ -148,6 +183,7 @@ Ollive/
 |---|---|
 | Unified environment versus separate processes | Simplify installation while isolating model serving from the UI runtime |
 | Ports versus adapters | Keep orchestration independent of vendors |
+| Security perception versus enforcement | Security LM extracts typed semantics; application code owns provenance and authority decisions |
 | Dialogue memory versus traces | Prevent stale tool evidence entering later turns |
 | Evaluation source versus generated reports | Preserve reproducible inputs and derived evidence |
 | Knowledge corpus versus project docs | Avoid indexing operational text as wellness evidence |
@@ -157,6 +193,7 @@ Ollive/
 | Change | Review together |
 |---|---|
 | Add a backend | Configuration, adapter, factory, installation docs, evaluation manifest |
+| Change a security boundary | Security contracts, broker, adapter schema, agent order, adversarial tests, workflow docs |
 | Add a route | Guardrails, agent behavior, datasets, tests, workflow document |
 | Change citation shape | Parser, grounding contract, UI, tests, archived evidence |
 | Change a KB file | Corpus version, index, citation lines, retrieval tests, evaluation |
@@ -178,7 +215,8 @@ explicitly excludes `assignment_kb/README.md` from retrievable evidence.
 - `src/ollive/`, `scripts/`, `tests/`, `evaluation/datasets/`, and
   `assignment_kb/` are reproducible source inputs.
 - `data/indexes/` and `data/traces/` are generated locally and ignored.
-- `evaluation/runs/` archives selected raw run evidence and manifests.
-- `evaluation/reports/` contains supporting human-readable reports and graphics.
+- `evaluation/runs/` retains the reviewed baseline archive; new run output is ignored.
+- `evaluation/reports/` retains reviewed baseline reports; dated security reports are ignored.
+- Security corpora and manifests are reproducible local artifacts and are ignored.
 - Model weights live in the Hugging Face cache, not in this repository.
 - Local credentials belong only in `.env`, which is excluded from Git.

@@ -118,6 +118,8 @@ class AgentTurnResult(BaseModel):
     citations: list[Citation] = Field(default_factory=list)
     invalid_citations: list[Citation] = Field(default_factory=list)
     citation_validation_failed: bool = False
+    security_validation_failed: bool = False
+    security_trace: list[dict[str, Any]] = Field(default_factory=list)
     tool_trace: list[dict[str, Any]] = Field(default_factory=list)
     usage: UsageStats = Field(default_factory=UsageStats)
     backend: str = ""

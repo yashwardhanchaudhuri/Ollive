@@ -2,23 +2,15 @@
 """Build Ollive's reviewed core and judge-calibration datasets."""
 from __future__ import annotations
 
-import json
 from pathlib import Path
+
+from ollive.evaluation.artifacts import write_jsonl
+from ollive.evaluation.cases import build_case as row
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "evaluation" / "datasets"
 
 
-def row(id, axis, subtype, severity, prompt, route, tools, cites, expected, forbidden, **extra):
-    """Build one evaluation-case mapping with required and optional fields."""
-    value = {
-        "id": id, "axis": axis, "subtype": subtype, "severity": severity,
-        "prompt": prompt, "expected_route": route, "tool_policy": tools,
-        "citation_policy": cites, "expected_behavior": expected,
-        "forbidden_behavior": forbidden,
-    }
-    value.update(extra)
-    return value
 
 
 def core_cases():
@@ -214,17 +206,14 @@ def judge_gold():
     return [{"id": f"judge_{i}", "prompt": p, "response": r, "axis": a, "gold_label": g} for i, p, r, a, g in values]
 
 
-def write(path, rows):
-    """Write mappings as UTF-8 JSONL, creating the destination directory."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding="utf-8") as handle:
-        for value in rows:
-            handle.write(json.dumps(value, ensure_ascii=False) + "\n")
+def main() -> None:
+    """Write the reviewed core and judge-calibration datasets."""
+    core = core_cases()
+    gold = judge_gold()
+    write_jsonl(OUT / "core.v1.jsonl", core)
+    write_jsonl(OUT / "judge_gold.v1.jsonl", gold)
+    print(f"Wrote {len(core)} core cases and {len(gold)} judge-gold cases")
 
 
 if __name__ == "__main__":
-    core = core_cases()
-    gold = judge_gold()
-    write(OUT / "core.v1.jsonl", core)
-    write(OUT / "judge_gold.v1.jsonl", gold)
-    print(f"Wrote {len(core)} core cases and {len(gold)} judge-gold cases")
+    main()

@@ -4,6 +4,22 @@
 set -euo pipefail
 
 MODE="${1:-oss}"
+require_port() {
+  local name="$1" value="$2"
+  if [[ ! "${value}" =~ ^[0-9]{1,5}$ ]] || (( 10#${value} < 1 || 10#${value} > 65535 )); then
+    echo "${name} must be an integer from 1 to 65535; received '${value}'." >&2
+    exit 2
+  fi
+}
+
+require_positive_integer() {
+  local name="$1" value="$2"
+  if [[ ! "${value}" =~ ^[0-9]+$ ]] || (( 10#${value} < 1 )); then
+    echo "${name} must be a positive integer; received '${value}'." >&2
+    exit 2
+  fi
+}
+
 case "${MODE}" in
   oss|frontier) ;;
   *)
@@ -25,8 +41,13 @@ STREAMLIT_HOST="${OLLIVE_STREAMLIT_HOST:-127.0.0.1}"
 STREAMLIT_PORT="${OLLIVE_STREAMLIT_PORT:-8501}"
 VLLM_HOST="${OLLIVE_VLLM_HOST:-127.0.0.1}"
 VLLM_PORT="${OLLIVE_VLLM_PORT:-8000}"
+VLLM_READY_TIMEOUT="${OLLIVE_VLLM_READY_TIMEOUT:-600}"
 VLLM_URL="http://${VLLM_HOST}:${VLLM_PORT}/v1"
 VLLM_LOG="${ROOT}/data/vllm.log"
+
+require_port OLLIVE_STREAMLIT_PORT "${STREAMLIT_PORT}"
+require_port OLLIVE_VLLM_PORT "${VLLM_PORT}"
+require_positive_integer OLLIVE_VLLM_READY_TIMEOUT "${VLLM_READY_TIMEOUT}"
 
 cd "${ROOT}"
 
@@ -60,6 +81,13 @@ if [[ "${MODE}" != "${CONFIGURED_BACKEND}" ]]; then
   echo "Edit the YAML active field, then rerun the launcher." >&2
   exit 1
 fi
+
+for REQUIRED_VAR in SECURITY_LM_MODEL SECURITY_LM_API_KEY TAVILY_API_KEY; do
+  if [[ -z "${!REQUIRED_VAR:-}" ]] && ! grep -Eq "^[[:space:]]*${REQUIRED_VAR}=[^[:space:]#]+" .env; then
+    echo "Ollive requires ${REQUIRED_VAR} in .env or the shell environment." >&2
+    exit 1
+  fi
+done
 
 if [[ ! -f data/indexes/faiss.index || ! -f data/indexes/chunks.pkl || ! -f data/indexes/meta.json ]]; then
   echo "Building the local knowledge-base index (first run downloads the embedding model)."
@@ -95,8 +123,8 @@ if [[ "${MODE}" == "oss" ]]; then
       bash scripts/serve_qwen_vllm.sh >"${VLLM_LOG}" 2>&1 &
     VLLM_PID=$!
 
-    echo "Waiting for vLLM at ${VLLM_URL} (up to ${OLLIVE_VLLM_READY_TIMEOUT:-600}s)."
-    deadline=$((SECONDS + ${OLLIVE_VLLM_READY_TIMEOUT:-600}))
+    echo "Waiting for vLLM at ${VLLM_URL} (up to ${VLLM_READY_TIMEOUT}s)."
+    deadline=$((SECONDS + VLLM_READY_TIMEOUT))
     until curl --fail --silent "${VLLM_URL}/models" >/dev/null; do
       if (( SECONDS >= deadline )); then
         echo "vLLM did not become ready. Recent log output:" >&2

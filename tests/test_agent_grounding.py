@@ -1,7 +1,9 @@
 import json
 from ollive.adapters.observability.langfuse_tracer import NoOpTracer
 from ollive.application.agent import CITATION_REJECTION_MESSAGE, WellnessAgent
+from ollive.application.security import SecurityBroker
 from ollive.application.grounded_answer import SUBMIT_GROUNDED_ANSWER, VERIFY_CLAIM_SUPPORT
+from ollive.domain.security import SecurityItemVerdict, SecurityReview
 from ollive.domain.models import (
     Citation,
     LLMResponse,
@@ -11,6 +13,31 @@ from ollive.domain.models import (
     ToolResult,
     UsageStats,
 )
+from ollive.ports.security import SecurityGatePort
+
+
+class AllowSecurityGate(SecurityGatePort):
+    """Deterministically approve test inputs and every identified evidence item."""
+
+    def review(self, *, stage, payload, item_ids=None):
+        """Approve the stage and preserve the exact evidence identifier order."""
+        return SecurityReview(
+            stage=stage,
+            decision="allow",
+            reason_code="test_allow",
+            risk_flags=[],
+            items=[
+                SecurityItemVerdict(
+                    item_id=item_id, decision="allow", risk_flags=[]
+                )
+                for item_id in (item_ids or [])
+            ],
+        )
+
+
+def allow_security():
+    """Build the explicit permissive security boundary used by agent unit tests."""
+    return SecurityBroker(AllowSecurityGate())
 
 
 def support_verdict_response(messages, supported=True):
@@ -96,6 +123,22 @@ class StructuredSleepLLM:
                 usage=UsageStats(total_tokens=2),
             )
 
+        if self.answer_calls == 2:
+            assert tool_name == "search_web"
+            assert tool_choice == {
+                "type": "function",
+                "function": {"name": "search_web"},
+            }
+            return LLMResponse(
+                tool_calls=[
+                    ToolCallRequest(
+                        id="web",
+                        name="search_web",
+                        arguments={"query": "sleep schedule guidance"},
+                    )
+                ]
+            )
+
         assert tool_name == SUBMIT_GROUNDED_ANSWER
         marker_enum = tools[0]["function"]["parameters"]["properties"]["items"][
             "items"
@@ -104,7 +147,7 @@ class StructuredSleepLLM:
         arguments = (
             {"items": []}
             if self.malformed_final and not (
-                self.recover_after_error and self.answer_calls > 2
+                self.recover_after_error and self.answer_calls > 3
             )
             else {
                 "items": [
@@ -161,7 +204,14 @@ class SleepTools:
         ]
 
     def execute(self, call, *, user_query=None):
-        """Return sleep evidence while asserting exact user-query fidelity."""
+        """Return KB evidence and an empty mandatory web completion."""
+        if call.name == "search_web":
+            return ToolResult(
+                tool_call_id=call.id,
+                name=call.name,
+                content="{\"results\": []}",
+                citations=[],
+            )
         assert call.name == "lookup_kb"
         assert user_query == "I want sleep tips"
         return ToolResult(
@@ -182,6 +232,7 @@ def build_agent(llm):
         llm=llm,
         tools=SleepTools(),
         tracer=NoOpTracer(),
+        security=allow_security(),
         system_prompt="Use grounded wellness evidence.",
     )
 
@@ -230,7 +281,7 @@ def test_structured_answer_recovers_after_validation_feedback():
 
     assert result.assistant_message.startswith("Maintain a regular sleep schedule.")
     assert not result.citation_validation_failed
-    assert llm.answer_calls == 3
+    assert llm.answer_calls == 4
 
 
 class RejectFirstSupportLLM(StructuredSleepLLM):
@@ -259,7 +310,7 @@ def test_unsupported_claim_is_rejected_and_resubmitted_before_rendering():
 
     assert not result.citation_validation_failed
     assert llm.verifications == 2
-    assert llm.answer_calls == 3
+    assert llm.answer_calls == 4
 
 
 def test_malformed_structured_answer_fails_closed_and_memory_stays_clean():
@@ -332,7 +383,19 @@ class DetailedFollowupLLM:
                 ]
             )
 
-        assert tool_names == [SUBMIT_GROUNDED_ANSWER, "search_web"]
+        if self.answer_calls == 2:
+            assert tool_names == ["search_web"]
+            return LLMResponse(
+                tool_calls=[
+                    ToolCallRequest(
+                        id="web",
+                        name="search_web",
+                        arguments={"query": "sleep routine guidance"},
+                    )
+                ]
+            )
+
+        assert tool_names == [SUBMIT_GROUNDED_ANSWER]
         item_schema = tools[0]["function"]["parameters"]["properties"]["items"]
         assert item_schema["maxItems"] == 5
         marker = item_schema["items"]["properties"]["citation"]["enum"][1]
@@ -368,7 +431,14 @@ class DetailedFollowupTools(SleepTools):
         return "\n".join([prior_user_text[-1], current]), True
 
     def execute(self, call, *, user_query=None):
-        """Require the original sleep request to remain attached to elaboration."""
+        """Preserve the contextual KB query and permit mandatory web search."""
+        if call.name == "search_web":
+            return ToolResult(
+                tool_call_id=call.id,
+                name=call.name,
+                content="{\"results\": []}",
+                citations=[],
+            )
         assert call.name == "lookup_kb"
         assert user_query == "How can I sleep on time?\nElaborate on it?"
         return ToolResult(
@@ -380,11 +450,12 @@ class DetailedFollowupTools(SleepTools):
 
 
 def test_elaboration_keeps_prior_topic_and_allows_more_supported_actions():
-    """Answer an elliptical follow-up from KB evidence without unnecessary web search."""
+    """Answer an elliptical follow-up after the required KB and web sequence."""
     agent = WellnessAgent(
         llm=DetailedFollowupLLM(),
         tools=DetailedFollowupTools(),
         tracer=NoOpTracer(),
+        security=allow_security(),
         system_prompt="Use grounded wellness evidence.",
     )
     agent.memory.add(Message(role=Role.USER, content="How can I sleep on time?"))
@@ -394,7 +465,7 @@ def test_elaboration_keeps_prior_topic_and_allows_more_supported_actions():
 
     result = agent.chat("Elaborate on it?")
 
-    assert [step["name"] for step in result.tool_trace] == ["lookup_kb"]
+    assert [step["name"] for step in result.tool_trace] == ["lookup_kb", "search_web"]
     assert result.tool_trace[0]["arguments"]["query"] == (
         "How can I sleep on time?\nElaborate on it?"
     )
@@ -443,26 +514,6 @@ class PartialEvidenceLLM:
                 ]
             )
         if self.answer_calls == 2:
-            assert tool_names == [SUBMIT_GROUNDED_ANSWER, "search_web"]
-            assert tool_choice == "required"
-            return LLMResponse(
-                tool_calls=[
-                    ToolCallRequest(
-                        id="gap",
-                        name=SUBMIT_GROUNDED_ANSWER,
-                        arguments={
-                            "items": [
-                                {
-                                    "kind": "evidence_limitation",
-                                    "text": "The KB does not establish adult sleep duration.",
-                                    "citation": "__NO_CITATION__",
-                                }
-                            ]
-                        },
-                    )
-                ]
-            )
-        if self.answer_calls == 3:
             assert tool_names == ["search_web"]
             assert tool_choice == {
                 "type": "function",
@@ -542,6 +593,7 @@ def test_agent_completes_partial_kb_evidence_with_cited_web_source():
         llm=PartialEvidenceLLM(),
         tools=PartialEvidenceTools(),
         tracer=NoOpTracer(),
+        security=allow_security(),
         system_prompt="Use grounded wellness evidence.",
     )
     result = agent.chat("What time should I sleep and how many hours do I need?")
@@ -586,40 +638,46 @@ class NoEvidenceLLM:
         self.answer_calls += 1
         if self.answer_calls == 1:
             assert tool_names == ["lookup_kb"]
-            selected = "lookup_kb"
-        elif self.answer_calls == 2:
-            assert tool_names == ["search_web"]
-            selected = "search_web"
-        else:
-            assert tool_names == [SUBMIT_GROUNDED_ANSWER]
-            markers = tools[0]["function"]["parameters"]["properties"]["items"][
-                "items"
-            ]["properties"]["citation"]["enum"]
-            assert markers == ["__NO_CITATION__"]
             return LLMResponse(
                 tool_calls=[
                     ToolCallRequest(
-                        id="submit",
-                        name=SUBMIT_GROUNDED_ANSWER,
-                        arguments={
-                            "items": [
-                                {
-                                    "kind": "evidence_limitation",
-                                    "text": "The available sources do not establish this detail.",
-                                    "citation": "__NO_CITATION__",
-                                }
-                            ]
-                        },
+                        id="lookup_kb",
+                        name="lookup_kb",
+                        arguments={},
+                    )
+                ]
+            )
+        if self.answer_calls in {2, 4, 6}:
+            assert tool_names == ["search_web"]
+            return LLMResponse(
+                tool_calls=[
+                    ToolCallRequest(
+                        id=f"web-{self.answer_calls}",
+                        name="search_web",
+                        arguments={"query": "missing detail"},
                     )
                 ]
             )
 
+        assert tool_names == [SUBMIT_GROUNDED_ANSWER]
+        markers = tools[0]["function"]["parameters"]["properties"]["items"][
+            "items"
+        ]["properties"]["citation"]["enum"]
+        assert markers == ["__NO_CITATION__"]
         return LLMResponse(
             tool_calls=[
                 ToolCallRequest(
-                    id=selected,
-                    name=selected,
-                    arguments={} if selected == "lookup_kb" else {"query": "missing detail"},
+                    id=f"submit-{self.answer_calls}",
+                    name=SUBMIT_GROUNDED_ANSWER,
+                    arguments={
+                        "items": [
+                            {
+                                "kind": "evidence_limitation",
+                                "text": "The available sources do not establish this detail.",
+                                "citation": "__NO_CITATION__",
+                            }
+                        ]
+                    },
                 )
             ]
         )
@@ -642,13 +700,19 @@ def test_agent_returns_a_structured_limitation_when_all_sources_are_empty():
         llm=NoEvidenceLLM(),
         tools=NoEvidenceTools(),
         tracer=NoOpTracer(),
+        security=allow_security(),
         system_prompt="Use grounded wellness evidence.",
     )
 
     result = agent.chat("Give me an unsupported wellness detail")
 
     assert result.assistant_message == "The available sources do not establish this detail."
-    assert [step["name"] for step in result.tool_trace] == ["lookup_kb", "search_web"]
+    assert [step["name"] for step in result.tool_trace] == [
+        "lookup_kb",
+        "search_web",
+        "search_web",
+        "search_web",
+    ]
     assert result.citations == []
     assert not result.citation_validation_failed
 
@@ -684,6 +748,7 @@ def test_fabricated_citation_on_non_grounded_route_is_withheld():
         llm=FabricatedConversationCitationLLM(),
         tools=SleepTools(),
         tracer=NoOpTracer(),
+        security=allow_security(),
         system_prompt="Use grounded wellness evidence.",
     )
 

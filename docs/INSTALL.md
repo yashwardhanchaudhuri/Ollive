@@ -33,9 +33,10 @@ For the frontier backend, put `OPENAI_API_KEY` in `.env`, change `active: oss` t
 ./run_ollive.sh frontier
 ```
 
-The launcher verifies that its mode matches YAML and starts only Streamlit. Restore `active: oss` before the OSS path. `TAVILY_API_KEY`
-remains optional for authoritative web-search completion. Both paths bind their
-services to loopback by default.
+The launcher verifies that its mode matches YAML and starts only Streamlit. Restore
+`active: oss` before the OSS path. Both modes require `TAVILY_API_KEY` because every
+grounded wellness turn performs at least one web search. Both also require a separately
+configured Security LM. Services started by Ollive bind to loopback by default.
 
 Useful overrides are `OLLIVE_ENV_NAME`, `OLLIVE_STREAMLIT_PORT`,
 `OLLIVE_VLLM_PORT`, `OLLIVE_VLLM_MAX_LEN`, `OLLIVE_VLLM_TP`, and
@@ -79,6 +80,16 @@ python -m pip install -e . --no-deps
 The same environment supports both backends. The OSS backend uses the installed
 vLLM server; the frontier backend simply does not start that server.
 
+Security-corpus builders need optional language-detection and Parquet readers.
+Install them into this same environment only when rebuilding those datasets:
+
+```bash
+python -m pip install -e '.[evaluation]'
+```
+
+These packages are deliberately excluded from `requirements.txt` because the
+application, normal evaluations, and report generation do not import them.
+
 **Checkpoint:** `python -m pip check` reports no broken requirements. This
 checks Python dependency resolution, not GPU or model availability.
 
@@ -102,8 +113,18 @@ OPENAI_API_KEY=replace_me
 OPENAI_BASE_URL=https://api.openai.com/v1
 ```
 
-`TAVILY_API_KEY` is optional and enables authoritative-domain web completion.
-Never commit the populated `.env` file.
+Every mode also requires an independent Security LM and Tavily:
+
+```dotenv
+SECURITY_LM_MODEL=replace_with_a_model_different_from_the_answer_model
+SECURITY_LM_API_KEY=replace_me
+SECURITY_LM_BASE_URL=https://api.openai.com/v1
+TAVILY_API_KEY=replace_me
+```
+
+The Security LM must expose an OpenAI-compatible chat-completions interface and support
+forced tool schemas. The factory rejects a missing, disabled, or answer-model-identical
+configuration. Never commit the populated `.env` file.
 
 ## 3. Download models and build the KB index manually (optional)
 
@@ -140,6 +161,7 @@ Useful local-server overrides:
 export OLLIVE_VLLM_PORT=8000
 export OLLIVE_VLLM_TP=1
 export OLLIVE_VLLM_MAX_LEN=32768
+export OLLIVE_VLLM_QUANTIZATION=fp8
 export OLLIVE_OSS_MODEL=Qwen/Qwen3.5-9B
 ./scripts/serve_qwen_vllm.sh
 ```
@@ -211,6 +233,18 @@ and vLLM with that same value.
 
 Check `OPENAI_API_KEY`, select `frontier`, and ensure `OPENAI_BASE_URL` is
 unset or an OpenAI-compatible `/v1` endpoint.
+
+### Security LM startup fails
+
+Set `SECURITY_LM_MODEL` and `SECURITY_LM_API_KEY`, verify the optional
+`SECURITY_LM_BASE_URL`, and confirm the security model differs from the selected answer
+model. Security-model timeouts and malformed verdicts fail closed during requests.
+
+### Grounded turns have no web evidence
+
+Set `TAVILY_API_KEY` and verify network access to the configured trusted domains. Web
+search is mandatory for grounded wellness turns; an unavailable search produces bounded
+evidence limitations rather than ungrounded completion.
 
 ## Scope and security
 

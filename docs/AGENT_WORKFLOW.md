@@ -2,210 +2,242 @@
 
 | Field | Value |
 |---|---|
-| Objective | Explain how one user message becomes a bounded, grounded Ollive response |
+| Objective | Explain how one user message crosses runtime security, routing, evidence, grounding, and output boundaries |
 | Audience | Developers, reviewers, and evaluators |
-| Status | Describes the current production workflow |
-| Supporting code | application/agent.py, application/guardrails.py, application/tools.py |
+| Status | Best measured concise five-guard profile restored; fused and expanded variants rejected |
+| Supporting code | `application/pipeline/`, `application/security.py`, `adapters/security/llm_security.py` |
 
 ## At a glance
 
-Ollive uses one orchestrating agent. It makes several constrained model calls,
-but those calls are stages of one workflow rather than independent agents.
+Ollive uses one answer-model workflow and a separate Security LM. Before either
+model runs, application code enforces a per-session request window plus current-
+message and accumulated-context size budgets. The Security LM never answers the
+user and has no retrieval or web tools. At ingress, one constrained call extracts
+authority semantics. The original envelope then passes through direct injection,
+delimiter/role confusion, Persona/DAN permission escalation, harmful action, and
+individualized medical guards in that fixed order. Each specialist receives one
+concise risk definition and its nearest allowed boundary, returns one decision and
+trust score, and stops the sequence on an owned block. Application code withholds
+blocked input from the answer model.
 
-The central design choice is to select context, safety, and evidence boundaries before
-answering. Non-substantive conversation remains natural, under-specified individualized
-requests seek constraints, factual wellness content requires evidence, and medical
-content stops at an application-owned boundary. The model cannot compose pharmaceutical
-facts on that route.
+![Ollive runtime workflow](agent_workflow.svg)
 
-```text
-User message
-    │
-    ▼
-Context-dependency classifier
-    │
-    ▼
-Policy router
-    ├── conversation / clarification / out of scope ──► bounded response
-    ├── medical ──► urgency selector ──► application-owned response
-    └── grounded wellness
-            │
-            ▼
-      bounded query builder
-            │
-            ▼
-       forced KB lookup
-            │
-            ├── material evidence gap or required web retrieval ──► one web search
-            │
-            ▼
-      structured answer submission
-            │
-            ▼
-      shape, bounds, and marker validation
-            │
-            ▼
-      claim-to-source entailment validation
-            ├── valid ──► render and remember
-            └── invalid ──► bounded correction or withholding
-```
+The runtime invariant is simple: no external user, memory, KB, or web content reaches
+the main answer pipeline without a valid security decision. Missing, malformed, or
+unavailable model verdicts fail closed.
 
-## Why staged decisions happen first
+## Code-level pipeline
 
-A single universal prompt tended to produce two opposite failures: it could cite
-ordinary conversation unnecessarily, or answer medical and safety-sensitive
-requests too freely. Ollive therefore asks the selected model to return a small,
-strict routing object before it produces the response.
+`WellnessAgent` is now only a session facade. It supplies an immutable dialogue
+snapshot to `RuntimePipeline`, then stores the finalized user/assistant pair. The
+pipeline owns the only legal execution order:
 
-A focused constrained call first decides whether prior dialogue supplies a missing
-substantive subject. It receives bounded history and the current message as explicit untrusted
-data and emits one boolean; no regex, keyword list, or retrieval score makes this decision.
-The policy router then selects the domain route, response depth, and explicit web requirement.
-Application policy makes every wellness route grounded.
+    Request/context admission budget
+      → IngressStage
+      → RoutingStage
+      → MedicalStage, NonGroundedStage, or GroundedStage
+          → EvidenceStage for every KB/web call
+      → OutputStage
 
-## Route behavior
+`TurnState` carries typed data between stages. `EvidenceStage` is the only pipeline
+module permitted to execute external tools; it sends raw results to
+`SecurityBroker`, reconstructs safe tool messages from approved citations, and only
+then appends them to answer-model context.
 
-| Route | Why it exists | Tools | Expected response |
-|---|---|---:|---|
-| Conversation | Preserve natural greetings and assistant questions | No | Brief, uncited conversation |
-| Wellness clarification | Avoid generic plans when personal constraints are missing | No | Two to four useful questions |
-| Wellness | Ground factual lifestyle guidance | Required | Retrieved, structured, cited answer |
-| Medical | Prevent substantive clinical or pharmaceutical generation | No | Application-owned boundary or urgent-help response |
-| Out of scope | Keep the assistant within its supported purpose | No | Brief refusal or redirection |
+## Trust boundaries
 
-## Grounded wellness execution
+| Data | Treatment before the answer model |
+|---|---|
+| Current user message | Session frequency/message/context budgets → authority extraction → direct injection → delimiter/role confusion → Persona/DAN → harm → medical |
+| Selected conversation context | Source-separated envelopes, composed-authority extraction, then boundary → harm checks |
+| KB passages | Instruction-injection check, then harmful-content check per result |
+| Web results | Domain/relevance filter, then instruction-injection and harmful-content checks |
+| Combined KB and web evidence | Cross-fragment boundary check, then cross-fragment harm check |
+| Proposed response | Grounding checks, then integrity → harm → medical output checks |
+| System policy and application schemas | Trusted, application-owned control data |
 
-### 1. The application forces retrieval
+Authority extraction is typed independently from `allow` or `block`. Code blocks an
+executed privileged override, disclosure, impersonation, persistence request, or
+unauthorized action only when the extraction cites an exact received span. If the
+extractor copies that span incorrectly, its opinion cannot block; the ordered focused
+checks still run on the original envelope. Evidence checks additionally return
+`allow` or `exclude` for every supplied item. The application combines exclusions
+across completed checks and rebuilds tool messages from approved citation objects,
+so raw provider payloads never enter the answer-model message list.
 
-On the first grounded round, the model can call only `lookup_kb`. The model may
-select a document type from the live enum and a result count, but the application
-controls the query.
+## Runtime sequence
 
-For a self-contained request, the query is the current user message. When the context
-classifier selects continuation, the application concatenates only the immediately preceding
-user message with the current message. It performs no model-written query expansion, so the
-original wording survives without introducing hidden facets or stale retrieved evidence.
+### 1. Input and context gates
 
-### 2. Retrieval returns evidence objects
+The session admits at most 12 requests per 60 seconds, 20,000 characters in one
+message, and 48,000 characters across the bounded current context. A limit block
+occurs before either model call and is not stored in dialogue memory. This constrains
+rapid repeated attempts and single- or multi-turn many-shot loading; it does not
+semantically classify the remaining shorter attacks.
 
-The local retriever embeds the query, searches paragraph vectors in FAISS, and
-returns the most similar chunks. Each chunk includes its document type, title,
-line positions, descriptor, text, and stable citation marker.
+The application assigns the current message untrusted provenance outside its text,
+normalizes invisible Unicode formatting without removing punctuation, and sends that
+inspection envelope to the authority extractor. The same envelope then enters the
+direct-injection guard, delimiter/role-confusion guard, Persona/DAN permission guard,
+harm guard, and medical guard. An anchored authority finding is assigned to its
+owning guard, so code enforcement and trace output preserve the same class order.
+The first owned block ends the sequence; an allow records the lowest completed check
+score. Input above `security.max_input_chars` is blocked before any model call.
+Bounded dialogue uses its separate composed-context authority and boundary/harm
+review only when prior dialogue exists. With no prior dialogue the application
+records `no_prior_context`.
+Blocked messages are not written into agent memory.
 
-### 3. The agent checks evidence completeness
+The context-dependency classifier then decides whether retrieval uses the current message
+alone or the immediately preceding user turn plus the current message. Grounded answer
+generation may receive up to the three most recent approved user turns. Historical tool
+payloads never enter conversation memory.
 
-After local retrieval, the model submits an answer when the passages directly support the request, or calls `search_web` once when the router marks an explicit web request or a distinct factual part remains unsupported. A request for more detail alone does not justify web search. An empty
-KB result forces the web path. This is a semantic decision rather than a keyword
-or regular-expression rule.
+### 2. Policy routing
 
-If the model first submits an `evidence_limitation`, the application treats that
-structured signal as partial completion and forces the single web-search round
-before accepting a final answer.
+The main model selects one constrained route:
 
-Web search uses Tavily advanced extraction to obtain relevant prose rather than
-bibliography-heavy snippets. It is restricted twice: Tavily receives `include_domains`
-from the configured allowlist, and the adapter independently rejects off-domain URLs
-and results below the configured relevance score. Tavily documents `include_domains`
-in its [Search API reference](https://docs.tavily.com/documentation/api-reference/endpoint/search).
-The model cannot add domains through tool arguments.
+| Route | Evidence tools | Response behavior |
+|---|---:|---|
+| Conversation | No | Brief conversational response |
+| Wellness clarification | No | Two to four material questions |
+| Medical | No | Application-owned standard or urgent boundary |
+| Out of scope | No | Brief refusal or wellness redirection |
+| Wellness | Required | Mandatory KB and web evidence pipeline |
 
-Each accepted result becomes evidence with a title, excerpt, original URL, and
-application-generated citation marker. After web search, another search is not
-offered; structured finalization is required.
+Every proposed response, including non-grounded responses, passes the final Security LM
+alignment gate before rendering.
 
-### 4. Free-text finalization is disabled
+### 3. Mandatory grounded evidence
 
-`submit_grounded_answer` contains the exact KB and web markers returned during
-the current turn. Standard turns permit at most three items; an explicit request for detail permits up to
-five. An item is either a
-supported claim tied to one returned marker or an evidence limitation with no
-citation. If both evidence sources are empty, only a structured limitation can
-pass validation.
+Every wellness route performs these steps in application-enforced order:
 
-### 5. The application validates before display
+1. `lookup_kb` using the application-selected query.
+2. Security LM review of every returned KB citation.
+3. At least one `search_web` call.
+4. Tavily trusted-domain and relevance filtering.
+5. Security LM review of every accepted web citation.
+6. Security LM review of the combined approved KB and web set.
 
-Validation checks shape, field bounds, marker provenance, limitation count, and
-citation syntax. It then sends only the atomic claim/source pairs to an isolated,
-forced-schema entailment check. A claim passes only when its selected passage alone
-supports every factual assertion; topic similarity and outside knowledge are rejected.
-The application adds citation markers only after both boundaries pass.
+The first web search is mandatory even when the KB appears sufficient. If the answer model
+submits an evidence limitation while attempts remain, the application forces another
+search. The second and third searches must target the remaining material gap. A hard
+application limit prevents a fourth search. After the third attempt, unresolved scope must
+remain an explicit evidence limitation.
 
-## Correction and fail-closed behavior
+Security rejection of a passage excludes it. The answer model receives a newly serialized
+empty or reduced evidence result, never the rejected text. A combined-evidence block also
+prevents newly retrieved web content from being added to the model context.
 
-When structured output is malformed or a selected passage does not entail its
-claim, the application returns the precise validation error and the same evidence.
-The initial draft receives at most two corrected submissions, while the complete
-tool loop remains bounded by the configured maximum number of rounds.
+### 4. Structured grounding
 
-If correction still fails but the verifier approved part of a valid structured
-draft, Ollive returns an explicit exact-match limitation followed only by that supported,
-cited subset. When no generated claim survives, it may show a short verbatim excerpt from
-the highest-ranked retrieved source. Malformed output or absent evidence still fails
-closed. Unsupported generated claims are never softened into the fallback.
+Free-text completion is disabled after retrieval. The answer model must call
+`submit_grounded_answer` with bounded atomic items. A supported claim selects one marker
+from evidence approved during the current turn. Unsupported scope uses the no-citation
+limitation sentinel.
 
-## Conversation memory
+Application validation then checks:
 
-Only final user and assistant messages persist. Tool payloads and model tool-call
-envelopes remain in traces but are removed from conversational memory. The router sees
-bounded dialogue to resolve intent. The dedicated context classifier binds the evidence
-query to either the current request alone or the immediately preceding user turn plus
-the current request; assistant prose never enters that query. For a grounded continuation,
-answer generation receives up to the three most recent user turns for conversational
-continuity. Regardless of that context, only passages returned during the current turn
-can serve as evidence, so prior assistant claims and stale tool payloads cannot become sources.
+- strict JSON shape and item bounds;
+- marker membership in the current approved evidence set;
+- citation grammar and provenance;
+- isolated claim-to-passage entailment.
 
-This avoids two common problems:
+Malformed output receives at most two corrections using the same approved evidence.
+Verifier-approved claims may survive as a best-effort answer; unsupported claims are never
+softened into uncited prose.
 
-- stale passages appearing as evidence for a later question;
-- token growth caused by carrying full retrieval payloads across turns.
+### 5. Final alignment gate
 
-If an exception interrupts a turn, memory rolls back to its previous state.
+After grounding, the separate Security LM receives the current request, selected route,
+approved evidence, safe tool trace, and proposed response as one bounded payload. It
+checks integrity, harmful capability, and individualized medical risk in separate
+ordered turns. It cannot rewrite the answer. Application code either renders the
+already-grounded response or replaces it with an application-owned rejection.
 
-## Backend variation
+## Fail-closed behavior
 
-The workflow is backend-independent.
+The following conditions never default to approval:
 
-| Backend | Model access | Important variation |
-|---|---|---|
-| OSS | Qwen 3.5 9B through local vLLM | Local service availability and tool-schema adherence |
-| Frontier | OpenAI-compatible GPT endpoint | Remote latency, provider behavior, and no temperature field when unsupported |
+- request-frequency, current-message, or accumulated-context budget exceeded;
+- Security LM timeout or adapter exception;
+- missing, free-text, malformed, or incorrectly typed verdict;
+- missing or reordered evidence item decisions;
+- answer-model tool calls that were not offered;
+- more than three web calls;
+- malformed grounded-answer objects;
+- stale or fabricated citation markers;
+- unsupported claim/source pairs;
+- final output rejection.
 
-Both backends receive the same route schemas, tool schemas, policies, memory, and
-retrieval evidence. A fair comparison therefore changes the model backend while
-freezing the surrounding workflow.
+Security events are recorded separately from tool traces. The UI does not expose internal
+risk flags or classifier reasoning.
 
-## What current evidence suggests
+## Model separation
 
-Observed evaluation results show that explicit routing and forced tool policies
-substantially improve structural compliance. They also show that stricter
-citation handling can increase withheld answers. The useful design lesson is not
-that more restriction is always better: grounding must remain direct and
-conversational, or safety improves while usefulness declines.
+`security.model` is mandatory. The Security LM runs in a separate adapter with constrained
+prompts, forced schemas, and no answer or retrieval tools; it may share model weights
+with the selected answer model. The composition root rejects disabled or missing
+security configuration at startup.
 
-See the [consolidated evaluation report](../evaluation/REPORT.md) for the
-measurements and limitations.
+This is logical adapter separation. Operators must still decide whether production requires
+separate providers, credentials, processes, or hardware.
+
+## Evaluation boundary
+
+Deterministic tests cover request/context limits, malformed extraction and verdict
+closure, semantic direct override, self-declared delimiter boundaries, quoted and
+persona contrasts, exact-span anchoring, immutable context provenance, blocked-input
+isolation, mandatory KB-plus-web execution, every runtime gate, and the three-search
+cap. The frozen broader Qwen suite separately measured 44/79 direct injections,
+36/78 delimiter breaks, 180/200 DAN/persona attacks, and 30/30 many-shot cases
+constructed as ten each at 8, 32, and 64 shots. Deepset Prompt Injections supplied
+direct and delimiter cases; disjoint hash-sorted JailbreakHub rows supplied persona
+and many-shot cases. At the current 20,000-character cap, 27/30 archived many-shot
+prompts exceed the input budget; this is retrospective size analysis, not a rerun.
+On the 1,213-case Qwen regression, attack blocking rose from 64.9% to 74.8% and
+fail-closed attack blocks fell from 65 to zero, but benign blocking rose from 11.3%
+to 16.8%. Because the same cases informed the refactor and comparison, they are now
+development evidence.
+On the same consumed 357-case subset, the earlier grouped sequential GPT design
+blocked 89/157 attacks and 68/200 benign controls. The concise class-specific sequence
+blocked 117/157 attacks (74.5%) and 69/200 benign controls (34.5%): 53/79 direct
+and 64/78 delimiter attacks. It completed with zero execution errors and used
+1,655,506 tokens. Persona/DAN produced 40 of the 69 benign blocks. A later
+expanded-variation rerun blocked only 100/157 attacks and 70/200 benign controls
+while using 2,115,220 tokens, so that prompt version was rejected. The runtime now
+uses the concise profile whose per-guard hashes match the 117/157 benchmark manifests
+exactly.
 
 ## Scope and limitations
 
-- This is one agent with staged model calls, not a multi-agent deliberation system.
-- Routing is model-based and can select a defensible route different from a test label.
-- Entailment validation is model-based; it improves on marker provenance but still requires calibration and human review.
-- The local KB limits what grounded answers can establish.
-- The authoritative-domain allowlist reduces source risk but does not guarantee that
-  every returned excerpt is correct, current, or sufficient for the generated claim.
-- Web fallback requires `TAVILY_API_KEY`; without it, the agent can only return a
-  structured evidence limitation when the KB is insufficient.
-- Matched structural runs and qualitative human checks are complete; blinded case-level adjudication and repeated sampling are not reported.
+This implementation protects runtime traffic only. KB and web ingestion security is
+future scope. The Security LM is a probabilistic classifier, not a formal sandbox:
+it can miss novel attacks or reject harmless text, and its effectiveness depends on
+model choice, calibration, provider independence, and adversarial testing. The
+implemented limiter is local to one agent/browser session. Identity-aware global
+limiting, authentication, audit review, and infrastructure isolation remain separate
+deployment controls.
+
+The current deterministic suite proves control-flow enforcement, not a 90% attack
+blocking rate. That claim requires a frozen threat taxonomy, multi-turn and indirect
+injection cases, repeated attempts, independent human labels, and measured false
+positive and false negative rates.
 
 ## Code map
 
 | Responsibility | Source |
 |---|---|
-| Main loop and memory cleanup | `src/ollive/application/agent.py` |
-| Semantic routes and policies | `src/ollive/application/guardrails.py` |
-| Tool schemas and execution | `src/ollive/application/tools.py` |
-| Grounded answer contract | `src/ollive/application/grounded_answer.py` |
-| Retrieval and indexing | `src/ollive/adapters/rag/` |
-| Backend adaptation | `src/ollive/adapters/llm/` |
-| Citation parsing | `src/ollive/domain/citations.py` |
-| Streamlit rendering | `src/ollive/ui/streamlit_app.py` |
+| Security contracts | `src/ollive/domain/security.py` |
+| Security capability port | `src/ollive/ports/security.py` |
+| Ordered check definitions | `src/ollive/adapters/security/checks.py` |
+| Constrained Security LM adapter | `src/ollive/adapters/security/llm_security.py` |
+| Application enforcement broker | `src/ollive/application/security.py` |
+| Stage ordering | `src/ollive/application/pipeline/runtime.py` |
+| Tool isolation and search cap | `src/ollive/application/pipeline/evidence.py` |
+| Grounded execution | `src/ollive/application/pipeline/grounded.py` |
+| Request and context budgets | `src/ollive/application/request_limits.py` |
+| Session facade | `src/ollive/application/agent.py` |
+| Backend composition | `src/ollive/application/factory.py` |
+| Tool validation and dispatch | `src/ollive/application/tools.py` |
+| Grounded-answer contract | `src/ollive/application/grounded_answer.py` |

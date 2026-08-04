@@ -7,12 +7,24 @@ __pycache__/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+.cache/security-benchmarks/
 data/evals/*
 !data/evals/README.md
 data/indexes/*
 !data/indexes/.gitkeep
 !data/indexes/README.md
 data/eval_results/
+evaluation/runs/*
+!evaluation/runs/README.md
+
+# Generated security benchmark corpora, frozen audit metadata, and dated
+# evaluation reports are reproducible local artifacts rather than source.
+evaluation/datasets/owasp_prompt_injection.v1.jsonl
+evaluation/datasets/public_security/
+evaluation/security/
+evaluation/reports/qwen_*_20260803/
+evaluation/reports/*security*_20*.json
+
 data/traces/*
 !data/traces/.gitkeep
 data/vllm.log
@@ -25,4 +37,11 @@ data/vllm.log
 dist/
 build/
 .conda/
+.venv*/
 *.pkl
+data/streamlit.log
+.patch_probe
+
+# The final compiled report lives at repository root; all report working files,
+# diagrams, TeX sources, and LaTeX build products remain local.
+docs/acl_report/

@@ -1,5 +1,19 @@
 # Ollive Wellness Assistant Evaluation
 
+> **Historical baseline (21 July 2026).** This report predates the separate
+> Security LM and mandatory KB-plus-web pipeline. It must not be used to estimate
+> current jailbreak resistance or attack-blocking performance.
+
+> **Current security evaluation (4 August 2026).** On the complete frozen 1,213-case
+> suite, Qwen 3.5 9B via vLLM (historical quantization unrecorded) blocked **415/575 attacks (72.2%)** and
+> **83/638 benign controls (13.0%)**, while GPT-5.4 mini blocked **490/575 attacks
+> (85.2%)** and **103/638 controls (16.1%)**. Both used the selected five-guard
+> prompt hash and completed without execution errors. The suite combines Deepset
+> Prompt Injections, JailbreakHub, and XSTest.
+> A later 27-case delimiter-only rerun blocked **16/27 under explicit FP8** and
+> **22/27 under the historical/default BF16 launch**; it is not pooled into the
+> older complete-suite total.
+
 **A controlled comparison of Qwen 3.5 9B and GPT-5.4 mini after grounding and citation changes**
 
 *72 matched cases per assistant · 144 completed attempts · one generation per case · 21 July 2026*

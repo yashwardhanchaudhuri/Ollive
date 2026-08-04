@@ -1,6 +1,7 @@
 import ast
 from pathlib import Path
 import re
+import subprocess
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -11,14 +12,26 @@ FOUNDATIONAL_DOCS = {
     "docs/INSTALL.md": ("What this guide produces", "Choose a path", "Scope and security"),
     "docs/KNOWLEDGE_BASE.md": ("Objective", "At a glance", "Evidence quality boundary"),
     "docs/PROJECT_STRUCTURE.md": ("Objective", "How to read the repository", "Design boundaries"),
-    "docs/WRITING_STANDARD.md": ("The reader should understand the point first", "Use progressive disclosure", "Review checklist"),
     "docs/prompt_guardrails.md": ("Objective", "Threat model", "Design insight"),
-    "requirements.md": ("Objective", "At a glance", "Resolution and known versions"),
     "evaluation/README.md": ("At a glance", "Evidence map", "Governance"),
     "evaluation/REPORT.md": ("30-second conclusion", "Findings", "Decision and release boundary"),
 }
 
 LOCAL_LINK_RE = re.compile(r"!?\[[^\]]*\]\(([^)#]+)(?:#[^)]+)?\)")
+
+
+def _source_controlled_files() -> set[Path]:
+    """Return tracked and non-ignored untracked files relative to the repository."""
+    output = subprocess.check_output(
+        ["git", "ls-files", "--cached", "--others", "--exclude-standard", "-z"],
+        cwd=ROOT,
+    )
+    files = {
+        Path(value.decode("utf-8"))
+        for value in output.split(b"\0")
+        if value
+    }
+    return {path for path in files if (ROOT / path).exists()}
 
 
 def test_foundational_docs_expose_reader_orientation():
@@ -54,7 +67,11 @@ def test_markdown_local_links_resolve():
     """Ensure every repository-local Markdown link resolves to an artifact."""
     missing = []
     for path in ROOT.rglob("*.md"):
-        if ".git" in path.parts or ".pytest_cache" in path.parts:
+        if (
+            ".git" in path.parts
+            or ".pytest_cache" in path.parts
+            or any(part.startswith(".venv") for part in path.parts)
+        ):
             continue
         for target in LOCAL_LINK_RE.findall(path.read_text(encoding="utf-8")):
             if "://" in target or target.startswith("mailto:"):
@@ -75,7 +92,6 @@ def test_local_setup_uses_one_requirements_path():
     for relative in (
         "README.md",
         "docs/INSTALL.md",
-        "requirements.md",
         "environment.yml",
     ):
         text = (ROOT / relative).read_text(encoding="utf-8")
@@ -110,26 +126,14 @@ def test_streamlit_state_contains_only_consumed_objects():
 
 def test_project_folders_have_orienting_readmes():
     """Require a concise local guide at every source-controlled folder boundary."""
-    excluded_parts = {
-        ".git",
-        ".pytest_cache",
-        "__pycache__",
-        ".venv",
-        "venv",
-    }
-    directories = [ROOT]
-    directories.extend(path for path in ROOT.rglob("*") if path.is_dir())
+    directories = {Path(".")}
+    for path in _source_controlled_files():
+        directories.update((path.parent, *path.parents[:-1]))
 
     missing = []
     unoriented = []
-    for directory in directories:
-        relative = directory.relative_to(ROOT)
-        if any(
-            part in excluded_parts or part.endswith(".egg-info")
-            for part in relative.parts
-        ):
-            continue
-        guide = directory / "README.md"
+    for relative in sorted(directories):
+        guide = ROOT / relative / "README.md"
         if not guide.exists():
             missing.append(str(relative or Path(".")))
             continue
@@ -143,22 +147,25 @@ def test_project_folders_have_orienting_readmes():
 def test_folder_guides_name_immediate_source_files():
     """Keep local file maps synchronized with the source files beside them."""
     generated_dirs = {Path("data/indexes"), Path("data/traces")}
+    source_files = _source_controlled_files()
     missing = []
-    for guide in ROOT.rglob("README.md"):
-        directory = guide.parent
-        if directory == ROOT or ".git" in directory.parts:
+    guides = sorted(path for path in source_files if path.name == "README.md")
+    for guide_relative in guides:
+        directory_relative = guide_relative.parent
+        if directory_relative == Path("."):
             continue
-        if any(part in {".pytest_cache", "__pycache__"} for part in directory.parts):
-            continue
-        text = guide.read_text(encoding="utf-8")
-        for path in directory.iterdir():
-            if not path.is_file() or path.name == "README.md" or path.suffix == ".orig":
+        text = (ROOT / guide_relative).read_text(encoding="utf-8")
+        immediate_files = sorted(
+            path for path in source_files if path.parent == directory_relative
+        )
+        for path in immediate_files:
+            if path.name == "README.md" or path.suffix == ".orig":
                 continue
             if (
-                directory.relative_to(ROOT) in generated_dirs
+                directory_relative in generated_dirs
                 and path.name != ".gitkeep"
             ):
                 continue
             if f"`{path.name}`" not in text:
-                missing.append((str(directory.relative_to(ROOT)), path.name))
+                missing.append((str(directory_relative), path.name))
     assert not missing, f"folder guides omit files: {missing}"

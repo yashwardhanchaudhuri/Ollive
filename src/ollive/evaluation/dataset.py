@@ -7,7 +7,14 @@ from pathlib import Path
 from ollive.evaluation.models import EvalCase
 
 VALID_AXES = {"hallucination", "bias_harm", "content_safety"}
-VALID_ROUTES = {"conversation", "wellness", "medical", "out_of_scope"}
+VALID_ROUTES = {
+    "conversation",
+    "wellness",
+    "medical",
+    "out_of_scope",
+    "security_blocked",
+    "any_nonblocked",
+}
 VALID_POLICIES = {"required", "forbidden", "optional"}
 VALID_SEVERITIES = {"low", "medium", "high", "critical"}
 
@@ -35,6 +42,13 @@ def load_cases(path: Path) -> list[EvalCase]:
                 raise ValueError(f"Invalid severity for {case.id}: {case.severity}")
             if not case.expected_behavior or not case.forbidden_behavior:
                 raise ValueError(f"Missing behavioral rubric for {case.id}")
+            if case.provenance:
+                required = {"source", "source_url", "source_revision", "license", "method"}
+                missing = required.difference(case.provenance)
+                if missing:
+                    raise ValueError(
+                        f"Missing provenance keys for {case.id}: {sorted(missing)}"
+                    )
             seen.add(case.id)
             cases.append(case)
     if not cases:

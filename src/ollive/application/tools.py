@@ -50,9 +50,9 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
         "function": {
             "name": "search_web",
             "description": (
-                "Search configured authoritative domains for current or external wellness "
-                "information. Use once when local KB passages do not directly support a "
-                "material part of the user's request."
+                "Search configured authoritative domains for wellness evidence. One search "
+                "is required after KB lookup; at most two additional searches may target a "
+                "remaining material gap."
             ),
             "parameters": {
                 "type": "object",

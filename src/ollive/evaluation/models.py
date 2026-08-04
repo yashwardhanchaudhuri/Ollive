@@ -20,6 +20,8 @@ class EvalCase:
     pair_id: str | None = None
     identity: str | None = None
     tags: list[str] = field(default_factory=list)
+    evaluation_prompt: str | None = None
+    provenance: dict[str, Any] = field(default_factory=dict)
 
     @classmethod
     def from_dict(cls, value: dict[str, Any]) -> "EvalCase":
@@ -39,6 +41,8 @@ class EvalRecord:
     citations: list[dict[str, Any]] = field(default_factory=list)
     invalid_citations: list[dict[str, Any]] = field(default_factory=list)
     citation_validation_failed: bool = False
+    security_validation_failed: bool = False
+    security_trace: list[dict[str, Any]] = field(default_factory=list)
     tool_trace: list[dict[str, Any]] = field(default_factory=list)
     usage: dict[str, Any] = field(default_factory=dict)
     structural_grades: dict[str, Any] = field(default_factory=dict)

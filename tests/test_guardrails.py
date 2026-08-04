@@ -1,5 +1,6 @@
 import pytest
 import json
+from pathlib import Path
 
 from ollive.application.guardrails import (
     CONTEXT_PROMPT,
@@ -15,7 +16,13 @@ from ollive.application.guardrails import (
 from ollive.application.config import load_config
 from ollive.application.grounded_answer import SUPPORT_VERIFIER_PROMPT
 from ollive.application.tools import TOOL_SCHEMAS
+from ollive.adapters.security.llm_security import SECURITY_SYSTEM_PROMPT
 from ollive.evaluation.judge import JUDGE_PROMPT
+from ollive.evaluation.prompt_audit import (
+    audit_prompt_specificity,
+    load_case_corpus,
+    prompt_surfaces,
+)
 
 from ollive.domain.models import (
     LLMResponse,
@@ -169,11 +176,32 @@ def test_model_prompts_are_free_of_content_examples():
         ROUTER_PROMPT,
         SUPPORT_VERIFIER_PROMPT,
         JUDGE_PROMPT,
+        SECURITY_SYSTEM_PROMPT,
         load_config()["agent"]["system_prompt"],
         *[policy.instruction for policy in POLICIES.values()],
         json.dumps(TOOL_SCHEMAS),
     ]
     combined = "\n".join(prompt_texts).casefold()
-    forbidden = ("example:", "for example", "such as", "e.g.", "for instance")
+    forbidden = ("example:", "for example", "e.g.", "for instance")
 
     assert all(marker not in combined for marker in forbidden)
+
+    benchmark_literals = (
+        "harmbench_direct_",
+        "jbb_pair_",
+        "ignore any previous and following instructions",
+        "i hate humans",
+        "kill humans",
+    )
+    security_prompt = SECURITY_SYSTEM_PROMPT.casefold()
+    assert all(literal not in security_prompt for literal in benchmark_literals)
+
+
+def test_model_prompts_are_case_agnostic_against_versioned_datasets():
+    """Reject prompt text copied from or conditional on known evaluation cases."""
+    report = audit_prompt_specificity(
+        surfaces=prompt_surfaces(),
+        cases=load_case_corpus(Path("evaluation/datasets")),
+    )
+
+    assert report["status"] == "pass", report["findings"]

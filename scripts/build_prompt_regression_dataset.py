@@ -2,22 +2,14 @@
 """Build prompt-regression cases with phrasings absent from the core dataset."""
 from __future__ import annotations
 
-import json
 from pathlib import Path
+
+from ollive.evaluation.artifacts import write_jsonl
+from ollive.evaluation.cases import build_case as make
 
 OUT = Path(__file__).resolve().parents[1] / "evaluation" / "datasets" / "prompt_regression.v1.jsonl"
 
 
-def make(id, axis, subtype, severity, prompt, route, tools, cites, expected, forbidden, **extra):
-    """Build one prompt-regression case with strict expected behavior fields."""
-    value = {
-        "id": id, "axis": axis, "subtype": subtype, "severity": severity,
-        "prompt": prompt, "expected_route": route, "tool_policy": tools,
-        "citation_policy": cites, "expected_behavior": expected,
-        "forbidden_behavior": forbidden,
-    }
-    value.update(extra)
-    return value
 
 
 def cases():
@@ -150,10 +142,12 @@ def cases():
     return rows
 
 
-if __name__ == "__main__":
+def main() -> None:
+    """Write the prompt-regression dataset."""
     rows = cases()
-    OUT.parent.mkdir(parents=True, exist_ok=True)
-    with OUT.open("w", encoding="utf-8") as handle:
-        for value in rows:
-            handle.write(json.dumps(value, ensure_ascii=False) + "\n")
+    write_jsonl(OUT, rows)
     print(f"Wrote {len(rows)} prompt-regression cases to {OUT}")
+
+
+if __name__ == "__main__":
+    main()

@@ -1,9 +1,9 @@
 """Before/after comparison for two runs of the same evaluation dataset."""
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
+from ollive.evaluation.artifacts import write_json, write_text
 from ollive.evaluation.report import bar_chart, load_records, percent, rate
 
 
@@ -69,7 +69,19 @@ def generate_comparison(baseline, candidate, output_dir):
 
     lines.extend(["", "## Guardrail components", "",
                   "| Check | Baseline | Prompt v2 | Change |", "|---|---:|---:|---:|"])
-    for check in ("route", "tool_policy", "citation_policy", "citation_integrity", "query_fidelity"):
+    checks = (
+        "route",
+        "tool_policy",
+        "citation_policy",
+        "citation_integrity",
+        "query_fidelity",
+    )
+    if all(
+        "security_integrity" in row.get("structural_grades", {})
+        for row in before + after
+    ):
+        checks += ("security_integrity",)
+    for check in checks:
         old = rate([r["structural_grades"][check]["pass"] for r in before])
         new = rate([r["structural_grades"][check]["pass"] for r in after])
         lines.append(f"| {check.replace('_', ' ')} | {percent(old)} | {percent(new)} | {(new-old)*100:+.1f} pp |")
@@ -116,7 +128,7 @@ def generate_comparison(baseline, candidate, output_dir):
         f"- Prompt v2: {candidate}",
     ])
     report = output_dir / "report.md"
-    report.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    write_text(report, "\n".join(lines) + "\n")
     summary = {
         "baseline_rate": structural_rate(before),
         "candidate_rate": structural_rate(after),
@@ -125,5 +137,5 @@ def generate_comparison(baseline, candidate, output_dir):
         "regressions": regressions,
         "citation_rejections": {"baseline": old_rejections, "candidate": new_rejections},
     }
-    (output_dir / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
+    write_json(output_dir / "summary.json", summary)
     return report

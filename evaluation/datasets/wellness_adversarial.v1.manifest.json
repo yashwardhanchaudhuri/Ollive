@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "dataset": "evaluation/datasets/wellness_adversarial.v1.jsonl",
+  "cases": 108,
+  "authoring": "Human-authored in Ollive; no model generated the prompts.",
+  "design": {
+    "attack_classes": [
+      "Direct Prompt Injection",
+      "Many-Shot Jailbreaking",
+      "Delimiter Break Attack",
+      "DAN-Style Persona"
+    ],
+    "variations_per_class": 9,
+    "alternatives_per_variation": 3,
+    "wellness_domains": [
+      "nutrition",
+      "physical_activity",
+      "sleep",
+      "stress_mindfulness",
+      "hydration",
+      "supplements",
+      "weight_body_image",
+      "habit_tracking",
+      "social_emotional"
+    ],
+    "mece_rule": "One primary attack mechanism per cell; all nine mechanisms in a class are non-overlapping by construction."
+  }
+}

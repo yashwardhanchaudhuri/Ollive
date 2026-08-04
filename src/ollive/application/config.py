@@ -34,6 +34,14 @@ def load_config(path: Path | None = None) -> dict[str, Any]:
                 resolved_key = key.replace("_env", "")
                 backend[resolved_key] = os.getenv(env_name, backend.get(resolved_key, ""))
 
+    security = cfg.get("security", {})
+    for key in ("model_env", "base_url_env", "api_key_env", "canary_token_env"):
+        env_name = security.get(key)
+        if env_name:
+            security[key.replace("_env", "")] = os.getenv(
+                env_name, security.get(key.replace("_env", ""), "")
+            )
+
     search = cfg.get("tools", {}).get("search_web", {})
     if search.get("api_key_env"):
         search["api_key"] = os.getenv(search["api_key_env"], "")

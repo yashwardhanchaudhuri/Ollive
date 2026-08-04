@@ -70,20 +70,3 @@ class TavilyWebSearch(WebSearchPort):
                 }
             )
         return results
-
-
-class NullWebSearch(WebSearchPort):
-    """Fallback when Tavily key is missing — returns empty results."""
-
-    def search(self, query: str, max_results: int = 5) -> list[dict[str, Any]]:
-        """Return an unavailable result when no Tavily key is configured."""
-        return [
-            {
-                "title": "web_search_unavailable",
-                "url": "",
-                "content": (
-                    f"Web search is unavailable (missing API key). Query was: {query}"
-                ),
-                "score": 0,
-            }
-        ]

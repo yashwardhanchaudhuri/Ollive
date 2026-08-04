@@ -75,17 +75,28 @@ The internal marker is stable enough to validate within a corpus version. The UI
 shows the document title rather than the raw marker and opens the supporting
 paragraph in a source drawer.
 
-## Authoritative web completion
+## Required authoritative web evidence
 
-When a distinct factual part of the request remains unsupported after local retrieval, the agent may search the configured authoritative-domain allowlist once. Asking for more detail alone is not a web-search trigger. The allowlist is applied by Tavily and verified again against each returned
-URL. Results below the configured relevance score are discarded.
+Every grounded wellness turn performs a local KB lookup and at least one web
+search. The first web search is mandatory even when the KB appears sufficient.
+If the approved KB and web evidence still leave a named gap, the application may
+run two additional searches. The hard per-turn limit is three web searches.
+
+The configured authoritative-domain allowlist is applied by Tavily and verified
+again against each returned URL. Results below the configured relevance score
+are discarded.
+
+KB passages and every web result are treated as untrusted input. The independent
+Security LM must approve each item before the application reconstructs the tool
+payload that can enter the main model. The Security LM then reviews the combined
+evidence set to detect cross-source attacks or unsafe meaning.
 
 Accepted web results receive distinct `web` citation markers, retain their
 original URLs, and open as external sources in the UI drawer. They never masquerade
 as local KB line citations. If neither source supplies evidence, the structured
 answer contract permits only an evidence limitation.
 
-This is evidence completion, not unrestricted browsing. Organization-level trust
+This is bounded evidence collection, not unrestricted browsing. Organization-level trust
 does not prove that a particular excerpt entails a generated claim, and search
 snippets can omit important context. The same semantic-review limitation remains.
 
@@ -129,7 +140,20 @@ configured embedding model. It does not mean:
 This distinction explains why Ollive validates citation provenance and still
 needs semantic claim review.
 
-## Operational workflow
+## Runtime evidence workflow
+
+1. Build an application-bound query from the current turn and, only when needed,
+   the immediately preceding user turn.
+2. Retrieve from the local KB.
+3. Exclude every passage not approved by the Security LM.
+4. Perform required web search number one.
+5. Exclude every web result not approved by the Security LM.
+6. Review the combined approved evidence set.
+7. If a specific gap remains, repeat steps 4–6 up to the three-search cap.
+8. Generate a structured answer, validate provenance and entailment, and run the
+   final Security LM alignment gate before rendering.
+
+## Corpus maintenance workflow
 
 1. Review or update the corpus.
 2. Run `python scripts/build_index.py`.

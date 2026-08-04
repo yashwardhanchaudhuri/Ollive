@@ -26,6 +26,10 @@ local = [
     "vllm==0.25.0",
     "huggingface-hub>=1.2,<2",
 ]
+evaluation = [
+    "langdetect==1.0.9",
+    "pyarrow>=15,<24",
+]
 dev = ["pytest>=9.1,<10"]
 
 [tool.setuptools.packages.find]

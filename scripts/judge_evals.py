@@ -6,30 +6,33 @@ import argparse
 import json
 from pathlib import Path
 
-from ollive.application.config import load_config
-from ollive.application.factory import build_llm
+from ollive.evaluation.artifacts import atomic_text_writer, load_jsonl, write_json
 from ollive.evaluation.judge import calibration_metrics, judge
 
 
-def load_jsonl(path):
-    """Load non-empty UTF-8 JSONL records from a path."""
-    return [json.loads(line) for line in path.open(encoding="utf-8") if line.strip()]
-
-
-def main():
-    """Calibrate the configured judge and optionally grade a candidate run."""
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    """Parse judge calibration and candidate-scoring options."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--input", type=Path)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--judge-backend", default="frontier")
-    parser.add_argument("--judge-model", default="gpt-5.5-2026-04-23")
+    parser.add_argument("--judge-model")
     parser.add_argument("--gold", type=Path, default=Path("evaluation/datasets/judge_gold.v1.jsonl"))
     parser.add_argument("--allow-uncalibrated", action="store_true")
     parser.add_argument("--calibrate-only", action="store_true")
-    args = parser.parse_args()
+    return parser.parse_args(argv)
+
+
+def main() -> None:
+    """Calibrate the configured judge and optionally grade a candidate run."""
+    args = parse_args()
+
+    from ollive.application.config import load_config
+    from ollive.application.factory import build_llm
 
     cfg = load_config()
-    cfg["backends"][args.judge_backend]["model"] = args.judge_model
+    if args.judge_model:
+        cfg["backends"][args.judge_backend]["model"] = args.judge_model
     llm = build_llm(cfg, args.judge_backend)
     gold_rows = load_jsonl(args.gold)
     predicted = []
@@ -52,8 +55,7 @@ def main():
         ),
     })
     calibration_path = args.output.with_suffix(".calibration.json")
-    calibration_path.parent.mkdir(parents=True, exist_ok=True)
-    calibration_path.write_text(json.dumps({"metrics": metrics, "examples": gold_rows}, indent=2), encoding="utf-8")
+    write_json(calibration_path, {"metrics": metrics, "examples": gold_rows})
     print(f"Calibration: {calibration_path}")
     if args.calibrate_only:
         return
@@ -63,7 +65,7 @@ def main():
         raise SystemExit(f"Judge macro-F1 {metrics['macro_f1']:.3f} is below 0.85; use --allow-uncalibrated only for exploratory scoring")
 
     rows = load_jsonl(args.input)
-    with args.output.open("w", encoding="utf-8") as handle:
+    with atomic_text_writer(args.output) as handle:
         for index, item in enumerate(rows, 1):
             print(f"[judge {index}/{len(rows)}] {item['case']['id']}", flush=True)
             if item.get("error"):
@@ -77,7 +79,6 @@ def main():
                     execution_evidence=item.get("tool_trace", []),
                 )
             handle.write(json.dumps(item, ensure_ascii=False) + "\n")
-            handle.flush()
     print(f"Judged results: {args.output}")
 
 
